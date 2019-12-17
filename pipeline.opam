@@ -1,0 +1,31 @@
+opam-version: "2.0"
+synopsis: "OCurrent pipeline for index benchmarks"
+description: """
+This pipeline runs the index benchmarks and publishes them to slack.
+"""
+maintainer: "gargi@tarides.com"
+authors: "gargi@tarides.com"
+homepage: "https://github.com/gs0510/index-benchmarks" 
+dev-repo: "git+https://github.com/gs0510/index-benchmarks.git"
+build: [
+  ["dune" "build" "-p" name "-j" jobs]
+  ["dune" "runtest" "-p" name "-j" jobs] {with-test}
+]
+depends: [
+  "ocaml" {>= "4.08.0"}
+  "fmt"
+  "cmdliner"
+  "duration"
+  "current" {= version}
+  "current_web" {= version}
+  "current_git" {= version}
+  "current_github" {= version}
+  "current_docker" {= version}
+  "current_rpc" {= version}
+  "capnp-rpc-unix" {>= "0.5"}
+  "dune" {>= "1.9"}
+  "logs"
+]
+pin-depends: [
+  [ "ocurrent" "git+https://github.com/ocurrent/ocurrent#3a190f0c388b51957c4afbebafd4e8d63717f384" ]
+]

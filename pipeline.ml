@@ -8,8 +8,6 @@ module Github = Current_github
 module Docker = Current_docker.Default
 module Slack = Current_slack
 
-let () = Logging.init ()
-
 let read_channel_uri path =
     let path = match path with
     | None -> "slack_path"
@@ -33,7 +31,7 @@ let dockerfile ~base =
   add ~src:["--chown=opam ."] ~dst:"." () @@
   run "opam config exec -- make -C ." @@
   run "eval $(opam env)"
-  
+
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
@@ -41,7 +39,7 @@ let read_json filename =
   let ch = open_in filename in
   let s = really_input_string ch (in_channel_length ch) in
   close_in ch;
-  s 
+  s
 
 let pipeline ~github ~repo ~output_file ~slack_path() =
   let output_file = match output_file with
@@ -55,13 +53,13 @@ let pipeline ~github ~repo ~output_file ~slack_path() =
     dockerfile ~base
   in
   let image  = Docker.build ~pull:false ~dockerfile (`Git src)
-  in 
-  let s = 
+  in
+  let s =
           let+ () = Docker.run ~run_args:["-v"; "/data/gargi/index:/data/gargi/index"] image ~args:["dune"; "exec"; "--"; "bench/db_bench.exe"; "-b"; "index"; "-j"; output_file] in
     read_json output_file
   in
   let channel = read_channel_uri slack_path in
-  Slack.post channel ~key:"output" s 
+  Slack.post channel ~key:"output" s
 
 let webhooks = [
   "github", Github.input_webhook
@@ -69,12 +67,10 @@ let webhooks = [
 
 let main config mode github repo output_file slack_path=
   let engine = Current.Engine.create ~config (pipeline ~github ~repo ~output_file ~slack_path) in
-  Logging.run begin
     Lwt.choose [
       Current.Engine.thread engine;
       Current_web.run ~mode ~webhooks engine;
     ]
-  end
 
 (* Command-line parsing *)
 
