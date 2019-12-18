@@ -9,11 +9,10 @@ module Slack = Current_slack
 
 let () = Logging.init ()
 
-let generate_diff =
-  let json_1 = 
-
 let read_channel_uri path =
-  let path = match path with None -> raise ("slack_path is missing") | Some path -> path in
+  let path =
+    match path with None -> "slack_path is missing" | Some path -> path
+  in
   let ch = open_in path in
   let uri = input_line ch in
   close_in ch;
@@ -57,7 +56,17 @@ let pipeline ~github ~repo ~output_file ~slack_path () =
   let s =
     let+ () =
       Docker.run
-        ~run_args:[ "-v"; "/data/gargi/index:/data/gargi/index" ]
+        ~run_args:
+          [
+            "-v";
+            "/data/gargi/index:/data/gargi/index";
+            "--cpuset-cpus";
+            "15";
+            "--cpuset-mems";
+            "7";
+            "--tmpfs";
+            "/dev/shm:rw,noexec,nosuid,size=4G,mpol=bind:7";
+          ]
         image
         ~args:
           [
