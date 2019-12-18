@@ -1,4 +1,4 @@
 (executable
 (public_name pipeline)
 (package pipeline)
-(libraries logs cmdliner current current_docker current_git current_github current_slack current_web dockerfile uri))
+(libraries logs.fmt logs cmdliner current current_docker current.fs current_git current_github current_slack current_web dockerfile  fmt.tty uri prometheus ))
