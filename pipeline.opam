@@ -5,7 +5,8 @@ This pipeline runs the index benchmarks and publishes them to slack.
 """
 maintainer: "gargi@tarides.com"
 authors: "gargi@tarides.com"
-homepage: "https://github.com/gs0510/index-benchmarks" 
+homepage: "https://github.com/gs0510/index-benchmarks"
+bug-reports: "https://github.com/gs0510/index-benchmarks/issues"
 dev-repo: "git+https://github.com/gs0510/index-benchmarks.git"
 build: [
   ["dune" "build" "-p" name "-j" jobs]
@@ -27,5 +28,5 @@ depends: [
   "logs"
 ]
 pin-depends: [
-  [ "ocurrent" "git+https://github.com/ocurrent/ocurrent#3a190f0c388b51957c4afbebafd4e8d63717f384" ]
+  [ "ocurrent.dev" "git+https://github.com/ocurrent/ocurrent#3a190f0c388b51957c4afbebafd4e8d63717f384" ]
 ]
