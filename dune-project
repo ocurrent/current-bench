@@ -11,6 +11,7 @@
  (synopsis "OCurrent pipeline for index benchmarks")
  (description "This pipeline runs the index benchmarks and publishes them to slack.")
  (depends
+  bos
   capnp-rpc-unix
   cmdliner
   current
@@ -21,5 +22,7 @@
   current_slack
   current_web
   duration
+  fpath
   logs
-  (ocaml (>= 4.08))))
+  (ocaml (>= 4.08))
+  rresult))

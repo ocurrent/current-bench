@@ -7,11 +7,10 @@ module Github = Current_github
 module Docker = Current_docker.Default
 module Slack = Current_slack
 
-let read_channel_uri path =
-  let ch = open_in (Fpath.to_string path) in
-  let uri = input_line ch in
-  close_in ch;
-  Current_slack.channel (Uri.of_string (String.trim uri))
+let read_fpath p = Bos.OS.File.read p |> Rresult.R.error_msg_to_invalid_arg
+
+let read_channel_uri p =
+  read_fpath p |> String.trim |> Uri.of_string |> Current_slack.channel
 
 (* Generate a Dockerfile for building all the opam packages in the build context. *)
 let dockerfile ~base =
@@ -29,18 +28,12 @@ let dockerfile ~base =
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
-let read_json filename =
-  let ch = open_in filename in
-  let s = really_input_string ch (in_channel_length ch) in
-  close_in ch;
-  s
-
-let pipeline ~github ~repo ~output_file ?slack_path () =
-  let output_file =
-    match output_file with
-    | None -> "/data/gargi/index/output.json"
-    | Some file -> file
+let pipeline ~github ~repo ?output_file ?slack_path () =
+  let tmp_source =
+    Bos.OS.File.tmp "index-bench-result-%s.txt"
+    |> Rresult.R.error_msg_to_invalid_arg
   in
+  let tmp_target = Fpath.(v "/tmp" / filename tmp_source) in
   let head = Github.Api.head_commit github repo in
   let src = Git.fetch (Current.map Github.Api.Commit.id head) in
   let dockerfile =
@@ -53,8 +46,9 @@ let pipeline ~github ~repo ~output_file ?slack_path () =
       Docker.run
         ~run_args:
           [
-            "-v";
-            "/data/gargi/index:/data/gargi/index";
+            "--mount";
+            Fmt.str "type=bind,source=%a,target=%a" Fpath.pp tmp_source Fpath.pp
+              tmp_target;
             "--cpuset-cpus";
             "15";
             "--cpuset-mems";
@@ -69,19 +63,31 @@ let pipeline ~github ~repo ~output_file ?slack_path () =
             "exec";
             "--";
             "bench/db_bench.exe";
-            "-b";
+            "--bench";
             "index";
-            "-j";
-            output_file;
+            "--json";
+            Fmt.str "%a" Fpath.pp tmp_target;
           ]
     in
+    (* Conditionally move the results to ?output_file *)
+    let results_path =
+      match output_file with
+      | Some path ->
+          Bos.OS.Path.move tmp_source path |> Rresult.R.error_msg_to_invalid_arg;
+          path
+      | None -> tmp_source
+    in
     (* No need to read JSON if we're not publishing the results anywhere *)
-    match slack_path with Some _ -> Some (read_json tmp_source) | None -> None
+    match slack_path with
+    | Some p -> Some (p, read_fpath results_path)
+    | None -> None
   in
   s
-  |> Current.option_map (fun results ->
-         let channel = read_channel_uri (Option.get slack_path) in
-         Slack.post channel ~key:"output" results)
+  |> Current.option_map (fun p ->
+         Current.component "post"
+         |> let** path, _ = p in
+            let channel = read_channel_uri path in
+            Slack.post channel ~key:"output" (Current.map snd p))
   |> Current.ignore_value
 
 let webhooks = [ ("github", Github.input_webhook) ]
@@ -89,7 +95,7 @@ let webhooks = [ ("github", Github.input_webhook) ]
 let main config mode github repo output_file slack_path () =
   let engine =
     Current.Engine.create ~config
-      (pipeline ~github ~repo ~output_file ?slack_path)
+      (pipeline ~github ~repo ?output_file ?slack_path)
   in
   Logging.run
     (Lwt.choose
@@ -99,13 +105,15 @@ let main config mode github repo output_file slack_path () =
 
 open Cmdliner
 
+let path = Arg.conv ~docv:"PATH" Fpath.(of_string, pp)
+
 let output_file =
   let doc = "output file where benchmark result should be stored" in
-  Arg.(value & opt (some non_dir_file) None & info [ "o"; "output" ] ~doc)
+  Arg.(value & opt (some path) None & info [ "o"; "output" ] ~doc)
 
 let slack_path =
   let doc = "" in
-  Arg.(value & opt (some non_dir_file) None & info [ "s"; "slack" ] ~doc)
+  Arg.(value & opt (some path) None & info [ "s"; "slack" ] ~doc)
 
 let repo =
   Arg.required

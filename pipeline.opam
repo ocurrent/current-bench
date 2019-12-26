@@ -9,6 +9,7 @@ homepage: "https://github.com/gs0510/index-benchmarks"
 bug-reports: "https://github.com/gs0510/index-benchmarks/issues"
 depends: [
   "dune" {>= "2.0"}
+  "bos"
   "capnp-rpc-unix"
   "cmdliner"
   "current"
@@ -19,8 +20,10 @@ depends: [
   "current_slack"
   "current_web"
   "duration"
+  "fpath"
   "logs"
   "ocaml" {>= "4.08"}
+  "rresult"
 ]
 build: [
   ["dune" "subst"] {pinned}
