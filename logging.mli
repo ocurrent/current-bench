@@ -1,4 +1,5 @@
-val init : ?level:Logs.level -> unit -> unit
+val init :
+  ?style_renderer:Fmt.style_renderer -> ?level:Logs.level -> unit -> unit
 (** Initialise the Logs library with some sensible defaults. *)
 
 val with_dot : dotfile:Fpath.t -> (unit -> 'a Current.t) -> unit -> 'a Current.t
