@@ -7,12 +7,8 @@ module Github = Current_github
 module Docker = Current_docker.Default
 module Slack = Current_slack
 
-
 let read_channel_uri path =
-  let path =
-    match path with None -> "slack_path is missing" | Some path -> path
-  in
-  let ch = open_in path in
+  let ch = open_in (Fpath.to_string path) in
   let uri = input_line ch in
   close_in ch;
   Current_slack.channel (Uri.of_string (String.trim uri))
@@ -39,7 +35,7 @@ let read_json filename =
   close_in ch;
   s
 
-let pipeline ~github ~repo ~output_file ~slack_path () =
+let pipeline ~github ~repo ~output_file ?slack_path () =
   let output_file =
     match output_file with
     | None -> "/data/gargi/index/output.json"
@@ -79,17 +75,21 @@ let pipeline ~github ~repo ~output_file ~slack_path () =
             output_file;
           ]
     in
-    read_json output_file
+    (* No need to read JSON if we're not publishing the results anywhere *)
+    match slack_path with Some _ -> Some (read_json tmp_source) | None -> None
   in
-  let channel = read_channel_uri slack_path in
-  Slack.post channel ~key:"output" s
+  s
+  |> Current.option_map (fun results ->
+         let channel = read_channel_uri (Option.get slack_path) in
+         Slack.post channel ~key:"output" results)
+  |> Current.ignore_value
 
 let webhooks = [ ("github", Github.input_webhook) ]
 
-let main config mode github repo output_file slack_path =
+let main config mode github repo output_file slack_path () =
   let engine =
     Current.Engine.create ~config
-      (pipeline ~github ~repo ~output_file ~slack_path)
+      (pipeline ~github ~repo ~output_file ?slack_path)
   in
   Logging.run
     (Lwt.choose
