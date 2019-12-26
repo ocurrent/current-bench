@@ -28,7 +28,8 @@ let dockerfile ~base =
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
-let pipeline ~github ~repo ?output_file ?slack_path () =
+let pipeline ~github ~repo ?output_file ?slack_path ?cpuset_cpus ?cpuset_mems ()
+    =
   let tmp_source =
     Bos.OS.File.tmp "index-bench-result-%s.txt"
     |> Rresult.R.error_msg_to_invalid_arg
@@ -42,21 +43,19 @@ let pipeline ~github ~repo ?output_file ?slack_path () =
   in
   let image = Docker.build ~pull:false ~dockerfile (`Git src) in
   let s =
+    let run_args =
+      [
+        "--mount";
+        Fmt.str "type=bind,source=%a,target=%a" Fpath.pp tmp_source Fpath.pp
+          tmp_target;
+        "--tmpfs";
+        "/dev/shm:rw,noexec,nosuid,size=4G,mpol=bind:7";
+      ]
+      @ (match cpuset_cpus with Some i -> [ "--cpuset-cpus"; i ] | None -> [])
+      @ match cpuset_mems with Some i -> [ "--cpuset-mems"; i ] | None -> []
+    in
     let+ () =
-      Docker.run
-        ~run_args:
-          [
-            "--mount";
-            Fmt.str "type=bind,source=%a,target=%a" Fpath.pp tmp_source Fpath.pp
-              tmp_target;
-            "--cpuset-cpus";
-            "15";
-            "--cpuset-mems";
-            "7";
-            "--tmpfs";
-            "/dev/shm:rw,noexec,nosuid,size=4G,mpol=bind:7";
-          ]
-        image
+      Docker.run ~run_args image
         ~args:
           [
             "dune";
@@ -92,10 +91,12 @@ let pipeline ~github ~repo ?output_file ?slack_path () =
 
 let webhooks = [ ("github", Github.input_webhook) ]
 
-let main config mode github repo output_file slack_path () =
+let main config mode github repo output_file slack_path cpuset_cpus cpuset_mems
+    () =
   let engine =
     Current.Engine.create ~config
-      (pipeline ~github ~repo ?output_file ?slack_path)
+      (pipeline ~github ~repo ?output_file ?slack_path ?cpuset_cpus
+         ?cpuset_mems)
   in
   Logging.run
     (Lwt.choose
@@ -108,12 +109,22 @@ open Cmdliner
 let path = Arg.conv ~docv:"PATH" Fpath.(of_string, pp)
 
 let output_file =
-  let doc = "output file where benchmark result should be stored" in
+  let doc = "Output file where benchmark result should be stored." in
   Arg.(value & opt (some path) None & info [ "o"; "output" ] ~doc)
 
 let slack_path =
-  let doc = "" in
+  let doc =
+    "File containing the Slack endpoint URI to use for result notifications."
+  in
   Arg.(value & opt (some path) None & info [ "s"; "slack" ] ~doc)
+
+let docker_cpuset_cpus =
+  let doc = "CPUs in which to allow execution of the benchmarks (0-3, 0,1)" in
+  Arg.(value & opt (some string) None & info [ "cpuset-cpus" ] ~doc)
+
+let docker_cpuset_mems =
+  let doc = "MEMs in which to allow execution of the benchmarks (0-3, 0,1)" in
+  Arg.(value & opt (some string) None & info [ "cpuset-mems" ] ~doc)
 
 let repo =
   Arg.required
@@ -135,6 +146,8 @@ let cmd =
       $ repo
       $ output_file
       $ slack_path
+      $ docker_cpuset_cpus
+      $ docker_cpuset_mems
       $ setup_log),
     Term.info "github" ~doc )
 
