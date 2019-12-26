@@ -117,8 +117,13 @@ let repo =
 let cmd =
   let doc = "Monitor a GitHub repository." in
   ( Term.(
-      const main $ Current.Config.cmdliner $ Current_web.cmdliner
-      $ Current_github.Api.cmdliner $ repo $ output_file $ slack_path),
+      const main
+      $ Current.Config.cmdliner
+      $ Current_web.cmdliner
+      $ Current_github.Api.cmdliner
+      $ repo
+      $ output_file
+      $ slack_path),
     Term.info "github" ~doc )
 
 let () = Term.(exit @@ eval cmd)
