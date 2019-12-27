@@ -30,8 +30,8 @@ let dockerfile ~base =
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
-let pipeline ~github ~repo ?output_file ?slack_path ?cpuset_cpus ?cpuset_mems ()
-    =
+let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
+    ?docker_numa_node ~docker_shm_size () =
   let tmp_source =
     Bos.OS.File.tmp "index-bench-result-%s.txt"
     |> Rresult.R.error_msg_to_invalid_arg
@@ -44,17 +44,40 @@ let pipeline ~github ~repo ?output_file ?slack_path ?cpuset_cpus ?cpuset_mems ()
     dockerfile ~base
   in
   let image = Docker.build ~pull:false ~dockerfile (`Git src) in
+  let docker_cpuset_cpus =
+    match docker_cpu with
+    | Some i -> [ "--cpuset-cpus"; string_of_int i ]
+    | None -> []
+  in
+  let docker_cpuset_mems =
+    match docker_numa_node with
+    | Some i -> [ "--cpuset-mems"; string_of_int i ]
+    | None -> []
+  in
+  let tmpfs =
+    match docker_numa_node with
+    | Some i ->
+        [
+          "--tmpfs";
+          Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dG,mpol=bind:%d"
+            docker_shm_size i;
+        ]
+    | None ->
+        [
+          "--tmpfs";
+          Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dG" docker_shm_size;
+        ]
+  in
   let s =
     let run_args =
       [
         "--mount";
         Fmt.str "type=bind,source=%a,target=%a" Fpath.pp tmp_source Fpath.pp
           tmp_target;
-        "--tmpfs";
-        "/dev/shm:rw,noexec,nosuid,size=4G,mpol=bind:7";
       ]
-      @ (match cpuset_cpus with Some i -> [ "--cpuset-cpus"; i ] | None -> [])
-      @ match cpuset_mems with Some i -> [ "--cpuset-mems"; i ] | None -> []
+      @ tmpfs
+      @ docker_cpuset_cpus
+      @ docker_cpuset_mems
     in
     let+ () =
       Docker.run ~run_args image
@@ -90,12 +113,12 @@ let pipeline ~github ~repo ?output_file ?slack_path ?cpuset_cpus ?cpuset_mems ()
 
 let webhooks = [ ("github", Github.input_webhook) ]
 
-let main config mode github repo output_file slack_path cpuset_cpus cpuset_mems
-    () =
+let main config mode github repo output_file slack_path docker_cpu
+    docker_numa_node docker_shm_size () =
   let engine =
     Current.Engine.create ~config
-      (pipeline ~github ~repo ?output_file ?slack_path ?cpuset_cpus
-         ?cpuset_mems)
+      (pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
+         ?docker_numa_node ~docker_shm_size)
   in
   Logging.run
     (Lwt.choose
@@ -117,13 +140,20 @@ let slack_path =
   in
   Arg.(value & opt (some path) None & info [ "s"; "slack" ] ~doc)
 
-let docker_cpuset_cpus =
-  let doc = "CPUs in which to allow execution of the benchmarks (0-3, 0,1)" in
-  Arg.(value & opt (some string) None & info [ "cpuset-cpus" ] ~doc)
+let docker_cpu =
+  let doc = "CPU/core that should run the benchmarks." in
+  Arg.(value & opt (some int) None & info [ "docker-cpu" ] ~doc)
 
-let docker_cpuset_mems =
-  let doc = "MEMs in which to allow execution of the benchmarks (0-3, 0,1)" in
-  Arg.(value & opt (some string) None & info [ "cpuset-mems" ] ~doc)
+let docker_numa_node =
+  let doc =
+    "NUMA node to use for memory and tmpfs storage (should match CPU core if \
+     enabled, see `lscpu`)"
+  in
+  Arg.(value & opt (some int) None & info [ "docker-numa-node" ] ~doc)
+
+let docker_shm_size =
+  let doc = "Size of tmpfs volume to be mounted in /dev/shm (in GB)." in
+  Arg.(value & opt int 4 & info [ "docker-shm-size" ] ~doc)
 
 let repo =
   Arg.required
@@ -145,8 +175,9 @@ let cmd =
       $ repo
       $ output_file
       $ slack_path
-      $ docker_cpuset_cpus
-      $ docker_cpuset_mems
+      $ docker_cpu
+      $ docker_numa_node
+      $ docker_shm_size
       $ setup_log),
     Term.info "github" ~doc )
 
