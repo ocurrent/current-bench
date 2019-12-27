@@ -1,6 +1,6 @@
 (executable
  (public_name pipeline)
  (package pipeline)
- (libraries logs logs.cli logs.fmt fmt.cli cmdliner current current_docker
-   current.fs current_git current_github current_slack current_web dockerfile
-   fmt.tty uri prometheus))
+ (libraries bos cmdliner current current.fs current_docker current_git
+   current_github current_slack current_web dockerfile fmt.cli fmt.tty logs
+   logs.cli logs.fmt prometheus rresult uri))
