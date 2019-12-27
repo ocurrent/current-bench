@@ -7,7 +7,6 @@ module Github = Current_github
 module Docker = Current_docker.Default
 module Slack = Current_slack
 
-let () = Logging.init ()
 
 let read_channel_uri path =
   let path =
@@ -114,6 +113,10 @@ let repo =
   @@ Arg.info ~doc:"The GitHub repository (owner/name) to monitor." ~docv:"REPO"
        []
 
+let setup_log =
+  let init style_renderer level = Logging.init ?style_renderer ?level () in
+  Term.(const init $ Fmt_cli.style_renderer () $ Logs_cli.level ())
+
 let cmd =
   let doc = "Monitor a GitHub repository." in
   ( Term.(
@@ -123,7 +126,8 @@ let cmd =
       $ Current_github.Api.cmdliner
       $ repo
       $ output_file
-      $ slack_path),
+      $ slack_path
+      $ setup_log),
     Term.info "github" ~doc )
 
 let () = Term.(exit @@ eval cmd)

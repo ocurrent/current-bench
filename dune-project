@@ -21,4 +21,5 @@
   current_slack
   current_web
   duration
+  logs
   (ocaml (>= 4.08))))
