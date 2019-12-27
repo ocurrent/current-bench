@@ -71,6 +71,8 @@ let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
   let s =
     let run_args =
       [
+        "--security-opt";
+        "seccomp=./aslr_seccomp.json";
         "--mount";
         Fmt.str "type=bind,source=%a,target=%a" Fpath.pp tmp_source Fpath.pp
           tmp_target;
@@ -83,6 +85,9 @@ let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
       Docker.run ~run_args image
         ~args:
           [
+            "/usr/bin/setarch";
+            "x86_64";
+            "--addr-no-randomize";
             "_build/default/bench/db_bench.exe";
             "--bench";
             "index";
