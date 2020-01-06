@@ -57,8 +57,6 @@ external generate: C3.generateArg => Js.t(unit) = "generate";
 let rightButtonStyle =
   ReactDOMRe.Style.make(~borderRadius="0px 4px 4px 0px", ~width="48px", ());
 
-let short_hash: string => string = s => String.sub(s, 0, 8);
-
 let chart_of_spec = (id, {xdata, _}) => {
   let series =
     Array.append(
@@ -66,7 +64,7 @@ let chart_of_spec = (id, {xdata, _}) => {
       xdata |> Array.map(((_xlabel, datum)) => C3.Value.int(datum)),
     );
   let xlabels =
-    xdata |> Array.map(((xlabel, _datum)) => short_hash(xlabel));
+    xdata |> Array.map(((xlabel, _datum)) => Utils.short_hash(xlabel));
   C3.generateArg(
     ~bindto=Format.sprintf("#%s", id),
     ~axis={

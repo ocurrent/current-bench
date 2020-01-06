@@ -33,7 +33,7 @@ let random_benchmarks = () => {
   );
 };
 
-let link_of_commit_hash = (org, repo, hash) =>
+let link_of_commit_hash = (~org, ~repo, ~hash) =>
   Format.sprintf("https://github.com/%s/%s/tree/%s", org, repo, hash);
 
 let benches: array(Benchmark.t) =
@@ -155,6 +155,13 @@ let repo = "index";
 let make = () => {
   let specs =
     benches |> benchmarks_to_display |> Array.map(spec_of_bench(benches));
+  let latest_commit =
+    benches
+    |> Array.to_list
+    |> List.rev
+    |> List.hd
+  |> ((Benchmark.{commit, _}) => commit);
+  let latest_commit_short = latest_commit |> Utils.short_hash;
   <>
     /* React.useEffect0(() => Some(() => Js.log(generate(chart)))); */
     <div className="header">
@@ -168,10 +175,10 @@ let make = () => {
     </div>
     <div className="content">
       <p>
-        {React.string("Showing results for commit ")}
+        {React.string("Latest commit is commit ")}
         <a
-          href="https://github.com/mirage/index/tree/0adda73019f9f3a947c224b37ceb54d0f36d5fc4">
-          {React.string("0adda73019")}
+          href={link_of_commit_hash(~org, ~repo, ~hash=latest_commit)}>
+          {React.string(latest_commit_short)}
         </a>
         {React.string(".")}
       </p>
