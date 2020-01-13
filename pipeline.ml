@@ -89,6 +89,8 @@ let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
             "x86_64";
             "--addr-no-randomize";
             "_build/default/bench/db_bench.exe";
+            "-d";
+            "/dev/shm";
             "--bench";
             "index";
             "--json";
