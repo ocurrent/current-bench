@@ -7,6 +7,8 @@ module Github = Current_github
 module Docker = Current_docker.Default
 module Slack = Current_slack
 
+let pool = Current.Pool.create ~label:"docker" 1
+
 let read_fpath p = Bos.OS.File.read p |> Rresult.R.error_msg_to_invalid_arg
 
 let read_channel_uri p =
@@ -43,7 +45,7 @@ let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
     let+ base = Docker.pull ~schedule:weekly "ocaml/opam2" in
     dockerfile ~base
   in
-  let image = Docker.build ~pull:false ~dockerfile (`Git src) in
+  let image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
   let docker_cpuset_cpus =
     match docker_cpu with
     | Some i -> [ "--cpuset-cpus"; string_of_int i ]
