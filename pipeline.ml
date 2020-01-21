@@ -32,15 +32,18 @@ let dockerfile ~base =
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
+let tmp_host =
+  Bos.OS.File.tmp ~mode:0o666
+    ~dir:Fpath.(v "/data/tmp/")
+    "index-bench-result-%s.txt"
+  |> Rresult.R.error_msg_to_invalid_arg
+
 let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
     ?docker_numa_node ~docker_shm_size () =
-  let tmp_source =
-    Bos.OS.File.tmp "index-bench-result-%s.txt"
-    |> Rresult.R.error_msg_to_invalid_arg
-  in
-  let tmp_target = Fpath.(v "/tmp" / filename tmp_source) in
+  let tmp_container = Fpath.(v "/data/tmp" / filename tmp_host) in
   let head = Github.Api.head_commit github repo in
   let src = Git.fetch (Current.map Github.Api.Commit.id head) in
+  let () = Unix.chmod ("/data/tmp/" ^ Fpath.filename tmp_host) 0o666 in
   let dockerfile =
     let+ base = Docker.pull ~schedule:weekly "ocaml/opam2" in
     dockerfile ~base
@@ -76,8 +79,8 @@ let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
         "--security-opt";
         "seccomp=./aslr_seccomp.json";
         "--mount";
-        Fmt.str "type=bind,source=%a,target=%a" Fpath.pp tmp_source Fpath.pp
-          tmp_target;
+        Fmt.str "type=bind,source=%a,target=%a" Fpath.pp tmp_container Fpath.pp
+          tmp_host;
       ]
       @ tmpfs
       @ docker_cpuset_cpus
@@ -96,16 +99,16 @@ let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
             "--bench";
             "index";
             "--json";
-            Fmt.str "%a" Fpath.pp tmp_target;
+            Fmt.str "%a" Fpath.pp tmp_container;
           ]
     in
     (* Conditionally move the results to ?output_file *)
     let results_path =
       match output_file with
       | Some path ->
-          Bos.OS.Path.move tmp_source path |> Rresult.R.error_msg_to_invalid_arg;
+          Bos.OS.Path.move tmp_host path |> Rresult.R.error_msg_to_invalid_arg;
           path
-      | None -> tmp_source
+      | None -> tmp_host
     in
     (* No need to read JSON if we're not publishing the results anywhere *)
     match slack_path with
