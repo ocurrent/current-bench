@@ -25,9 +25,7 @@ let dockerfile ~base =
   @@ workdir "index"
   @@ run "opam install -y --deps-only -t ."
   @@ add ~src:[ "--chown=opam ." ] ~dst:"." ()
-  @@ run
-       "opam config exec -- dune build @@default bench/main.exe \
-        bench/db_bench.exe"
+  @@ run "opam config exec -- dune build @@default bench/bench.exe"
   @@ run "eval $(opam env)"
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
@@ -93,12 +91,11 @@ let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
             "/usr/bin/setarch";
             "x86_64";
             "--addr-no-randomize";
-            "_build/default/bench/db_bench.exe";
+            "_build/default/bench/bench.exe";
             "-d";
             "/dev/shm";
-            "--bench";
-            "index";
             "--json";
+            "--output";
             Fmt.str "%a" Fpath.pp tmp_container;
           ]
     in
