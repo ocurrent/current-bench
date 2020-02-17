@@ -9,10 +9,8 @@ module Slack = Current_slack
 
 let pool = Current.Pool.create ~label:"docker" 1
 
-let read_fpath p = Bos.OS.File.read p |> Rresult.R.error_msg_to_invalid_arg
-
 let read_channel_uri p =
-  read_fpath p |> String.trim |> Uri.of_string |> Current_slack.channel
+  Utils.read_fpath p |> String.trim |> Uri.of_string |> Current_slack.channel
 
 (* Generate a Dockerfile for building all the opam packages in the build context. *)
 let dockerfile ~base =
@@ -30,18 +28,11 @@ let dockerfile ~base =
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
-let tmp_host =
-  Bos.OS.File.tmp ~mode:0o666
-    ~dir:Fpath.(v "/data/tmp/")
-    "index-bench-result-%s.txt"
-  |> Rresult.R.error_msg_to_invalid_arg
-
 let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
-    ?docker_numa_node ~docker_shm_size () =
-  let tmp_container = Fpath.(v "/data/tmp" / filename tmp_host) in
+    ?docker_numa_node ~docker_shm_size ~tmp_host ~tmp_container () =
   let head = Github.Api.head_commit github repo in
+  let commit = Utils.get_commit repo.name repo.owner in
   let src = Git.fetch (Current.map Github.Api.Commit.id head) in
-  let () = Unix.chmod ("/data/tmp/" ^ Fpath.filename tmp_host) 0o666 in
   let dockerfile =
     let+ base = Docker.pull ~schedule:weekly "ocaml/opam2" in
     dockerfile ~base
@@ -94,6 +85,8 @@ let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
             "_build/default/bench/bench.exe";
             "-d";
             "/dev/shm";
+            "--nb-entries";
+            "1000";
             "--json";
             "--output";
             Fmt.str "%a" Fpath.pp tmp_container;
@@ -107,10 +100,11 @@ let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
           path
       | None -> tmp_host
     in
-    (* No need to read JSON if we're not publishing the results anywhere *)
-    match slack_path with
-    | Some p -> Some (p, read_fpath results_path)
-    | None -> None
+    let content =
+      Utils.merge_json repo.name commit (Utils.read_fpath results_path)
+    in
+    let () = Utils.write_fpath results_path content in
+    match slack_path with Some p -> Some (p, content) | None -> None
   in
   s
   |> Current.option_map (fun p ->
@@ -122,12 +116,17 @@ let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
 
 let webhooks = [ ("github", Github.input_webhook) ]
 
-let main config mode github repo output_file slack_path docker_cpu
-    docker_numa_node docker_shm_size () =
+let main config mode github (repo : Current_github.Repo_id.t) output_file
+    slack_path docker_cpu docker_numa_node docker_shm_size () =
+  let commit = Utils.get_commit repo.name repo.owner in
+  let tmp_host = Utils.create_tmp_host repo.name commit in
+  let tmp_container =
+    Fpath.(v ("/data/tmp/" ^ repo.name ^ "/" ^ commit) / filename tmp_host)
+  in
   let engine =
     Current.Engine.create ~config
       (pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
-         ?docker_numa_node ~docker_shm_size)
+         ?docker_numa_node ~docker_shm_size ~tmp_host ~tmp_container)
   in
   Logging.run
     (Lwt.choose
