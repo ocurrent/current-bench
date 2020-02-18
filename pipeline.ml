@@ -85,8 +85,6 @@ let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
             "_build/default/bench/bench.exe";
             "-d";
             "/dev/shm";
-            "--nb-entries";
-            "1000";
             "--json";
             "--output";
             Fmt.str "%a" Fpath.pp tmp_container;
