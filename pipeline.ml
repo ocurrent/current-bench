@@ -99,7 +99,8 @@ let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
       | None -> tmp_host
     in
     let content =
-      Utils.merge_json repo.name commit (Utils.read_fpath results_path)
+      Utils.merge_json repo.name commit
+        (Yojson.Basic.from_string (Utils.read_fpath results_path))
     in
     let () = Utils.write_fpath results_path content in
     match slack_path with Some p -> Some (p, content) | None -> None
