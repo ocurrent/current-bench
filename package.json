@@ -1,29 +1,39 @@
 {
-  "name": "new-project",
+  "name": "frontend-js",
   "version": "0.1.0",
-  "scripts": {
-    "build": "bsb -make-world",
-    "start": "bsb -make-world -w -ws _ ",
-    "clean": "bsb -clean-world",
-    "server": "moduleserve ./ --port 8000",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [
-    "BuckleScript",
-    "ReasonReact",
-    "reason-react"
-  ],
-  "author": "",
-  "license": "MIT",
+  "private": true,
   "dependencies": {
-    "c3": "^0.7.11",
-    "react": "^16.8.1",
-    "react-dom": "^16.8.1",
-    "reason-cli": "^3.3.3-macos-1",
-    "reason-react": ">=0.7.0"
+    "@babel/plugin-proposal-pipeline-operator": "^7.8.3",
+    "@testing-library/jest-dom": "^4.2.4",
+    "@testing-library/react": "^9.3.2",
+    "@testing-library/user-event": "^7.1.2",
+    "graphql": "^14.6.0",
+    "graphql-tools": "^4.0.7",
+    "ramda": "^0.27.0",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0",
+    "react-scripts": "3.4.0",
+    "recharts": "^2.0.0-beta.1"
   },
-  "devDependencies": {
-    "bs-platform": "^7.0.1",
-    "moduleserve": "^0.8.4"
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

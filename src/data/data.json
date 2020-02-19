@@ -1,0 +1,1848 @@
+[
+  {
+    "name": "mirage/index",
+    "commits": [
+      {
+        "hash": "793e5601d87a3cc404779ff60d8f7624d167b9c4",
+        "results": [
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.0005209999999999937,
+                "ops_per_sec": 1919385.7965451288,
+                "mbs_per_sec": 82.37110218480186,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.0036809999999999343,
+                "ops_per_sec": 271665.3083401298,
+                "mbs_per_sec": 11.658610225015488,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005719999999999059,
+                "ops_per_sec": 1748251.7482520358,
+                "mbs_per_sec": 75.02682559141313,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005840000000000289,
+                "ops_per_sec": 1712328.7671232028,
+                "mbs_per_sec": 73.48517849020398,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0005769999999999387,
+                "ops_per_sec": 1733102.2530331132,
+                "mbs_per_sec": 74.37667978905687,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 2.8999999999945736e-5,
+                "ops_per_sec": 34482758.620754175,
+                "mbs_per_sec": 1479.839456495226,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.006642000000000037,
+                "ops_per_sec": 150557.061126166,
+                "mbs_per_sec": 6.461208105733365,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.0005060000000000064,
+                "ops_per_sec": 1976284.584980212,
+                "mbs_per_sec": 84.81293327723459,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.012892999999999932,
+                "ops_per_sec": 77561.46746296481,
+                "mbs_per_sec": 3.3285770757993856,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.0004290000000000127,
+                "ops_per_sec": 2331002.331002262,
+                "mbs_per_sec": 100.03576745519808,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          },
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.0005189999999999362,
+                "ops_per_sec": 1926782.27360332,
+                "mbs_per_sec": 82.68852454390468,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.0037400000000000766,
+                "ops_per_sec": 267379.67914437957,
+                "mbs_per_sec": 11.474690972802238,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005790000000001072,
+                "ops_per_sec": 1727115.7167527026,
+                "mbs_per_sec": 74.11976552378809,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005780000000000785,
+                "ops_per_sec": 1730103.806228139,
+                "mbs_per_sec": 74.24800041224123,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0005779999999998564,
+                "ops_per_sec": 1730103.8062288035,
+                "mbs_per_sec": 74.24800041226975,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 2.999999999997449e-5,
+                "ops_per_sec": 33333333.333361678,
+                "mbs_per_sec": 1430.5114746105914,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.0067309999999999315,
+                "ops_per_sec": 148566.3348685203,
+                "mbs_per_sec": 6.375775403102316,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.0005060000000000064,
+                "ops_per_sec": 1976284.584980212,
+                "mbs_per_sec": 84.81293327723459,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.012916000000000039,
+                "ops_per_sec": 77423.35088262596,
+                "mbs_per_sec": 3.32264975520913,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.0004189999999999472,
+                "ops_per_sec": 2386634.8448690358,
+                "mbs_per_sec": 102.42325593863164,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          },
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.0005199999999999649,
+                "ops_per_sec": 1923076.9230770527,
+                "mbs_per_sec": 82.52950815054643,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.0036890000000000533,
+                "ops_per_sec": 271076.17240444175,
+                "mbs_per_sec": 11.633327253532293,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005859999999999754,
+                "ops_per_sec": 1706484.641638297,
+                "mbs_per_sec": 73.23437583324753,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005809999999999427,
+                "ops_per_sec": 1721170.3958693608,
+                "mbs_per_sec": 73.86462003147244,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0005739999999999634,
+                "ops_per_sec": 1742160.2787457556,
+                "mbs_per_sec": 74.76540808063412,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 2.9000000000056758e-5,
+                "ops_per_sec": 34482758.620622166,
+                "mbs_per_sec": 1479.8394564895607,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.006761999999999935,
+                "ops_per_sec": 147885.24105294433,
+                "mbs_per_sec": 6.3465460275483085,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.0005049999999999777,
+                "ops_per_sec": 1980198.0198020677,
+                "mbs_per_sec": 84.98087967976861,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.012951000000000046,
+                "ops_per_sec": 77214.11474017423,
+                "mbs_per_sec": 3.3136703141287236,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.0004190000000000582,
+                "ops_per_sec": 2386634.8448684034,
+                "mbs_per_sec": 102.4232559386045,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          },
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.0005209999999999937,
+                "ops_per_sec": 1919385.7965451288,
+                "mbs_per_sec": 82.37110218480186,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.0036919999999999176,
+                "ops_per_sec": 270855.9046587276,
+                "mbs_per_sec": 11.623874387400381,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005789999999999962,
+                "ops_per_sec": 1727115.716753034,
+                "mbs_per_sec": 74.1197655238023,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005799999999999139,
+                "ops_per_sec": 1724137.9310347387,
+                "mbs_per_sec": 73.99197282463382,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0005860000000000865,
+                "ops_per_sec": 1706484.6416379735,
+                "mbs_per_sec": 73.23437583323366,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 2.8999999999945736e-5,
+                "ops_per_sec": 34482758.620754175,
+                "mbs_per_sec": 1479.839456495226,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.00676600000000005,
+                "ops_per_sec": 147797.81259237256,
+                "mbs_per_sec": 6.342794005066647,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.0005070000000000352,
+                "ops_per_sec": 1972386.5877710662,
+                "mbs_per_sec": 84.64564938516425,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.012892000000000015,
+                "ops_per_sec": 77567.48371082834,
+                "mbs_per_sec": 3.3288352651474713,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.0004199999999998649,
+                "ops_per_sec": 2380952.3809531466,
+                "mbs_per_sec": 102.17939104355965,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          },
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.0005239999999999689,
+                "ops_per_sec": 1908396.9465649987,
+                "mbs_per_sec": 81.89951190512174,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.003686999999999996,
+                "ops_per_sec": 271223.21670735045,
+                "mbs_per_sec": 11.639637710409898,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005760000000000209,
+                "ops_per_sec": 1736111.111111048,
+                "mbs_per_sec": 74.50580596923557,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005830000000000002,
+                "ops_per_sec": 1715265.8662092618,
+                "mbs_per_sec": 73.61122510854415,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0005730000000000457,
+                "ops_per_sec": 1745200.6980801402,
+                "mbs_per_sec": 74.89588872299795,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 2.9000000000056758e-5,
+                "ops_per_sec": 34482758.620622166,
+                "mbs_per_sec": 1479.8394564895607,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.006863999999999981,
+                "ops_per_sec": 145687.6456876461,
+                "mbs_per_sec": 6.252235465950083,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.0005060000000000064,
+                "ops_per_sec": 1976284.584980212,
+                "mbs_per_sec": 84.81293327723459,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.013037999999999994,
+                "ops_per_sec": 76698.88019634917,
+                "mbs_per_sec": 3.291558846317017,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.0004250000000000087,
+                "ops_per_sec": 2352941.17647054,
+                "mbs_per_sec": 100.9772805606597,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          },
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.0005330000000000057,
+                "ops_per_sec": 1876172.607879905,
+                "mbs_per_sec": 80.51659331759998,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.003689999999999971,
+                "ops_per_sec": 271002.7100271024,
+                "mbs_per_sec": 11.630174590320213,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005760000000000209,
+                "ops_per_sec": 1736111.111111048,
+                "mbs_per_sec": 74.50580596923557,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005759999999999099,
+                "ops_per_sec": 1736111.1111113827,
+                "mbs_per_sec": 74.50580596924993,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0005740000000000745,
+                "ops_per_sec": 1742160.2787454186,
+                "mbs_per_sec": 74.76540808061966,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 2.9000000000056758e-5,
+                "ops_per_sec": 34482758.620622166,
+                "mbs_per_sec": 1479.8394564895607,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.006906000000000079,
+                "ops_per_sec": 144801.62177816225,
+                "mbs_per_sec": 6.2142114448712364,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.0005060000000001175,
+                "ops_per_sec": 1976284.5849797784,
+                "mbs_per_sec": 84.81293327721599,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.012989000000000028,
+                "ops_per_sec": 76988.2208022171,
+                "mbs_per_sec": 3.303975998019952,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.0004189999999999472,
+                "ops_per_sec": 2386634.8448690358,
+                "mbs_per_sec": 102.42325593863164,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          },
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.0005250000000001087,
+                "ops_per_sec": 1904761.9047615104,
+                "mbs_per_sec": 81.74351283480451,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.003686999999999996,
+                "ops_per_sec": 271223.21670735045,
+                "mbs_per_sec": 11.639637710409898,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005740000000000745,
+                "ops_per_sec": 1742160.2787454186,
+                "mbs_per_sec": 74.76540808061966,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005749999999999922,
+                "ops_per_sec": 1739130.4347826324,
+                "mbs_per_sec": 74.6353812839684,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0005719999999999059,
+                "ops_per_sec": 1748251.7482520358,
+                "mbs_per_sec": 75.02682559141313,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 2.8000000000139025e-5,
+                "ops_per_sec": 35714285.714108385,
+                "mbs_per_sec": 1532.6908656452918,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.006816999999999962,
+                "ops_per_sec": 146692.09329617216,
+                "mbs_per_sec": 6.2953416808392975,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.0005330000000000057,
+                "ops_per_sec": 1876172.607879905,
+                "mbs_per_sec": 80.51659331759998,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.012974999999999959,
+                "ops_per_sec": 77071.29094412355,
+                "mbs_per_sec": 3.307540981755791,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.00044399999999999995,
+                "ops_per_sec": 2252252.2522522523,
+                "mbs_per_sec": 96.65618071684968,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          },
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.0005260000000000264,
+                "ops_per_sec": 1901140.6844105509,
+                "mbs_per_sec": 81.58810691688041,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.003693999999999975,
+                "ops_per_sec": 270709.25825663423,
+                "mbs_per_sec": 11.617581006573237,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005740000000000745,
+                "ops_per_sec": 1742160.2787454186,
+                "mbs_per_sec": 74.76540808061966,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005739999999999634,
+                "ops_per_sec": 1742160.2787457556,
+                "mbs_per_sec": 74.76540808063412,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0005709999999999882,
+                "ops_per_sec": 1751313.4851138715,
+                "mbs_per_sec": 75.15822108280585,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 2.8999999999945736e-5,
+                "ops_per_sec": 34482758.620754175,
+                "mbs_per_sec": 1479.839456495226,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.006847999999999965,
+                "ops_per_sec": 146028.0373831783,
+                "mbs_per_sec": 6.2668434927397,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.0005309999999999482,
+                "ops_per_sec": 1883239.1713749485,
+                "mbs_per_sec": 80.81985732257145,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.01315299999999997,
+                "ops_per_sec": 76028.28252109802,
+                "mbs_per_sec": 3.262779916238223,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.0004350000000000742,
+                "ops_per_sec": 2298850.5747122513,
+                "mbs_per_sec": 98.65596376614697,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          },
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.0005249999999999977,
+                "ops_per_sec": 1904761.9047619132,
+                "mbs_per_sec": 81.74351283482179,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.0036890000000000533,
+                "ops_per_sec": 271076.17240444175,
+                "mbs_per_sec": 11.633327253532293,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005739999999999634,
+                "ops_per_sec": 1742160.2787457556,
+                "mbs_per_sec": 74.76540808063412,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005730000000000457,
+                "ops_per_sec": 1745200.6980801402,
+                "mbs_per_sec": 74.89588872299795,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0005710000000000992,
+                "ops_per_sec": 1751313.4851135311,
+                "mbs_per_sec": 75.15822108279123,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 4.100000000006876e-5,
+                "ops_per_sec": 24390243.90239812,
+                "mbs_per_sec": 1046.7157131270556,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.006843999999999961,
+                "ops_per_sec": 146113.38398597395,
+                "mbs_per_sec": 6.270506171578242,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.0005399999999999849,
+                "ops_per_sec": 1851851.8518519036,
+                "mbs_per_sec": 79.47285970052305,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.013053999999999899,
+                "ops_per_sec": 76604.87206986424,
+                "mbs_per_sec": 3.2875244552077203,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.0004349999999999632,
+                "ops_per_sec": 2298850.574712838,
+                "mbs_per_sec": 98.65596376617214,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          },
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.000528000000000084,
+                "ops_per_sec": 1893939.3939390928,
+                "mbs_per_sec": 81.27906105733793,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.003707000000000016,
+                "ops_per_sec": 269759.91367682646,
+                "mbs_per_sec": 11.576839557130043,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005819999999999714,
+                "ops_per_sec": 1718213.0584193284,
+                "mbs_per_sec": 73.73770487677552,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005840000000000289,
+                "ops_per_sec": 1712328.7671232028,
+                "mbs_per_sec": 73.48517849020398,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0005809999999999427,
+                "ops_per_sec": 1721170.3958693608,
+                "mbs_per_sec": 73.86462003147244,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 2.9000000000056758e-5,
+                "ops_per_sec": 34482758.620622166,
+                "mbs_per_sec": 1479.8394564895607,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.00684499999999999,
+                "ops_per_sec": 146092.0379839301,
+                "mbs_per_sec": 6.26959010055242,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.0005180000000000184,
+                "ops_per_sec": 1930501.9305018617,
+                "mbs_per_sec": 82.8481549001539,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.012979999999999992,
+                "ops_per_sec": 77041.60246533134,
+                "mbs_per_sec": 3.3062668904685113,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.0004199999999998649,
+                "ops_per_sec": 2380952.3809531466,
+                "mbs_per_sec": 102.17939104355965,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          },
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.0005220000000000224,
+                "ops_per_sec": 1915708.812260454,
+                "mbs_per_sec": 82.21330313846629,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.003726000000000007,
+                "ops_per_sec": 268384.32635534037,
+                "mbs_per_sec": 11.51780575369865,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005729999999999347,
+                "ops_per_sec": 1745200.6980804782,
+                "mbs_per_sec": 74.89588872301246,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005789999999999962,
+                "ops_per_sec": 1727115.716753034,
+                "mbs_per_sec": 74.1197655238023,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0005790000000001072,
+                "ops_per_sec": 1727115.7167527026,
+                "mbs_per_sec": 74.11976552378809,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 2.999999999997449e-5,
+                "ops_per_sec": 33333333.333361678,
+                "mbs_per_sec": 1430.5114746105914,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.006688000000000027,
+                "ops_per_sec": 149521.53110047785,
+                "mbs_per_sec": 6.416767978211883,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.000508000000000064,
+                "ops_per_sec": 1968503.9370076263,
+                "mbs_per_sec": 84.47902409109419,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.012893999999999961,
+                "ops_per_sec": 77555.45214828626,
+                "mbs_per_sec": 3.328318926499254,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.0004189999999999472,
+                "ops_per_sec": 2386634.8448690358,
+                "mbs_per_sec": 102.42325593863164,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          },
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.0005220000000000224,
+                "ops_per_sec": 1915708.812260454,
+                "mbs_per_sec": 82.21330313846629,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.003723000000000032,
+                "ops_per_sec": 268600.5909212977,
+                "mbs_per_sec": 11.527086821993253,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005729999999999347,
+                "ops_per_sec": 1745200.6980804782,
+                "mbs_per_sec": 74.89588872301246,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005800000000000249,
+                "ops_per_sec": 1724137.9310344085,
+                "mbs_per_sec": 73.99197282461967,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0006479999999999819,
+                "ops_per_sec": 1543209.876543253,
+                "mbs_per_sec": 66.22738308376921,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 2.8999999999945736e-5,
+                "ops_per_sec": 34482758.620754175,
+                "mbs_per_sec": 1479.839456495226,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.006682000000000077,
+                "ops_per_sec": 149655.79167913625,
+                "mbs_per_sec": 6.42252981716264,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.0005159999999999609,
+                "ops_per_sec": 1937984.4961241777,
+                "mbs_per_sec": 83.16927177962113,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.012896999999999936,
+                "ops_per_sec": 77537.41180119445,
+                "mbs_per_sec": 3.3275447187936313,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.00041800000000002946,
+                "ops_per_sec": 2392344.497607487,
+                "mbs_per_sec": 102.66828765138331,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          },
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.0005630000000000912,
+                "ops_per_sec": 1776198.9342803517,
+                "mbs_per_sec": 76.22618870030959,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.0036839999999999096,
+                "ops_per_sec": 271444.08251900773,
+                "mbs_per_sec": 11.64911624274764,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005809999999999427,
+                "ops_per_sec": 1721170.3958693608,
+                "mbs_per_sec": 73.86462003147244,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005789999999999962,
+                "ops_per_sec": 1727115.716753034,
+                "mbs_per_sec": 74.1197655238023,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0005789999999999962,
+                "ops_per_sec": 1727115.716753034,
+                "mbs_per_sec": 74.1197655238023,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 2.8999999999945736e-5,
+                "ops_per_sec": 34482758.620754175,
+                "mbs_per_sec": 1479.839456495226,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.00672600000000001,
+                "ops_per_sec": 148676.7766874812,
+                "mbs_per_sec": 6.380515051781324,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.0005060000000000064,
+                "ops_per_sec": 1976284.584980212,
+                "mbs_per_sec": 84.81293327723459,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.013098000000000054,
+                "ops_per_sec": 76347.53397465231,
+                "mbs_per_sec": 3.2764807022660767,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.00044200000000005346,
+                "ops_per_sec": 2262443.4389137537,
+                "mbs_per_sec": 97.09353900062457,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          },
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.0005199999999998539,
+                "ops_per_sec": 1923076.9230774634,
+                "mbs_per_sec": 82.52950815056406,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.0037209999999999743,
+                "ops_per_sec": 268744.9610319825,
+                "mbs_per_sec": 11.53328251499101,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005799999999999139,
+                "ops_per_sec": 1724137.9310347387,
+                "mbs_per_sec": 73.99197282463382,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005780000000000785,
+                "ops_per_sec": 1730103.806228139,
+                "mbs_per_sec": 74.24800041224123,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0005769999999999387,
+                "ops_per_sec": 1733102.2530331132,
+                "mbs_per_sec": 74.37667978905687,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 2.9000000000056758e-5,
+                "ops_per_sec": 34482758.620622166,
+                "mbs_per_sec": 1479.8394564895607,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.0066829999999999945,
+                "ops_per_sec": 149633.39817447268,
+                "mbs_per_sec": 6.4215687922013,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.0005140000000000144,
+                "ops_per_sec": 1945525.291828739,
+                "mbs_per_sec": 83.49288762311292,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.012917999999999985,
+                "ops_per_sec": 77411.36398823356,
+                "mbs_per_sec": 3.322135333509932,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.0004189999999999472,
+                "ops_per_sec": 2386634.8448690358,
+                "mbs_per_sec": 102.42325593863164,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          },
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.0005219999999999114,
+                "ops_per_sec": 1915708.8122608615,
+                "mbs_per_sec": 82.21330313848378,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.0036839999999999096,
+                "ops_per_sec": 271444.08251900773,
+                "mbs_per_sec": 11.64911624274764,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005749999999999922,
+                "ops_per_sec": 1739130.4347826324,
+                "mbs_per_sec": 74.6353812839684,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005800000000000249,
+                "ops_per_sec": 1724137.9310344085,
+                "mbs_per_sec": 73.99197282461967,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0005789999999999962,
+                "ops_per_sec": 1727115.716753034,
+                "mbs_per_sec": 74.1197655238023,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 2.9000000000056758e-5,
+                "ops_per_sec": 34482758.620622166,
+                "mbs_per_sec": 1479.8394564895607,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.0066870000000001095,
+                "ops_per_sec": 149543.8911320448,
+                "mbs_per_sec": 6.417727566663758,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.0005070000000000352,
+                "ops_per_sec": 1972386.5877710662,
+                "mbs_per_sec": 84.64564938516425,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.012861000000000011,
+                "ops_per_sec": 77754.451442345,
+                "mbs_per_sec": 3.33685904970696,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.00041800000000002946,
+                "ops_per_sec": 2392344.497607487,
+                "mbs_per_sec": 102.66828765138331,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          },
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.0005630000000000912,
+                "ops_per_sec": 1776198.9342803517,
+                "mbs_per_sec": 76.22618870030959,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.0036929999999999463,
+                "ops_per_sec": 270782.5616030367,
+                "mbs_per_sec": 11.620726844917918,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005739999999999634,
+                "ops_per_sec": 1742160.2787457556,
+                "mbs_per_sec": 74.76540808063412,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005800000000000249,
+                "ops_per_sec": 1724137.9310344085,
+                "mbs_per_sec": 73.99197282461967,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0005789999999999962,
+                "ops_per_sec": 1727115.716753034,
+                "mbs_per_sec": 74.1197655238023,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 2.8000000000028002e-5,
+                "ops_per_sec": 35714285.71425,
+                "mbs_per_sec": 1532.690865651369,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.0066749999999999865,
+                "ops_per_sec": 149812.7340823973,
+                "mbs_per_sec": 6.42926505442417,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.000508000000000064,
+                "ops_per_sec": 1968503.9370076263,
+                "mbs_per_sec": 84.47902409109419,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.01287500000000008,
+                "ops_per_sec": 77669.90291262088,
+                "mbs_per_sec": 3.333230620449008,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.0004209999999998937,
+                "ops_per_sec": 2375296.912114614,
+                "mbs_per_sec": 101.93668465152516,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          },
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.0005209999999999937,
+                "ops_per_sec": 1919385.7965451288,
+                "mbs_per_sec": 82.37110218480186,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.0037449999999999983,
+                "ops_per_sec": 267022.6969292391,
+                "mbs_per_sec": 11.459370958152542,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005830000000000002,
+                "ops_per_sec": 1715265.8662092618,
+                "mbs_per_sec": 73.61122510854415,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005800000000000249,
+                "ops_per_sec": 1724137.9310344085,
+                "mbs_per_sec": 73.99197282461967,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0005770000000000497,
+                "ops_per_sec": 1733102.2530327798,
+                "mbs_per_sec": 74.37667978904256,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 2.9000000000056758e-5,
+                "ops_per_sec": 34482758.620622166,
+                "mbs_per_sec": 1479.8394564895607,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.006635999999999975,
+                "ops_per_sec": 150693.18866787278,
+                "mbs_per_sec": 6.467050066046023,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.0005079999999999529,
+                "ops_per_sec": 1968503.9370080563,
+                "mbs_per_sec": 84.47902409111265,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.012853000000000003,
+                "ops_per_sec": 77802.84758422156,
+                "mbs_per_sec": 3.338935986795397,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.00042000000000008697,
+                "ops_per_sec": 2380952.380951888,
+                "mbs_per_sec": 102.17939104350563,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          },
+          {
+            "config": {
+              "key_size": 32,
+              "value_size": 13,
+              "nb_entries": 1000,
+              "log_size": 500000,
+              "seed": 0,
+              "with_metrics": false
+            },
+            "results": {
+              "replace_random": {
+                "time": 0.000520000000000076,
+                "ops_per_sec": 1923076.9230766422,
+                "mbs_per_sec": 82.52950815052881,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_random_sync": {
+                "time": 0.0037080000000000446,
+                "ops_per_sec": 269687.1628910431,
+                "mbs_per_sec": 11.573717432114545,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 2.0,
+                "write_amplification_size": 1.1777777777777778
+              },
+              "replace_increasing_keys": {
+                "time": 0.0005730000000000457,
+                "ops_per_sec": 1745200.6980801402,
+                "mbs_per_sec": 74.89588872299795,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_increasing_hash": {
+                "time": 0.0005800000000000249,
+                "ops_per_sec": 1724137.9310344085,
+                "mbs_per_sec": 73.99197282461967,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "replace_decreasing_hash": {
+                "time": 0.0005769999999999387,
+                "ops_per_sec": 1733102.2530331132,
+                "mbs_per_sec": 74.37667978905687,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "iter_rw": {
+                "time": 2.9000000000056758e-5,
+                "ops_per_sec": 34482758.620622166,
+                "mbs_per_sec": 1479.8394564895607,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_ro": {
+                "time": 0.006664999999999921,
+                "ops_per_sec": 150037.5093773461,
+                "mbs_per_sec": 6.438911363583159,
+                "read_amplification_calls": 2.004,
+                "read_amplification_size": 1.356088888888889,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_random_rw": {
+                "time": 0.0005050000000000887,
+                "ops_per_sec": 1980198.0198016323,
+                "mbs_per_sec": 84.98087967974992,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_ro": {
+                "time": 0.012846999999999942,
+                "ops_per_sec": 77839.18424534946,
+                "mbs_per_sec": 3.3404953871161704,
+                "read_amplification_calls": 4.004,
+                "read_amplification_size": 1.7116444444444445,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              },
+              "find_absent_rw": {
+                "time": 0.00041800000000002946,
+                "ops_per_sec": 2392344.497607487,
+                "mbs_per_sec": 102.66828765138331,
+                "read_amplification_calls": 0.0,
+                "read_amplification_size": 0.0,
+                "write_amplification_calls": 0.0,
+                "write_amplification_size": 0.0
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
