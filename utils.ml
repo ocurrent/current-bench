@@ -55,8 +55,4 @@ let create_tmp_host repo commit_hash =
 let merge_json repo commit json =
   Yojson.Basic.pretty_to_string
     (`Assoc
-      [
-        ("repo", `String repo);
-        ("commit", `String commit);
-        ("result", `String json);
-      ])
+      [ ("repo", `String repo); ("commit", `String commit); ("result", json) ])
