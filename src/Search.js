@@ -45,7 +45,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const Search = () => {
+const Search = ({ value, handleChange }) => {
   const classes = useStyles();
 
   return (
@@ -54,6 +54,8 @@ const Search = () => {
         <SearchIcon />
       </div>
       <InputBase
+        value={value}
+        onChange={handleChange}
         placeholder="Search…"
         classes={{
           root: classes.inputRoot,

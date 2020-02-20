@@ -5,13 +5,8 @@ import { graphql } from "graphql";
 import Navbar from "./Navbar.js";
 import MetricSelector from "./MetricSelector.js";
 import Graph from "./Graph.js";
-import {   ThemeProvider } from "@material-ui/core/styles";
-import {
-  Box,
-  Container,
-  Grid,
-  Divider
-} from "@material-ui/core";
+import { ThemeProvider } from "@material-ui/core/styles";
+import { Box, Container, Grid, Divider } from "@material-ui/core";
 import { schema } from "./Mock.js";
 import "./App.css";
 import {
@@ -30,7 +25,7 @@ import {
   map,
   mean,
   path,
-  reduce,
+  reduce
 } from "ramda";
 
 import theme from "./theme.js";
@@ -117,6 +112,11 @@ const mapNil = curry((f, xs) => {
 function App() {
   const [data, setData] = useState({ data: { repositories: [] } });
 
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const handleSearchTermChange = event => {
+    setSearchTerm(event.target.value);
+  };
+
   useEffect(() => {
     async function fetchData() {
       const result = await graphql(schema, query);
@@ -170,8 +170,6 @@ function App() {
 
       return { name: name, chart: chart };
     }, benchmarkNames);
-
-    console.log(benches[0]);
   }
 
   return (

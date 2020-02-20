@@ -30,7 +30,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const Navbar = ({ title }) => {
+const Navbar = ({ title, searchTerm, handleSearchTermChange }) => {
   const classes = useStyles();
 
   return (
@@ -48,7 +48,7 @@ const Navbar = ({ title }) => {
               </a>
             </Typography>
             <div style={{ flexGrow: 1 }} />
-            <Search />
+            <Search value={searchTerm} handleChange={handleSearchTermChange} />
             <Tooltip title={"github"} enterDelay={300}>
               <IconButton
                 edge="end"
