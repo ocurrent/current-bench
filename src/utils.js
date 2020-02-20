@@ -19,5 +19,4 @@ function randomHash() {
     return result;
 }
 
-
 export { standardDeviation, randomHash };
