@@ -29,9 +29,8 @@ let dockerfile ~base =
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
 let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
-    ?docker_numa_node ~docker_shm_size ~tmp_host ~tmp_container () =
+    ?docker_numa_node ~docker_shm_size ~tmp_host ~tmp_container ~commit () =
   let head = Github.Api.head_commit github repo in
-  let commit = Utils.get_commit repo.name repo.owner in
   let src = Git.fetch (Current.map Github.Api.Commit.id head) in
   let dockerfile =
     let+ base = Docker.pull ~schedule:weekly "ocaml/opam2" in
@@ -115,9 +114,18 @@ let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
 
 let webhooks = [ ("github", Github.input_webhook) ]
 
+let read_file path =
+  let ch = open_in_bin path in
+  Fun.protect
+    (fun () ->
+      let len = in_channel_length ch in
+      really_input_string ch len)
+    ~finally:(fun () -> close_in ch)
+
 let main config mode github (repo : Current_github.Repo_id.t) output_file
-    slack_path docker_cpu docker_numa_node docker_shm_size () =
-  let commit = Utils.get_commit repo.name repo.owner in
+    slack_path docker_cpu docker_numa_node docker_shm_size user token_file () =
+  let token = read_file token_file in
+  let commit = Utils.get_commit repo.name repo.owner user token in
   let tmp_host = Utils.create_tmp_host repo.name commit in
   let tmp_container =
     Fpath.(v ("/data/tmp/" ^ repo.name ^ "/" ^ commit) / filename tmp_host)
@@ -125,7 +133,7 @@ let main config mode github (repo : Current_github.Repo_id.t) output_file
   let engine =
     Current.Engine.create ~config
       (pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
-         ?docker_numa_node ~docker_shm_size ~tmp_host ~tmp_container)
+         ?docker_numa_node ~docker_shm_size ~tmp_host ~tmp_container ~commit)
   in
   Logging.run
     (Lwt.choose
@@ -168,6 +176,18 @@ let repo =
   @@ Arg.info ~doc:"The GitHub repository (owner/name) to monitor." ~docv:"REPO"
        []
 
+let user =
+  Arg.required
+  @@ Arg.opt Arg.(some string) None
+  @@ Arg.info ~doc:"User for which the OAuth token is given." ~docv:"USER"
+       [ "oauth-user" ]
+
+let token_file =
+  Arg.required
+  @@ Arg.opt Arg.(some file) None
+  @@ Arg.info ~doc:"User for which the OAuth token is given." ~docv:"TOKEN"
+       [ "token-file" ]
+
 let setup_log =
   let init style_renderer level = Logging.init ?style_renderer ?level () in
   Term.(const init $ Fmt_cli.style_renderer () $ Logs_cli.level ())
@@ -185,6 +205,8 @@ let cmd =
       $ docker_cpu
       $ docker_numa_node
       $ docker_shm_size
+      $ user
+      $ token_file
       $ setup_log),
     Term.info "github" ~doc )
 
