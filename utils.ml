@@ -15,11 +15,12 @@ let get_commit_string body =
   |> filter_string
   |> List.hd
 
-let get_commit repo owner =
+let get_commit repo owner user token =
+  let headers = [ ("-u", user ^ ":" ^ token) ] in
   let url =
     "https://api.github.com/repos/" ^ owner ^ "/" ^ repo ^ "/commits/master"
   in
-  match Curly.(run (Request.make ~url ~meth:`GET ())) with
+  match Curly.(run (Request.make ~headers ~url ~meth:`GET ())) with
   | Ok x -> get_commit_string x.Curly.Response.body
   | Error _ -> "failed"
 
