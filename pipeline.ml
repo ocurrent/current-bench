@@ -114,22 +114,17 @@ let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
 
 let webhooks = [ ("github", Github.input_webhook) ]
 
-let read_file path =
-  let ch = open_in_bin path in
-  Fun.protect
-    (fun () ->
-      let len = in_channel_length ch in
-      really_input_string ch len)
-    ~finally:(fun () -> close_in ch)
+type token = { token_file : string; token_api_file : Github.Api.t }
 
-let main config mode github (repo : Current_github.Repo_id.t) output_file
-    slack_path docker_cpu docker_numa_node docker_shm_size user token_file () =
-  let token = read_file token_file in
+let main config mode github_token (repo : Current_github.Repo_id.t) output_file
+    slack_path docker_cpu docker_numa_node docker_shm_size user () =
+  let token = Utils.read_file github_token.token_file in
   let commit = Utils.get_commit repo.name repo.owner user token in
   let tmp_host = Utils.create_tmp_host repo.name commit in
   let tmp_container =
     Fpath.(v ("/data/tmp/" ^ repo.name ^ "/" ^ commit) / filename tmp_host)
   in
+  let github = github_token.token_api_file in
   let engine =
     Current.Engine.create ~config
       (pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
@@ -182,15 +177,24 @@ let user =
   @@ Arg.info ~doc:"User for which the OAuth token is given." ~docv:"USER"
        [ "oauth-user" ]
 
-let token_file =
-  Arg.required
-  @@ Arg.opt Arg.(some file) None
-  @@ Arg.info ~doc:"User for which the OAuth token is given." ~docv:"TOKEN"
-       [ "token-file" ]
-
 let setup_log =
   let init style_renderer level = Logging.init ?style_renderer ?level () in
   Term.(const init $ Fmt_cli.style_renderer () $ Logs_cli.level ())
+
+let token_file =
+  Arg.required
+  @@ Arg.opt Arg.(some file) None
+  @@ Arg.info ~doc:"A file containing the GitHub OAuth token." ~docv:"PATH"
+       [ "github-token-file" ]
+
+let make_config token_file =
+  {
+    token_file;
+    token_api_file =
+      Github.Api.of_oauth @@ String.trim (Utils.read_file token_file);
+  }
+
+let git_cmdliner = Term.(const make_config $ token_file)
 
 let cmd =
   let doc = "Monitor a GitHub repository." in
@@ -198,7 +202,7 @@ let cmd =
       const main
       $ Current.Config.cmdliner
       $ Current_web.cmdliner
-      $ Current_github.Api.cmdliner
+      $ git_cmdliner
       $ repo
       $ output_file
       $ slack_path
@@ -206,7 +210,6 @@ let cmd =
       $ docker_numa_node
       $ docker_shm_size
       $ user
-      $ token_file
       $ setup_log),
     Term.info "github" ~doc )
 
