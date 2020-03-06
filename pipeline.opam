@@ -42,12 +42,12 @@ build: [
 dev-repo: "git+https://github.com/gs0510/index-benchmarks.git"
 
 pin-depends: [
-  [ "current.dev" "git+https://github.com/ocurrent/ocurrent#3a190f0c388b51957c4afbebafd4e8d63717f384" ]
-  [ "current_ansi.dev" "git+https://github.com/ocurrent/ocurrent#3a190f0c388b51957c4afbebafd4e8d63717f384" ]
-  [ "current_docker.dev" "git+https://github.com/ocurrent/ocurrent#3a190f0c388b51957c4afbebafd4e8d63717f384" ]
-  [ "current_git.dev" "git+https://github.com/ocurrent/ocurrent#3a190f0c388b51957c4afbebafd4e8d63717f384" ]
-  [ "current_github.dev" "git+https://github.com/ocurrent/ocurrent#3a190f0c388b51957c4afbebafd4e8d63717f384" ]
-  [ "current_rpc.dev" "git+https://github.com/ocurrent/ocurrent#3a190f0c388b51957c4afbebafd4e8d63717f384" ]
-  [ "current_slack.dev" "git+https://github.com/ocurrent/ocurrent#3a190f0c388b51957c4afbebafd4e8d63717f384" ]
-  [ "current_web.dev" "git+https://github.com/ocurrent/ocurrent#3a190f0c388b51957c4afbebafd4e8d63717f384" ]
+  [ "current.dev" "git+https://github.com/ocurrent/ocurrent#03cb70329f8942a54d3c5459b5a1f8efc1c2eafa" ]
+  [ "current_ansi.dev" "git+https://github.com/ocurrent/ocurrent#03cb70329f8942a54d3c5459b5a1f8efc1c2eafa" ]
+  [ "current_docker.dev" "git+https://github.com/ocurrent/ocurrent#03cb70329f8942a54d3c5459b5a1f8efc1c2eafa" ]
+  [ "current_git.dev" "git+https://github.com/ocurrent/ocurrent#03cb70329f8942a54d3c5459b5a1f8efc1c2eafa" ]
+  [ "current_github.dev" "git+https://github.com/ocurrent/ocurrent#03cb70329f8942a54d3c5459b5a1f8efc1c2eafa" ]
+  [ "current_rpc.dev" "git+https://github.com/ocurrent/ocurrent#03cb70329f8942a54d3c5459b5a1f8efc1c2eafa" ]
+  [ "current_slack.dev" "git+https://github.com/ocurrent/ocurrent#03cb70329f8942a54d3c5459b5a1f8efc1c2eafa" ]
+  [ "current_web.dev" "git+https://github.com/ocurrent/ocurrent#03cb70329f8942a54d3c5459b5a1f8efc1c2eafa" ]
 ]

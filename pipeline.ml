@@ -28,13 +28,13 @@ let dockerfile ~base =
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
-let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
-    ?docker_numa_node ~docker_shm_size ~tmp_host ~tmp_container ~commit () =
+let pipeline ~github ~repo ?slack_path ?docker_cpu ?docker_numa_node
+    ~docker_shm_size ~tmp_host ~tmp_container ~commit () =
   let head = Github.Api.head_commit github repo in
   let src = Git.fetch (Current.map Github.Api.Commit.id head) in
   let dockerfile =
     let+ base = Docker.pull ~schedule:weekly "ocaml/opam2" in
-    dockerfile ~base
+    `Contents (dockerfile ~base)
   in
   let image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
   let docker_cpuset_cpus =
@@ -74,8 +74,8 @@ let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
       @ docker_cpuset_cpus
       @ docker_cpuset_mems
     in
-    let+ () =
-      Docker.run ~run_args image
+    let+ output =
+      Docker.pread ~run_args image
         ~args:
           [
             "/usr/bin/setarch";
@@ -85,23 +85,12 @@ let pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
             "-d";
             "/dev/shm";
             "--json";
-            "--output";
-            Fmt.str "%a" Fpath.pp tmp_container;
           ]
     in
-    (* Conditionally move the results to ?output_file *)
-    let results_path =
-      match output_file with
-      | Some path ->
-          Bos.OS.Path.move tmp_host path |> Rresult.R.error_msg_to_invalid_arg;
-          path
-      | None -> tmp_host
-    in
     let content =
-      Utils.merge_json repo.name commit
-        (Yojson.Basic.from_string (Utils.read_fpath results_path))
+      Utils.merge_json repo.name commit (Yojson.Basic.from_string output)
     in
-    let () = Utils.write_fpath results_path content in
+    let () = Utils.write_fpath tmp_host content in
     match slack_path with Some p -> Some (p, content) | None -> None
   in
   s
@@ -116,8 +105,8 @@ let webhooks = [ ("github", Github.input_webhook) ]
 
 type token = { token_file : string; token_api_file : Github.Api.t }
 
-let main config mode github_token (repo : Current_github.Repo_id.t) output_file
-    slack_path docker_cpu docker_numa_node docker_shm_size user () =
+let main config mode github_token (repo : Current_github.Repo_id.t) slack_path
+    docker_cpu docker_numa_node docker_shm_size user () =
   let token = Utils.read_file github_token.token_file in
   let commit = Utils.get_commit repo.name repo.owner user token in
   let tmp_host = Utils.create_tmp_host repo.name commit in
@@ -127,8 +116,8 @@ let main config mode github_token (repo : Current_github.Repo_id.t) output_file
   let github = github_token.token_api_file in
   let engine =
     Current.Engine.create ~config
-      (pipeline ~github ~repo ?output_file ?slack_path ?docker_cpu
-         ?docker_numa_node ~docker_shm_size ~tmp_host ~tmp_container ~commit)
+      (pipeline ~github ~repo ?slack_path ?docker_cpu ?docker_numa_node
+         ~docker_shm_size ~tmp_host ~tmp_container ~commit)
   in
   Logging.run
     (Lwt.choose
@@ -139,10 +128,6 @@ let main config mode github_token (repo : Current_github.Repo_id.t) output_file
 open Cmdliner
 
 let path = Arg.conv ~docv:"PATH" Fpath.(of_string, pp)
-
-let output_file =
-  let doc = "Output file where benchmark result should be stored." in
-  Arg.(value & opt (some path) None & info [ "o"; "output" ] ~doc)
 
 let slack_path =
   let doc =
@@ -204,7 +189,6 @@ let cmd =
       $ Current_web.cmdliner
       $ git_cmdliner
       $ repo
-      $ output_file
       $ slack_path
       $ docker_cpu
       $ docker_numa_node
