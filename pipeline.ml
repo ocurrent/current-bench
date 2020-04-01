@@ -29,7 +29,7 @@ let dockerfile ~base =
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
 let pipeline ~github ~repo ?slack_path ?docker_cpu ?docker_numa_node
-    ~docker_shm_size ~tmp_host ~tmp_container ~commit () =
+    ~docker_shm_size ~commit ~conninfo () =
   let head = Github.Api.head_commit github repo in
   let src = Git.fetch (Current.map Github.Api.Commit.id head) in
   let dockerfile =
@@ -63,13 +63,7 @@ let pipeline ~github ~repo ?slack_path ?docker_cpu ?docker_numa_node
   in
   let s =
     let run_args =
-      [
-        "--security-opt";
-        "seccomp=./aslr_seccomp.json";
-        "--mount";
-        Fmt.str "type=bind,source=%a,target=%a" Fpath.pp tmp_container Fpath.pp
-          tmp_host;
-      ]
+      [ "--security-opt"; "seccomp=./aslr_seccomp.json" ]
       @ tmpfs
       @ docker_cpuset_cpus
       @ docker_cpuset_mems
@@ -90,7 +84,7 @@ let pipeline ~github ~repo ?slack_path ?docker_cpu ?docker_numa_node
     let content =
       Utils.merge_json repo.name commit (Yojson.Basic.from_string output)
     in
-    let () = Utils.write_fpath tmp_host content in
+    let () = Utils.populate_postgres conninfo content in
     match slack_path with Some p -> Some (p, content) | None -> None
   in
   s
@@ -106,18 +100,14 @@ let webhooks = [ ("github", Github.input_webhook) ]
 type token = { token_file : string; token_api_file : Github.Api.t }
 
 let main config mode github_token (repo : Current_github.Repo_id.t) slack_path
-    docker_cpu docker_numa_node docker_shm_size user () =
+    docker_cpu docker_numa_node docker_shm_size conninfo user () =
   let token = Utils.read_file github_token.token_file in
   let commit = Utils.get_commit repo.name repo.owner user token in
-  let tmp_host = Utils.create_tmp_host repo.name commit in
-  let tmp_container =
-    Fpath.(v ("/data/tmp/" ^ repo.name ^ "/" ^ commit) / filename tmp_host)
-  in
   let github = github_token.token_api_file in
   let engine =
     Current.Engine.create ~config
       (pipeline ~github ~repo ?slack_path ?docker_cpu ?docker_numa_node
-         ~docker_shm_size ~tmp_host ~tmp_container ~commit)
+         ~docker_shm_size ~commit ~conninfo)
   in
   Logging.run
     (Lwt.choose
@@ -172,6 +162,12 @@ let token_file =
   @@ Arg.info ~doc:"A file containing the GitHub OAuth token." ~docv:"PATH"
        [ "github-token-file" ]
 
+let conninfo =
+  Arg.required
+  @@ Arg.opt Arg.(some string) None
+  @@ Arg.info ~doc:"Connection info for Postgres DB" ~docv:"PATH"
+       [ "conn-info" ]
+
 let make_config token_file =
   {
     token_file;
@@ -193,6 +189,7 @@ let cmd =
       $ docker_cpu
       $ docker_numa_node
       $ docker_shm_size
+      $ conninfo
       $ user
       $ setup_log),
     Term.info "github" ~doc )
