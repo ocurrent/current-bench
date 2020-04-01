@@ -3,5 +3,5 @@
  (package pipeline)
  (libraries bos cmdliner current current.fs current_docker current_git
    current_github current_slack current_web dockerfile fmt.cli fmt.tty logs
-   logs.cli logs.fmt prometheus rresult uri curly))
+   logs.cli logs.fmt prometheus rresult uri curly postgresql))
 
