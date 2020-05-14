@@ -19,10 +19,12 @@ depends: [
   "current_rpc"
   "current_slack"
   "current_web"
+  "curly"
   "duration"
   "fpath"
   "logs"
   "ocaml" {>= "4.08"}
+  "postgresql"
   "rresult"
 ]
 build: [
