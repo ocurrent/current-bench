@@ -37,14 +37,65 @@ let read_file path =
       really_input_string ch len)
     ~finally:(fun () -> close_in ch)
 
+open Yojson.Basic.Util
+
+let format_benchmark_data commit name time mbs_per_sec ops_per_sec =
+  "("
+  ^ commit
+  ^ ", "
+  ^ name
+  ^ ","
+  ^ time
+  ^ ", "
+  ^ mbs_per_sec
+  ^ ", "
+  ^ ops_per_sec
+  ^ ") "
+
+let get_repo json = Yojson.Basic.from_string json |> member "repo" |> to_string
+
+let get_data_from_json commit json =
+  let bench_objects =
+    Yojson.Basic.from_string json
+    |> member "result"
+    |> member "results"
+    |> to_list
+  in
+  let bench_names =
+    List.map (fun json -> json |> member "name" |> to_string) bench_objects
+  in
+  let result_string =
+    List.map2
+      (fun json bench_name ->
+        let metrics = json |> member "metrics" in
+        format_benchmark_data commit bench_name
+          (metrics |> member "time" |> to_float |> string_of_float)
+          (metrics |> member "mbs_per_sec" |> to_float |> string_of_float)
+          (metrics |> member "ops_per_sec" |> to_float |> string_of_float))
+      bench_objects bench_names
+  in
+  String.concat "," result_string
+
 open! Postgresql
 
-let populate_postgres conninfo json_string =
+let populate_postgres conninfo commit json_string =
   try
+    let repository = get_repo json_string in
     let c = new connection ~conninfo () in
     let _ =
       c#exec ~expect:[ Command_ok ]
-        ("insert into index(benchmarks_data) values ( '" ^ json_string ^ "' )")
+        ( "insert into benchmarks(repositories, commits) values ( '"
+        ^ repository
+        ^ "', '"
+        ^ commit
+        ^ "' )" )
+    in
+    let data_to_insert = get_data_from_json commit json_string in
+    let _ =
+      c#exec ~expect:[ Command_ok ]
+        ( "insert into benchmarksruns(commits, name, time, mbs_per_sec, \
+           ops_per_sec) values "
+        ^ data_to_insert )
     in
     c#finish
   with

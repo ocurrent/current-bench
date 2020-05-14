@@ -84,7 +84,7 @@ let pipeline ~github ~repo ?slack_path ?docker_cpu ?docker_numa_node
     let content =
       Utils.merge_json repo.name commit (Yojson.Basic.from_string output)
     in
-    let () = Utils.populate_postgres conninfo content in
+    let () = Utils.populate_postgres conninfo commit content in
     match slack_path with Some p -> Some (p, content) | None -> None
   in
   s
