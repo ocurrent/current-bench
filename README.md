@@ -10,6 +10,20 @@ The main difference from the scripts hosted in [ocaml-bench-scripts](https://git
 
 ## Running the pipeline
 
+Before you can start the pipeline, you need to setup the Postgres instance.
+To setup the postgres instance, build the 
+```
+$ docker build -t postgres_docker .
+```
+
+And to run the docker, run the following
+```
+docker run -d -e POSTGRES_PASSWORD=<your_password> postgres_docker
+```
+The above command will start the docker instance with postgres running in
+background, and you can now run the pipeline.
+
+
 Build the pipeline:
 ```
 # install dependencies (requires postgres, libpq-dev library)
