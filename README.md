@@ -8,7 +8,37 @@ Use the `—docker-cpu` parameter to pin the benchmark to a single CPU. This wil
 
 The main difference from the scripts hosted in [ocaml-bench-scripts](https://github.com/ocaml-bench/ocaml_bench_scripts/) and this ocurrent pipeline is that the tasks will be executed inside docker containers. This requires a few more adjustments to how the containers are launched. Most of this is handled automatically by the pipeline by passing parameters to Docker. Some additional details are documented below.
 
-## Reliable IO performance
+## Running the pipeline
+
+Build the pipeline:
+```
+# install dependencies (requires postgres, libpq-dev library)
+$ opam install --deps-only .
+# build
+$ dune build pipeline.exe
+```
+
+Run the pipeline:
+```
+./_build/default/pipeline.exe mirage/index --github-token-file <your_github_token> --docker-cpu 3 -v --oauth-user <user_github_user_name> --conn-info "host=/var/run/postgresql"
+```
+
+You can find more options for different configurations, posting message to slack, etc by running `--help` to the pipeline executable.
+
+### Creating a Postgres instance
+
+The `db.out` contains the information needed to recreate the postgres database that the pipeline uses.
+Run
+```
+$ psql -d database -f db.out
+
+```
+
+### Starting a graphql engine connected to the Postgres Database
+
+Follow instructions from instructions here: https://hasura.io/docs/1.0/graphql/manual/deployment/docker/index.html
+
+## IO performance
 
 The results of IO bound benchmarks can vary greatly between different device/storage types and how they are configured. For this prototype we’re aiming for predictable results so we are using an in-memory `tmpfs` partition in `/dev/shm` for all storage.
 
@@ -28,28 +58,4 @@ NOTE: Although it should be possible to get good results on a NUMA enabled syste
 
 ASLR affects performance as the memory layout is changed each time the benchmark is loaded. The ocurrent pipeline disables ASLR inside the container automatically by wrapping the benchmark command in a call to `setarch [...] --addr-no-randomize`. This is normally blocked by the default Docker seccomp profile, so we have modified the profile to allow [`personality(2)`](http://man7.org/linux/man-pages/man2/personality.2.html) to be invoked with the `ADDR_NO_RANDOMIZE` flag.
 
-# Creating a Postgres instance
 
-The `db.out` contains the information needed to recreate the postgres database that the pipeline uses. 
-Run 
-```
-$ psql -d database -f db.out
-
-```
-
-# Running the pipeline
-
-Build the pipeline:
-```
-dune build pipeline.exe
-```
-
-Run the pipeline:
-```
-./_build/default/pipeline.exe mirage/index --github-token-file <your_github_token> --docker-cpu 3 -v --oauth-user <user_github_user_name> --conn-info "host=/var/run/postgresql"
-```
-
-You can find more options for different configurations, posting message to slack, etc by running `--help` to the pipeline executable.
-
-# Starting a graphql engine connected to the Postgres Database
-Follow instructions from instructions here: https://hasura.io/docs/1.0/graphql/manual/deployment/docker/index.html
