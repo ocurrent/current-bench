@@ -48,6 +48,31 @@ $ psql -d database -f db.out
 
 ```
 
+### Benchmarks format
+
+If you want to enroll your repository or setup this benchmark repository for your repository,
+we make the following assumptions.
+
+1. There is a dune bench target which can run the benchmarks.
+2. The benchmarks results are json with of the following format:
+```
+{
+  "repo" : <repo-name>,
+  "commit": <commit-hash>,
+  "results" : [
+    {
+      "name": <name-of-the-benchmarks>,
+      "metrics": {
+        "<metric-1>": "",
+        "<metric2>": "",
+        ...
+      },
+     ...
+    }
+  ]
+}
+```
+
 ### Starting a graphql engine connected to the Postgres Database
 
 Follow instructions from instructions here: https://hasura.io/docs/1.0/graphql/manual/deployment/docker/index.html
