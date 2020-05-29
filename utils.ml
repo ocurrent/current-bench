@@ -40,11 +40,11 @@ let read_file path =
 open Yojson.Basic.Util
 
 let format_benchmark_data commit name time mbs_per_sec ops_per_sec =
-  "("
+  "('"
   ^ commit
-  ^ ", "
+  ^ "', '"
   ^ name
-  ^ ","
+  ^ "',"
   ^ time
   ^ ", "
   ^ mbs_per_sec
@@ -93,7 +93,7 @@ let populate_postgres conninfo commit json_string =
     let data_to_insert = get_data_from_json commit json_string in
     let _ =
       c#exec ~expect:[ Command_ok ]
-        ( "insert into benchmarksruns(commits, name, time, mbs_per_sec, \
+        ( "insert into benchmarksrun(commits, name, time, mbs_per_sec, \
            ops_per_sec) values "
         ^ data_to_insert )
     in
