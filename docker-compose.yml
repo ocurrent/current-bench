@@ -2,6 +2,12 @@ version: '3.8'
 services:
   postgres:
     build: .
+	expose:
+	- 5432
+	ports:
+	5432:5432
+	networks:
+	- psql-pgql
   graphql-engine:
     image: hasura/graphql-engine:v1.2.1
     ports:
@@ -10,11 +16,11 @@ services:
     - "postgres"
     restart: always
     environment:
-      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/postgres
+      HASURA_GRAPHQL_DATABASE_URL: postgres://docker:@postgres:5432/docker
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
       ## uncomment next line to set an admin secret
       # HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
-volumes:
-  db_data:
-  db_log:
-  db_lib:
+
+
+networks:
+  psql-pgql:
