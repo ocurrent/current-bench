@@ -15,6 +15,8 @@ services:
     depends_on:
     - "postgres"
     restart: always
+	networks:
+	- psql-pgql
     environment:
       HASURA_GRAPHQL_DATABASE_URL: postgres://docker:@postgres:5432/docker
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
