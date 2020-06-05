@@ -72,6 +72,7 @@ we make the following assumptions.
   ]
 }
 ```
+[Here's](https://gist.github.com/gs0510/9ef5d47582b7fbf8dda6df0af08537e4) an example from [index](https://github.com/mirage/index) with regards to what the format looks like.
 
 ### Starting a graphql engine connected to the Postgres Database
 
