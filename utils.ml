@@ -84,10 +84,12 @@ let populate_postgres conninfo commit json_string =
     let c = new connection ~conninfo () in
     let _ =
       c#exec ~expect:[ Command_ok ]
-        ( "insert into benchmarks(repositories, commits) values ( '"
+        ( "insert into benchmarks(repositories, commits, json_data) values ( '"
         ^ repository
         ^ "', '"
         ^ commit
+        ^ "', '"
+        ^ json_string
         ^ "' )" )
     in
     let data_to_insert = get_data_from_json commit json_string in
