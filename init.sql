@@ -1,10 +1,8 @@
-CREATE USER docker;
-CREATE DATABASE docker;
-GRANT ALL PRIVILEGES ON DATABASE docker TO docker;
 
 CREATE TABLE benchmarks(
 	repositories varchar(256),
-	commits varchar(50)
+	commits varchar(50),
+	json_data jsonb
 );
 
 CREATE TABLE benchmarksrun (
