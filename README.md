@@ -11,18 +11,18 @@ The main difference from the scripts hosted in [ocaml-bench-scripts](https://git
 ## Running the pipeline
 
 Before you can start the pipeline, you need to setup the Postgres instance.
-To setup the postgres instance, build the 
+The `docker-compose` file will both 
+1. setup the postgres instance
+2. start the graphql engine
+
 ```
-$ docker build -t postgres_docker .
+$ docker-compose up -d
 ```
 
-And to run the docker, run the following
+The postgres instance will be available on port `5432` and if youwant to access it locally you can run:
 ```
-docker run -d -e POSTGRES_PASSWORD=<your_password> postgres_docker
+$ psql -h localhost:5432 -U docker
 ```
-The above command will start the docker instance with postgres running in
-background, and you can now run the pipeline.
-
 
 Build the pipeline:
 ```
@@ -39,14 +39,6 @@ Run the pipeline:
 
 You can find more options for different configurations, posting message to slack, etc by running `--help` to the pipeline executable.
 
-### Creating a Postgres instance
-
-The `db.out` contains the information needed to recreate the postgres database that the pipeline uses.
-Run
-```
-$ psql -d database -f db.out
-
-```
 
 ### Benchmarks format
 
