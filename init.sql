@@ -1,3 +1,4 @@
+GRANT ALL PRIVILEGES ON DATABASE docker TO docker;
 
 CREATE TABLE benchmarks(
 	repositories varchar(256),
