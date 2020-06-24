@@ -49,8 +49,6 @@ we make the following assumptions.
 2. The benchmarks results are json with of the following format:
 ```
 {
-  "repo" : <repo-name>,
-  "commit": <commit-hash>,
   "results" : [
     {
       "name": <name-of-the-benchmarks>,
@@ -65,6 +63,8 @@ we make the following assumptions.
 }
 ```
 [Here's](https://gist.github.com/gs0510/9ef5d47582b7fbf8dda6df0af08537e4) an example from [index](https://github.com/mirage/index) with regards to what the format looks like.
+
+The metadata about `repo`, `branch` and `commit` is added by the pipeline. Your repo only needs to output the results as a json.
 
 ### Starting a graphql engine connected to the Postgres Database
 
