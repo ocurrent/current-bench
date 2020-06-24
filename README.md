@@ -21,7 +21,7 @@ First you will need to build the docker images, and pass the build argument to t
 docker-compose build --build-arg FRONTEND_DIRECTORY="<location of frontend directory>"
 ```
 
-You can clone the frontend from [here](https://github.com/gs0510/current-bench/).
+You can clone the frontend from [here](https://github.com/CraigFe/current-bench/).
 
 
 You can then run,
