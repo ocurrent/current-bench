@@ -15,9 +15,20 @@ The `docker-compose` file will both
 1. setup the postgres instance
 2. start the graphql engine
 
+First you will need to build the docker images, and pass the build argument to the `docker-compose build` command.
+
+```
+docker-compose build --build-arg FRONTEND_DIRECTORY="<location of frontend directory>"
+```
+
+You can clone the frontend from [here](https://github.com/CraigFe/current-bench/).
+
+
+You can then run,
 ```
 $ docker-compose up -d
 ```
+to start the postgres database, grahpql engine and the frontend.
 
 The postgres instance will be available on port `5432` and if youwant to access it locally you can run:
 ```
@@ -25,8 +36,7 @@ $ psql -h localhost:5432 -U docker
 ```
 
 Build the pipeline:
-```
-# install dependencies (requires postgres, libpq-dev library)
+```# install dependencies (requires postgres, libpq-dev library)
 $ opam install --deps-only .
 # build
 $ dune build pipeline.exe
