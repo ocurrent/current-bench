@@ -17,7 +17,7 @@ let dockerfile ~base =
   let open Dockerfile in
   from (Docker.Image.hash base)
   @@ run
-       "sudo apt-get install -qq -yy libffi-dev liblmdb-dev m4 pkg-config \
+       "sudo apt-get update && sudo apt-get install -qq -yy libffi-dev liblmdb-dev m4 pkg-config \
         gnuplot-x11"
   @@ copy ~src:[ "--chown=opam:opam ." ] ~dst:"index" ()
   @@ workdir "index"
