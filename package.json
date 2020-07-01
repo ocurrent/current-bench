@@ -3,26 +3,27 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@babel/plugin-proposal-pipeline-operator": "^7.8.3",
+    "@apollo/react-hooks": "^3.1.5",
     "@material-ui/core": "^4.9.3",
     "@material-ui/icons": "^4.9.1",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
+    "apollo-boost": "^0.4.9",
     "graphql": "^14.6.0",
     "graphql-tools": "^4.0.7",
     "ramda": "^0.27.0",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "react-scripts": "3.4.0",
-    "recharts": "^2.0.0-beta.1"
+    "recharts": "^2.0.0-beta.1",
+    "webpack": "4.41.5"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "lint": "eslint ."
+    "eject": "react-scripts eject"
   },
   "browserslist": {
     "production": [
@@ -36,7 +37,5 @@
       "last 1 safari version"
     ]
   },
-  "devDependencies": {
-    "eslint-config-airbnb": "^18.0.1"
-  }
+  "devDependencies": {}
 }
