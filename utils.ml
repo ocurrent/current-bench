@@ -74,7 +74,7 @@ let get_data_from_json commit json =
           (metrics |> member "ops_per_sec" |> to_float |> string_of_float))
       bench_objects bench_names
   in
-  String.concat "," result_string
+  (String.concat "," result_string) ^ "," ^ ( string_of_float (Unix.time()))
 
 open! Postgresql
 
@@ -96,7 +96,7 @@ let populate_postgres conninfo commit json_string =
     let _ =
       c#exec ~expect:[ Command_ok ]
         ( "insert into benchmarksrun(commits, name, time, mbs_per_sec, \
-           ops_per_sec) values "
+           ops_per_sec, timestamp) values "
         ^ data_to_insert )
     in
     c#finish
