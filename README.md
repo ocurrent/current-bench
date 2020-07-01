@@ -21,7 +21,8 @@ First you will need to build the docker images, and pass the build argument to t
 docker-compose build --build-arg FRONTEND_DIRECTORY="<location of frontend directory>"
 ```
 
-You can clone the frontend from [here](https://github.com/CraigFe/current-bench/).
+You can clone the frontend from [here](https://github.com/CraigFe/current-bench/). You might also need to setup the
+FRONTEND_DIRECTORY as an env variable before you can `docker-compose build`.
 
 
 You can then run,
@@ -44,7 +45,7 @@ $ dune build pipeline.exe
 
 Run the pipeline:
 ```
-./_build/default/pipeline.exe mirage/index --github-token-file <your_github_token> --docker-cpu 3 -v --oauth-user <user_github_user_name> --conn-info "host=/var/run/postgresql"
+./_build/default/pipeline.exe mirage/index --github-token-file <your_github_token> --docker-cpu 3 -v --oauth-user <user_github_user_name> --conn-info "host=localhost user=docker port=5432 dbname=docker password=docker" --port=8081
 ```
 
 You can find more options for different configurations, posting message to slack, etc by running `--help` to the pipeline executable.
