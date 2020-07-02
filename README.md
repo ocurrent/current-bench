@@ -81,6 +81,12 @@ The metadata about `repo`, `branch` and `commit` is added by the pipeline. Your 
 
 Follow instructions from instructions here: https://hasura.io/docs/1.0/graphql/manual/deployment/docker/index.html
 
+### Troubleshooting
+
+You can `export FRONTEND_DIRECTORY=<location of frontend directory>` as a env variable if it is ignored by `docker-compose build`.
+
+If you run several times `docker-compose up` and failing to load the DB for some reasons, remember to remove the `db_data` folder before trying again, as [the `init.sql` is only run once](https://stackoverflow.com/questions/53249276/docker-compose-mysql-init-sql-is-not-executed).
+
 ## IO performance
 
 The results of IO bound benchmarks can vary greatly between different device/storage types and how they are configured. For this prototype we’re aiming for predictable results so we are using an in-memory `tmpfs` partition in `/dev/shm` for all storage.

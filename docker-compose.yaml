@@ -1,14 +1,13 @@
 version: '3.6'
 services:
   postgres:
-    image: postgres:12
+    build: ./postgres
     environment:
     - POSTGRES_DB=docker
     - POSTGRES_USER=docker
     - POSTGRES_PASSWORD=docker
     restart: always
     volumes:
-    - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     - ./db_data:/var/lib/postgresql/data
     ports: ["5432:5432"]
   graphql-engine:
