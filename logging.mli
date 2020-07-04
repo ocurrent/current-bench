@@ -2,7 +2,8 @@ val init :
   ?style_renderer:Fmt.style_renderer -> ?level:Logs.level -> unit -> unit
 (** Initialise the Logs library with some sensible defaults. *)
 
-val with_dot : dotfile:Fpath.t -> (unit -> 'a Current.t) -> unit -> 'a Current.t
+val with_dot :
+  dotfile:string -> (unit -> unit Current.t) -> unit -> unit Current.t
 (** [with_dot ~dotfile pipeline] wraps [pipeline] to keep a dot diagram in
     [dotfile] showing its current state. *)
 
