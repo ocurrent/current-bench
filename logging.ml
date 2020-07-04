@@ -40,20 +40,36 @@ let init ?style_renderer ?level () =
   Logs.set_level level;
   Logs.set_reporter reporter
 
-let with_dot ~dotfile f () =
-  let result = f () in
-  let dot_data =
-    let+ a = Current.Analysis.get result in
-    Logs.debug (fun f -> f "Pipeline: @[%a@]" Current.Analysis.pp a);
-    let url _ = None in
-    Fmt.strf "%a" (Current.Analysis.pp_dot ~url) a
-  in
-  let* () = Current_fs.save (Current.return dotfile) dot_data in
-  result
-
 let run x =
   match Lwt_main.run x with
   | Ok () -> Ok ()
   | Error (`Msg m) as e ->
       Logs.err (fun f -> f "%a" Fmt.lines m);
       e
+
+module SVar = Current.Var (struct
+  type t = unit -> unit Current.t
+
+  let equal = ( == )
+
+  let pp f _ = Fmt.string f "pipeline"
+end)
+
+let selected = SVar.create ~name:"current-test" (Error (`Msg "no-test"))
+
+let test_pipeline =
+  Current.component "choose pipeline"
+  |> let** make_pipeline = SVar.get selected in
+     make_pipeline ()
+
+let with_dot ~dotfile f () =
+  SVar.set selected (Ok f);
+  Logs.debug (fun f -> f "Pipeline: @[%a@]" Current.Analysis.pp test_pipeline);
+  let path = Fmt.strf "%s.%d.dot" dotfile 1 in
+  let ch = open_out path in
+  let f = Format.formatter_of_out_channel ch in
+  let url _ = None in
+  let env = [] in
+  Fmt.pf f "%a@!" (Current.Analysis.pp_dot ~env ~url) test_pipeline;
+  close_out ch;
+  test_pipeline
