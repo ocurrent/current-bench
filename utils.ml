@@ -74,7 +74,7 @@ let get_data_from_json commit json =
           (metrics |> member "ops_per_sec" |> to_float |> string_of_float))
       bench_objects bench_names
   in
-  (String.concat "," result_string) ^ "," ^ ( string_of_float (Unix.time()))
+  String.concat "," result_string ^ "," ^ string_of_float (Unix.time ())
 
 open! Postgresql
 
