@@ -5,20 +5,20 @@ import { InputBase } from "@material-ui/core";
 
 import { fade, makeStyles } from "@material-ui/core/styles";
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   search: {
     position: "relative",
     borderRadius: theme.shape.borderRadius,
     backgroundColor: fade(theme.palette.common.white, 0.15),
     "&:hover": {
-      backgroundColor: fade(theme.palette.common.white, 0.25)
+      backgroundColor: fade(theme.palette.common.white, 0.25),
     },
     marginLeft: 0,
     width: "100%",
     [theme.breakpoints.up("sm")]: {
       marginLeft: theme.spacing(1),
-      width: "auto"
-    }
+      width: "auto",
+    },
   },
   searchIcon: {
     width: theme.spacing(7),
@@ -27,10 +27,10 @@ const useStyles = makeStyles(theme => ({
     pointerEvents: "none",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
   inputRoot: {
-    color: "inherit"
+    color: "inherit",
   },
   inputInput: {
     padding: theme.spacing(1, 1, 1, 7),
@@ -39,10 +39,10 @@ const useStyles = makeStyles(theme => ({
     [theme.breakpoints.up("sm")]: {
       width: 120,
       "&:focus": {
-        width: 200
-      }
-    }
-  }
+        width: 200,
+      },
+    },
+  },
 }));
 
 const Search = ({ value, handleChange }) => {
@@ -59,7 +59,7 @@ const Search = ({ value, handleChange }) => {
         placeholder="Search…"
         classes={{
           root: classes.inputRoot,
-          input: classes.inputInput
+          input: classes.inputInput,
         }}
         inputProps={{ "aria-label": "search" }}
       />

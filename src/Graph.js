@@ -11,7 +11,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  Area
+  Area,
 } from "recharts";
 
 const Graph = ({ bench }) => {
@@ -33,7 +33,7 @@ const Graph = ({ bench }) => {
             top: 5,
             right: 30,
             left: 20,
-            bottom: 5
+            bottom: 5,
           }}
         >
           <CartesianGrid strokeDasharray="3 3" />

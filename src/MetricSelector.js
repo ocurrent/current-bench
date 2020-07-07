@@ -4,33 +4,33 @@ import { Switch, FormGroup, FormControlLabel } from "@material-ui/core";
 import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
 import { orange, blue, red } from "@material-ui/core/colors";
 
-const MetricSelector = ({ metrics }) => {
+const MetricSelector = () => {
   const [state, setState] = React.useState({
     time: true,
     opsPerSec: true,
-    mbsPerSec: false
+    mbsPerSec: false,
   });
 
-  const handleChange = name => event => {
+  const handleChange = (name) => (event) => {
     setState({ ...state, [name]: event.target.checked });
   };
 
   const timeTheme = createMuiTheme({
     palette: {
-      primary: blue
-    }
+      primary: blue,
+    },
   });
 
   const opsPerSecTheme = createMuiTheme({
     palette: {
-      primary: orange
-    }
+      primary: orange,
+    },
   });
 
   const mbsPerSecTheme = createMuiTheme({
     palette: {
-      primary: red
-    }
+      primary: red,
+    },
   });
   return (
     <FormGroup row>
@@ -60,7 +60,7 @@ const MetricSelector = ({ metrics }) => {
           label="Operations per second"
         />
       </ThemeProvider>
-     <ThemeProvider theme={mbsPerSecTheme}>
+      <ThemeProvider theme={mbsPerSecTheme}>
         <FormControlLabel
           control={
             <Switch

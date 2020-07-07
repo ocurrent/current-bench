@@ -16,18 +16,18 @@ import GitHubIcon from "@material-ui/icons/GitHub";
 
 const projectUrl = "https://github.com/CraigFe/current-bench";
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
-    flexGrow: 1
+    flexGrow: 1,
   },
   title: {
     // marginLeft: theme.spacing(2),
     flexGrow: 0,
     display: "none",
     [theme.breakpoints.up("sm")]: {
-      display: "block"
-    }
-  }
+      display: "block",
+    },
+  },
 }));
 
 const Navbar = ({ title, searchTerm, handleSearchTermChange }) => {
