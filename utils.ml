@@ -39,7 +39,7 @@ let read_file path =
 
 open Yojson.Basic.Util
 
-let format_benchmark_data commit name time mbs_per_sec ops_per_sec =
+let format_benchmark_data commit name time mbs_per_sec ops_per_sec timestamp =
   "('"
   ^ commit
   ^ "', '"
@@ -50,6 +50,8 @@ let format_benchmark_data commit name time mbs_per_sec ops_per_sec =
   ^ mbs_per_sec
   ^ ", "
   ^ ops_per_sec
+  ^ ","
+  ^ timestamp
   ^ ") "
 
 let get_repo json = Yojson.Basic.from_string json |> member "repo" |> to_string
@@ -68,13 +70,14 @@ let get_data_from_json commit json =
     List.map2
       (fun json bench_name ->
         let metrics = json |> member "metrics" in
-        format_benchmark_data commit bench_name
-          (metrics |> member "time" |> to_float |> string_of_float)
-          (metrics |> member "mbs_per_sec" |> to_float |> string_of_float)
-          (metrics |> member "ops_per_sec" |> to_float |> string_of_float))
+        (format_benchmark_data commit bench_name
+           (metrics |> member "time" |> to_float |> string_of_float)
+           (metrics |> member "mbs_per_sec" |> to_float |> string_of_float)
+           (metrics |> member "ops_per_sec" |> to_float |> string_of_float))
+          (string_of_float (Unix.time ())))
       bench_objects bench_names
   in
-  String.concat "," result_string ^ "," ^ string_of_float (Unix.time ())
+  String.concat "," result_string
 
 open! Postgresql
 
