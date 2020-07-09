@@ -68,8 +68,14 @@ let with_dot ~dotfile f () =
   let path = Fmt.strf "%s.%d.dot" dotfile 1 in
   let ch = open_out path in
   let f = Format.formatter_of_out_channel ch in
-  let url _ = None in
   let env = [] in
-  Fmt.pf f "%a@!" (Current.Analysis.pp_dot ~env ~url) test_pipeline;
+  let collapse_link ~k ~v = Some (k ^ v) in
+  let job_info { Current.Metadata.job_id; update } =
+    let url = job_id |> Option.map (fun id -> Fmt.strf "/job/%s" id) in
+    (update, url)
+  in
+  Fmt.pf f "%a@!"
+    (Current.Analysis.pp_dot ~env ~collapse_link ~job_info)
+    test_pipeline;
   close_out ch;
   test_pipeline

@@ -95,7 +95,7 @@ let pipeline ~github ~repo ?slack_path ?docker_cpu ?docker_numa_node
             Slack.post channel ~key:"output" (Current.map snd p))
   |> Current.ignore_value
 
-let webhooks = [ ("github", Github.input_webhook) ]
+let webhooks = [ ("github", Github.webhook) ]
 
 type token = { token_file : string; token_api_file : Github.Api.t }
 
@@ -109,9 +109,15 @@ let main config mode github_token (repo : Current_github.Repo_id.t) slack_path
       (pipeline ~github ~repo ?slack_path ?docker_cpu ?docker_numa_node
          ~docker_shm_size ~commit ~conninfo)
   in
+  let routes =
+    Routes.((s "webhooks" / s "github" /? nil) @--> Github.webhook)
+    :: Current_web.routes engine
+  in
+  let site =
+    Current_web.Site.(v ~has_role:allow_all) ~name:"Benchmarks" routes
+  in
   Logging.run
-    (Lwt.choose
-       [ Current.Engine.thread engine; Current_web.run ~mode ~webhooks engine ])
+    (Lwt.choose [ Current.Engine.thread engine; Current_web.run ~mode site ])
 
 (* Command-line parsing *)
 
