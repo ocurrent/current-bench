@@ -12,7 +12,8 @@ CREATE TABLE benchmarksrun (
     time float8,
     ops_per_sec float8,
     mbs_per_sec float8, 
-    timestamp float8
+    timestamp float8,
+    branch varchar(256)
 );
 
 

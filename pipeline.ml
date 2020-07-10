@@ -1,6 +1,3 @@
-(* This pipeline monitors a GitHub repository and uses Docker to build the
-   latest version on the default branch. *)
-
 open Current.Syntax
 module Git = Current_git
 module Github = Current_github
@@ -26,17 +23,58 @@ let dockerfile ~base =
   @@ run "opam config exec -- dune build @@default bench/bench.exe"
   @@ run "eval $(opam env)"
 
-let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
+let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 1) ()
 
-let pipeline ~github ~repo ?slack_path ?docker_cpu ?docker_numa_node
-    ~docker_shm_size ~commit ~conninfo () =
-  let head = Github.Api.head_commit github repo in
-  let src = Git.fetch (Current.map Github.Api.Commit.id head) in
+let pipeline ?slack_path ~conninfo ~pr_num ~head ~name ~dockerfile ~tmpfs
+    ~docker_cpuset_cpus ~docker_cpuset_mems =
+  let s =
+    let run_args =
+      [ "--security-opt"; "seccomp=./aslr_seccomp.json" ]
+      @ tmpfs
+      @ docker_cpuset_cpus
+      @ docker_cpuset_mems
+    in
+    let+ output =
+      let src =
+        Git.fetch (Current.map Github.Api.Commit.id (Current.return head))
+      in
+      let image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
+      Docker.pread ~run_args image
+        ~args:
+          [
+            "/usr/bin/setarch";
+            "x86_64";
+            "--addr-no-randomize";
+            "_build/default/bench/bench.exe";
+            "--nb-entries";
+            "1000";
+            "-d";
+            "/dev/shm";
+            "--json";
+          ]
+    in
+    let commit = Github.Api.Commit.hash head in
+    let content =
+      Utils.merge_json name commit (Yojson.Basic.from_string output)
+    in
+    let () = Utils.populate_postgres conninfo commit content pr_num in
+    match slack_path with Some p -> Some (p, content) | None -> None
+  in
+  s
+  |> Current.option_map (fun p ->
+         Current.component "post"
+         |> let** path, _ = p in
+            let channel = read_channel_uri path in
+            Slack.post channel ~key:"output" (Current.map snd p))
+  |> Current.ignore_value
+
+let process_pipeline ?slack_path ?docker_cpu ?docker_numa_node ~docker_shm_size
+    ~conninfo ~github ~(repo : Github.Repo_id.t) () =
+  let name = repo.name in
   let dockerfile =
     let+ base = Docker.pull ~schedule:weekly "ocaml/opam2" in
     `Contents (dockerfile ~base)
   in
-  let image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
   let docker_cpuset_cpus =
     match docker_cpu with
     | Some i -> [ "--cpuset-cpus"; string_of_int i ]
@@ -52,62 +90,41 @@ let pipeline ~github ~repo ?slack_path ?docker_cpu ?docker_numa_node
     | Some i ->
         [
           "--tmpfs";
-          Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dG,mpol=bind:%d"
+          Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg,mpol=bind:%d"
             docker_shm_size i;
         ]
     | None ->
         [
           "--tmpfs";
-          Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dG" docker_shm_size;
+          Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg" docker_shm_size;
         ]
   in
-  let s =
-    let run_args =
-      [ "--security-opt"; "seccomp=./aslr_seccomp.json" ]
-      @ tmpfs
-      @ docker_cpuset_cpus
-      @ docker_cpuset_mems
-    in
-    let+ output =
-      Docker.pread ~run_args image
-        ~args:
-          [
-            "/usr/bin/setarch";
-            "x86_64";
-            "--addr-no-randomize";
-            "_build/default/bench/bench.exe";
-            "-d";
-            "/dev/shm";
-            "--json";
-          ]
-    in
-    let content =
-      Utils.merge_json repo.name commit (Yojson.Basic.from_string output)
-    in
-    let () = Utils.populate_postgres conninfo commit content in
-    match slack_path with Some p -> Some (p, content) | None -> None
+  let repo = Current.return (github, repo) in
+  let* refs =
+    Current.component "Get PRs"
+    |> let> api, repo = repo in
+       Github.Api.refs api repo
   in
-  s
-  |> Current.option_map (fun p ->
-         Current.component "post"
-         |> let** path, _ = p in
-            let channel = read_channel_uri path in
-            Slack.post channel ~key:"output" (Current.map snd p))
-  |> Current.ignore_value
+  Github.Api.Ref_map.fold
+    (fun key head _ ->
+      match key with
+      | `Ref _ -> Current.return () (* Skip branches, only check PRs *)
+      | `PR pr_num ->
+          pipeline ?slack_path ~conninfo ~pr_num ~head ~name ~dockerfile ~tmpfs
+            ~docker_cpuset_cpus ~docker_cpuset_mems)
+    refs (Current.return ())
 
 let webhooks = [ ("github", Github.webhook) ]
 
 type token = { token_file : string; token_api_file : Github.Api.t }
 
-let main config mode github_token (repo : Current_github.Repo_id.t) slack_path
-    docker_cpu docker_numa_node docker_shm_size conninfo user () =
-  let token = Utils.read_file github_token.token_file in
-  let commit = Utils.get_commit repo.name repo.owner user token in
+let main config mode github_token repo slack_path docker_cpu docker_numa_node
+    docker_shm_size conninfo () =
   let github = github_token.token_api_file in
   let engine =
     Current.Engine.create ~config
-      (pipeline ~github ~repo ?slack_path ?docker_cpu ?docker_numa_node
-         ~docker_shm_size ~commit ~conninfo)
+      (process_pipeline ?slack_path ?docker_cpu ?docker_numa_node
+         ~docker_shm_size ~conninfo ~github ~repo)
   in
   let routes =
     Routes.((s "webhooks" / s "github" /? nil) @--> Github.webhook)
@@ -152,12 +169,6 @@ let repo =
   @@ Arg.info ~doc:"The GitHub repository (owner/name) to monitor." ~docv:"REPO"
        []
 
-let user =
-  Arg.required
-  @@ Arg.opt Arg.(some string) None
-  @@ Arg.info ~doc:"User for which the OAuth token is given." ~docv:"USER"
-       [ "oauth-user" ]
-
 let setup_log =
   let init style_renderer level = Logging.init ?style_renderer ?level () in
   Term.(const init $ Fmt_cli.style_renderer () $ Logs_cli.level ())
@@ -196,7 +207,6 @@ let cmd =
       $ docker_numa_node
       $ docker_shm_size
       $ conninfo
-      $ user
       $ setup_log),
     Term.info "github" ~doc )
 

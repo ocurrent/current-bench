@@ -2,28 +2,6 @@
 
 let read_fpath p = Bos.OS.File.read p |> Rresult.R.error_msg_to_invalid_arg
 
-let write_fpath p content =
-  Bos.OS.File.write p content |> Rresult.R.error_msg_to_invalid_arg
-
-open Yojson.Basic.Util
-
-let get_commit_string body =
-  [ Yojson.Basic.from_string body ]
-  |> filter_member "commit"
-  |> filter_member "tree"
-  |> filter_member "sha"
-  |> filter_string
-  |> List.hd
-
-let get_commit repo owner user token =
-  let headers = [ ("-u", user ^ ":" ^ token) ] in
-  let url =
-    "https://api.github.com/repos/" ^ owner ^ "/" ^ repo ^ "/commits/master"
-  in
-  match Curly.(run (Request.make ~headers ~url ~meth:`GET ())) with
-  | Ok x -> get_commit_string x.Curly.Response.body
-  | Error _ -> "failed"
-
 let merge_json repo commit json =
   Yojson.Basic.pretty_to_string
     (`Assoc
@@ -39,11 +17,12 @@ let read_file path =
 
 open Yojson.Basic.Util
 
-let format_benchmark_data commit name time mbs_per_sec ops_per_sec timestamp =
+let format_benchmark_data commit bench_name time mbs_per_sec ops_per_sec
+    timestamp pr =
   "('"
   ^ commit
   ^ "', '"
-  ^ name
+  ^ bench_name
   ^ "',"
   ^ time
   ^ ", "
@@ -52,11 +31,13 @@ let format_benchmark_data commit name time mbs_per_sec ops_per_sec timestamp =
   ^ ops_per_sec
   ^ ","
   ^ timestamp
-  ^ ") "
+  ^ ",'"
+  ^ pr
+  ^ "') "
 
 let get_repo json = Yojson.Basic.from_string json |> member "repo" |> to_string
 
-let get_data_from_json commit json =
+let construct_data_for_benchmarks_run commit json pr_str =
   let bench_objects =
     Yojson.Basic.from_string json
     |> member "result"
@@ -74,14 +55,15 @@ let get_data_from_json commit json =
            (metrics |> member "time" |> to_float |> string_of_float)
            (metrics |> member "mbs_per_sec" |> to_float |> string_of_float)
            (metrics |> member "ops_per_sec" |> to_float |> string_of_float))
-          (string_of_float (Unix.time ())))
+          (Unix.time () |> string_of_float)
+          pr_str)
       bench_objects bench_names
   in
-  String.concat "," result_string
+  String.concat " , " result_string
 
 open! Postgresql
 
-let populate_postgres conninfo commit json_string =
+let populate_postgres conninfo commit json_string pr_num =
   try
     let repository = get_repo json_string in
     let c = new connection ~conninfo () in
@@ -95,11 +77,14 @@ let populate_postgres conninfo commit json_string =
         ^ json_string
         ^ "' )" )
     in
-    let data_to_insert = get_data_from_json commit json_string in
+    let pr_str = Printf.sprintf "%s/%d" repository pr_num in
+    let data_to_insert =
+      construct_data_for_benchmarks_run commit json_string pr_str
+    in
     let _ =
       c#exec ~expect:[ Command_ok ]
         ( "insert into benchmarksrun(commits, name, time, mbs_per_sec, \
-           ops_per_sec, timestamp) values "
+           ops_per_sec, timestamp, branch) values "
         ^ data_to_insert )
     in
     c#finish
