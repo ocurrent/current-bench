@@ -21,8 +21,7 @@ services:
       HASURA_GRAPHQL_DATABASE_URL: postgres://docker:docker@postgres:5432/docker
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
-      ## uncomment next line to set an admin secret
-      # HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
+      HASURA_GRAPHQL_ADMIN_SECRET: ${GRAPHQL_KEY}
   frontend:
     build:
       context: ${FRONTEND_DIRECTORY}
