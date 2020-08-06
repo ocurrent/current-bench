@@ -88,6 +88,23 @@ You can `export FRONTEND_DIRECTORY=<location of frontend directory>` as a env va
 
 If you run several times `docker-compose up` and failing to load the DB for some reasons, remember to remove the `db_data` folder before trying again, as [the `init.sql` is only run once](https://stackoverflow.com/questions/53249276/docker-compose-mysql-init-sql-is-not-executed).
 
+On some computers, the docker containers have limited memory. If you get a docker error, try using a smaller data set for benchmarking, by chaging the run arguments of `index/bench` as follows:
+```ocaml
+      Docker.pread ~run_args image
+        ~args:
+          [
+            "/usr/bin/setarch";
+            "x86_64";
+            "--addr-no-randomize";
+            "_build/default/bench/bench.exe";
+            "-d";
+            "/dev/shm";
+            "--json";
+            "--nb-entries";
+            "10000";
+          ]
+```
+
 ## IO performance
 
 The results of IO bound benchmarks can vary greatly between different device/storage types and how they are configured. For this prototype we’re aiming for predictable results so we are using an in-memory `tmpfs` partition in `/dev/shm` for all storage.
