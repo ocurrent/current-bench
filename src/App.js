@@ -14,10 +14,15 @@ import ApolloClient from "apollo-client";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { HttpLink } from "apollo-link-http";
 
+require('dotenv').config();
+const graphql_key = process.env['REACT_APP_GRAPHQL_KEY'];
+
 const client = new ApolloClient({
   link: new HttpLink({
     uri: "http://localhost:8080/v1/graphql",
-    headers: {},
+    headers: {
+      'x-hasura-admin-secret': graphql_key
+    },
   }),
   cache: new InMemoryCache(),
 });
