@@ -1,5 +1,8 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+The graphql is authenticated and to access it, you have to add a `REACT_APP_GRAPHQL_KEY=<key>`
+to a `.env` file.
+
 ## Available Scripts
 
 In the project directory, you can run:
