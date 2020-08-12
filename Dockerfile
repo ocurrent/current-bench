@@ -1,21 +1,31 @@
 # pull official base image
-FROM node:13.12.0-alpine
+FROM node:13.12.0-alpine as builder
 
 # set working directory
 WORKDIR /app
 
-# add `/app/node_modules/.bin` to $PATH
-ENV PATH /app/node_modules/.bin:$PATH
-
 # install app dependencies
 COPY package.json ./
-COPY yarn.lock ./
-RUN yarn install
-RUN yarn global add react-scripts@3.4.1
+
+RUN npm install --save err && npm config set registry https://skimdb.npmjs.com/registry && npm install --silent
 
 # add app
 COPY . ./
 
-# start app
-CMD ["yarn", "start"]
+RUN npm run build
+
+FROM nginx:alpine
+
+#!/bin/sh
+
+COPY ./.nginx/nginx.conf /etc/nginx/nginx.conf
+
+## Remove default nginx index page
+RUN rm -rf /usr/share/nginx/html/*
+
+COPY --from=builder /app/build /usr/share/nginx/html
+
+EXPOSE 3000 82
+
+ENTRYPOINT ["nginx", "-g", "daemon off;"]
 
