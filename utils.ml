@@ -2,10 +2,14 @@
 
 let read_fpath p = Bos.OS.File.read p |> Rresult.R.error_msg_to_invalid_arg
 
-let merge_json repo commit json =
+let merge_json repo owner commit json =
   Yojson.Basic.pretty_to_string
     (`Assoc
-      [ ("repo", `String repo); ("commit", `String commit); ("result", json) ])
+      [
+        ("repo", `String (Printf.sprintf "%s/%s" owner repo));
+        ("commit", `String commit);
+        ("result", json);
+      ])
 
 let read_file path =
   let ch = open_in_bin path in

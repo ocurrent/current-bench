@@ -25,7 +25,17 @@ let dockerfile ~base =
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 1) ()
 
-let pipeline ?slack_path ~conninfo ~pr_num ~head ~name ~dockerfile ~tmpfs
+let get_url name owner pr_num =
+  Uri.of_string
+    (Printf.sprintf "http://autumn.ocamllabs.io:3000/%s/%s/%d" owner name
+       pr_num)
+
+let github_status_of_state url = function
+  | Ok _ -> Github.Api.Status.v ~url `Success ~description:"Passed"
+  | Error (`Active _) -> Github.Api.Status.v ~url `Pending
+  | Error (`Msg m) -> Github.Api.Status.v ~url `Failure ~description:m
+
+let pipeline ?slack_path ~conninfo ~pr_num ~head ~name ~owner ~dockerfile ~tmpfs
     ~docker_cpuset_cpus ~docker_cpuset_mems =
   let s =
     let run_args =
@@ -46,8 +56,6 @@ let pipeline ?slack_path ~conninfo ~pr_num ~head ~name ~dockerfile ~tmpfs
             "x86_64";
             "--addr-no-randomize";
             "_build/default/bench/bench.exe";
-            "--nb-entries";
-            "1000";
             "-d";
             "/dev/shm";
             "--json";
@@ -55,7 +63,7 @@ let pipeline ?slack_path ~conninfo ~pr_num ~head ~name ~dockerfile ~tmpfs
     in
     let commit = Github.Api.Commit.hash head in
     let content =
-      Utils.merge_json name commit (Yojson.Basic.from_string output)
+      Utils.merge_json name owner commit (Yojson.Basic.from_string output)
     in
     let () = Utils.populate_postgres conninfo commit content pr_num in
     match slack_path with Some p -> Some (p, content) | None -> None
@@ -66,11 +74,15 @@ let pipeline ?slack_path ~conninfo ~pr_num ~head ~name ~dockerfile ~tmpfs
          |> let** path, _ = p in
             let channel = read_channel_uri path in
             Slack.post channel ~key:"output" (Current.map snd p))
+  |> Current.state
+  |> Current.map (github_status_of_state (get_url name owner pr_num))
+  |> Github.Api.Commit.set_status (Current.return head) "benchmark"
   |> Current.ignore_value
 
 let process_pipeline ?slack_path ?docker_cpu ?docker_numa_node ~docker_shm_size
     ~conninfo ~github ~(repo : Github.Repo_id.t) () =
   let name = repo.name in
+  let owner = repo.owner in
   let dockerfile =
     let+ base = Docker.pull ~schedule:weekly "ocaml/opam2" in
     `Contents (dockerfile ~base)
@@ -110,8 +122,8 @@ let process_pipeline ?slack_path ?docker_cpu ?docker_numa_node ~docker_shm_size
       match key with
       | `Ref _ -> Current.return () (* Skip branches, only check PRs *)
       | `PR pr_num ->
-          pipeline ?slack_path ~conninfo ~pr_num ~head ~name ~dockerfile ~tmpfs
-            ~docker_cpuset_cpus ~docker_cpuset_mems)
+          pipeline ?slack_path ~conninfo ~pr_num ~head ~name ~owner ~dockerfile
+            ~tmpfs ~docker_cpuset_cpus ~docker_cpuset_mems)
     refs (Current.return ())
 
 let webhooks = [ ("github", Github.webhook) ]
