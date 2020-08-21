@@ -22,7 +22,7 @@ const graphql_key = process.env['REACT_APP_GRAPHQL_KEY'];
 
 const client = new ApolloClient({
   link: new HttpLink({
-    uri: "http://localhost:8080/v1/graphql",
+    uri: "http://autumn.ocamllabs.io:8080/v1/graphql",
     headers: {
       'x-hasura-admin-secret': graphql_key
     },
