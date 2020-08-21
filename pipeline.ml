@@ -27,7 +27,7 @@ let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 1) ()
 
 let get_url name owner pr_num =
   Uri.of_string
-    (Printf.sprintf "http://autumn.ocamllabs.io:3000/%s/%s/%d" owner name
+    (Printf.sprintf "http://autumn.ocamllabs.io:3030/prs/%s/%s/%d" owner name
        pr_num)
 
 let github_status_of_state url = function
