@@ -2,11 +2,12 @@ import React from "react";
 import { equals } from "ramda";
 
 const GraphTooltip = ({ active, payload, label }) => {
-  if (active) {
-    const branch = "master";
-    const ref = equals(label, 0) ? branch : `${branch}~${-label}`;
-
+  if (active && payload != null) {
     const foo = payload[0].payload;
+
+
+    const branch = `${foo.branch}`;
+    const ref = equals(label, 0) ? branch : `${branch}~${-label}`;
 
     const opsPerSec = `${foo.opsPerSec.toPrecision(3)}`;
     const time = `${foo.time.toPrecision(3)}`;

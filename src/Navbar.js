@@ -10,9 +10,9 @@ import {
 } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 
-import Search from "./Search.js";
-
 import GitHubIcon from "@material-ui/icons/GitHub";
+import HomeIcon from '@material-ui/icons/Home';
+import MergeIcon from '@material-ui/icons/MergeType';
 
 const projectUrl = "https://github.com/CraigFe/current-bench";
 
@@ -30,7 +30,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const Navbar = ({ title, searchTerm, handleSearchTermChange }) => {
+const Navbar = ({ title }) => {
   const classes = useStyles();
 
   return (
@@ -48,8 +48,33 @@ const Navbar = ({ title, searchTerm, handleSearchTermChange }) => {
               </a>
             </Typography>
             <div style={{ flexGrow: 1 }} />
-            <Search value={searchTerm} handleChange={handleSearchTermChange} />
-            <Tooltip title={"github"} enterDelay={300}>
+                        <Tooltip title={"home"} enterDelay={300}>
+              <IconButton
+                edge="end"
+                component="a"
+                color="inherit"
+                href="/"
+                data-ga-event-category="AppBar"
+                data-ga-event-action="home"
+              >
+                <HomeIcon/>
+              </IconButton>
+            </Tooltip>
+
+    <Tooltip title={"pull requests"} enterDelay={300}>
+              <IconButton
+                edge="end"
+                component="a"
+                color="inherit"
+                href="/prs"
+                data-ga-event-category="AppBar"
+                data-ga-event-action="pull requests"
+              >
+                <MergeIcon />
+              </IconButton>
+            </Tooltip>
+
+<Tooltip title={"github"} enterDelay={300}>
               <IconButton
                 edge="end"
                 component="a"
@@ -61,6 +86,9 @@ const Navbar = ({ title, searchTerm, handleSearchTermChange }) => {
                 <GitHubIcon />
               </IconButton>
             </Tooltip>
+            
+
+
           </Toolbar>
         </Container>
       </AppBar>

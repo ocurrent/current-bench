@@ -4,8 +4,11 @@ import MetricSelector from "./MetricSelector.js";
 import Graph from "./Graph.js";
 import { ThemeProvider } from "@material-ui/core/styles";
 import { Box, Container, Grid, Divider } from "@material-ui/core";
+import ListItemText from '@material-ui/core/ListItemText';
+import ListItem from '@material-ui/core/ListItem';
 import "./App.css";
 import { length, mapAccum, isNil, map } from "ramda";
+import { BrowserRouter as Router, Route, Link} from 'react-router-dom';
 
 import theme from "./theme.js";
 
@@ -35,6 +38,7 @@ const GET_DATA = gql`
       mbs_per_sec
       ops_per_sec
       time
+      branch
     }
   }
 `;
@@ -43,7 +47,7 @@ function benchmarkToChart(results) {
   const len = length(results);
 
   const [_, result] = mapAccum(
-    (index, { hash, stats }) => {
+    (index, { hash, branch, stats }) => {
       let time = stats["time"];
 
       let opsPerSec = stats["ops_per_sec"];
@@ -54,6 +58,7 @@ function benchmarkToChart(results) {
         index + 1,
         {
           name: hash,
+          branch: branch,
           relCommit: index - len + 1,
           time: time,
           timeLimit: [],
@@ -71,22 +76,7 @@ function benchmarkToChart(results) {
   return result;
 }
 
-function App() {
-  const [data, setData] = useState({ data: { benchmarksrun: [] } });
-
-  useEffect(() => {
-    async function fetchData() {
-      client
-        .query({
-          query: GET_DATA,
-        })
-        .then((result) => setData(result.data));
-    }
-    fetchData();
-  }, []);
-
-  const title = "mirage/index";
-
+function getBenchCharts(pr) {
   let data_info = [];
   if (data.hasOwnProperty("benchmarksrun")) {
     data_info = data["benchmarksrun"];
@@ -106,13 +96,18 @@ function App() {
 
   const benchmarkNames = Array.from(new Set(data_info.map(getName)));
 
-  var benches = [];
+  function getBranch(obj) {
+    return obj['branch'];
+  }
+
+  branches = Array.from(new Set(data_info.map(getBranch)));
 
   function getData(name, obj) {
-    if (name === obj["name"]) {
+    if (name === obj["name"] && (pr.includes(obj['branch']) || obj['branch'].includes('master') )) {
       return {
         name: obj["name"],
         hash: obj["commits"],
+        branch: obj['branch'],
         stats: {
           time: obj["time"],
           ops_per_sec: obj["ops_per_sec"],
@@ -135,12 +130,13 @@ function App() {
       return { name: name, chart: chart };
     }, benchmarkNames);
   }
+}
 
+const HomePage = () => {
+  getBenchCharts("master");
   return (
-    <div className="App">
-      <ThemeProvider theme={theme}>
-        <Navbar title={title} />
-        <Container maxWidth="1700px">
+    <ThemeProvider theme={theme}>
+        <Container maxWidth="md">
           <Box p={2}>
             <Container>
               <MetricSelector metrics={["a", "b", "c"]} />
@@ -158,6 +154,90 @@ function App() {
           </Box>
         </Container>
       </ThemeProvider>
+  );
+};
+
+
+const PRSPage = () => {
+return (
+    <>
+       <ThemeProvider theme={theme}>
+        <Container maxWidth="md">
+          <Box mt={2}>
+            <Grid container spacing={2}>
+      {branches.map((branch, _) => (
+        <h5 key={branch}>
+          <ListItem button component={Link} to={`/pr/${branch}`}>
+          <ListItemText>{branch}</ListItemText>
+        </ListItem>
+        </h5>
+      ))}
+           </Grid>
+          </Box>
+        </Container>
+      </ThemeProvider>
+
+    </>
+  );
+};
+
+const PRPage = ( {match}) => {
+  getBenchCharts(match.url);
+  return (
+    <ThemeProvider theme={theme}>
+        <Container maxWidth="md">
+          <Box p={2}>
+            <Container>
+              <MetricSelector metrics={["a", "b", "c"]} />
+            </Container>
+          </Box>
+          <Divider variant="middle" />
+          <Box mt={2}>
+            <Grid container spacing={2}>
+              {benches.map((bench) => (
+                <Grid item xs>
+                  <Graph bench={bench} />
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        </Container>
+      </ThemeProvider>
+  );
+
+};
+
+var benches = [];
+var branches = [];
+var data, setData;
+
+function App() {
+  [data, setData] = useState({ data: { benchmarksrun: [] } });
+
+  useEffect(() => {
+    async function fetchData() {
+      client
+        .query({
+          query: GET_DATA,
+        })
+        .then((result) => setData(result.data));
+    }
+    fetchData();
+  }, []);
+
+  getBenchCharts("master");
+
+
+ const title = "mirage/index";
+
+  return (
+    <div className="App">
+      <Router>
+      <Navbar title={title} />
+      <Route exact path="/" component={HomePage} />
+      <Route exact path="/prs" component={PRSPage}/>
+      <Route path="/pr/:owner/:name/:pr" component={PRPage} />
+     </Router> 
     </div>
   );
 }
