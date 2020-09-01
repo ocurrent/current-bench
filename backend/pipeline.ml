@@ -25,18 +25,25 @@ let dockerfile ~base =
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 1) ()
 
-let get_url name owner pr_num =
-  Uri.of_string
-    (Printf.sprintf "http://autumn.ocamllabs.io:3030/pr/%s/%s/%d" owner name
-       pr_num)
+type pr_info = [ `PR of int | `Branch of string ]
+
+let string_pr_info owner name info =
+  let str = Printf.sprintf "%s/%s/" owner name in
+  match info with
+  | `PR num -> str ^ string_of_int num
+  | `Branch branch -> str ^ branch
+
+let get_url name owner info =
+  let autumn_url = "http://autumn.ocamllabs.io:3030/pr/" in
+  Uri.of_string (autumn_url ^ string_pr_info owner name info)
 
 let github_status_of_state url = function
   | Ok _ -> Github.Api.Status.v ~url `Success ~description:"Passed"
   | Error (`Active _) -> Github.Api.Status.v ~url `Pending
   | Error (`Msg m) -> Github.Api.Status.v ~url `Failure ~description:m
 
-let pipeline ?slack_path ~conninfo ~pr_num ~head ~name ~owner ~dockerfile ~tmpfs
-    ~docker_cpuset_cpus ~docker_cpuset_mems =
+let pipeline ?slack_path ~conninfo ~(info : pr_info) ~head ~name ~owner
+    ~dockerfile ~tmpfs ~docker_cpuset_cpus ~docker_cpuset_mems =
   let s =
     let run_args =
       [ "--security-opt"; "seccomp=./aslr_seccomp.json" ]
@@ -56,6 +63,8 @@ let pipeline ?slack_path ~conninfo ~pr_num ~head ~name ~owner ~dockerfile ~tmpfs
             "x86_64";
             "--addr-no-randomize";
             "_build/default/bench/bench.exe";
+            "--nb-entries";
+            "10000";
             "-d";
             "/dev/shm";
             "--json";
@@ -65,7 +74,8 @@ let pipeline ?slack_path ~conninfo ~pr_num ~head ~name ~owner ~dockerfile ~tmpfs
     let content =
       Utils.merge_json name owner commit (Yojson.Basic.from_string output)
     in
-    let () = Utils.populate_postgres conninfo commit content pr_num in
+    let pr_str = string_pr_info owner name info in
+    let () = Utils.populate_postgres conninfo commit content pr_str in
     match slack_path with Some p -> Some (p, content) | None -> None
   in
   s
@@ -75,7 +85,7 @@ let pipeline ?slack_path ~conninfo ~pr_num ~head ~name ~owner ~dockerfile ~tmpfs
             let channel = read_channel_uri path in
             Slack.post channel ~key:"output" (Current.map snd p))
   |> Current.state
-  |> Current.map (github_status_of_state (get_url name owner pr_num))
+  |> Current.map (github_status_of_state (get_url name owner info))
   |> Github.Api.Commit.set_status (Current.return head) "benchmark"
   |> Current.ignore_value
 
@@ -120,10 +130,14 @@ let process_pipeline ?slack_path ?docker_cpu ?docker_numa_node ~docker_shm_size
   Github.Api.Ref_map.fold
     (fun key head _ ->
       match key with
-      | `Ref _ -> Current.return () (* Skip branches, only check PRs *)
+      | `Ref "refs/heads/master" ->
+          pipeline ?slack_path ~conninfo ~info:(`Branch "master") ~head ~name
+            ~owner ~dockerfile ~tmpfs ~docker_cpuset_cpus ~docker_cpuset_mems
       | `PR pr_num ->
-          pipeline ?slack_path ~conninfo ~pr_num ~head ~name ~owner ~dockerfile
-            ~tmpfs ~docker_cpuset_cpus ~docker_cpuset_mems)
+          pipeline ?slack_path ~conninfo ~info:(`PR pr_num) ~head ~name ~owner
+            ~dockerfile ~tmpfs ~docker_cpuset_cpus ~docker_cpuset_mems
+      | `Ref _ -> Current.return ()
+      (* Skip all branches other than master, and check PRs *))
     refs (Current.return ())
 
 let webhooks = [ ("github", Github.webhook) ]

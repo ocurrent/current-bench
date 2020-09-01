@@ -67,7 +67,7 @@ let construct_data_for_benchmarks_run commit json pr_str =
 
 open! Postgresql
 
-let populate_postgres conninfo commit json_string pr_num =
+let populate_postgres conninfo commit json_string pr_info =
   try
     let repository = get_repo json_string in
     let c = new connection ~conninfo () in
@@ -81,9 +81,8 @@ let populate_postgres conninfo commit json_string pr_num =
         ^ json_string
         ^ "' )" )
     in
-    let pr_str = Printf.sprintf "%s/%d" repository pr_num in
     let data_to_insert =
-      construct_data_for_benchmarks_run commit json_string pr_str
+      construct_data_for_benchmarks_run commit json_string pr_info
     in
     let _ =
       c#exec ~expect:[ Command_ok ]
