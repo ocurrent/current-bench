@@ -41,12 +41,12 @@ Build the pipeline:
 ```# install dependencies (requires postgres, libpq-dev library)
 $ opam install --deps-only .
 # build
-$ dune build pipeline.exe
+$ dune build bin/main.exe
 ```
 
 Run the pipeline:
 ```
-./_build/default/pipeline.exe mirage/index --github-token-file <your_github_token> --docker-cpu 3 -v --oauth-user <user_github_user_name> --conn-info "host=localhost user=docker port=5432 dbname=docker password=docker" --port=8081
+./_build/default/bin/main.exe mirage/index --github-token-file <your_github_token> --docker-cpu 3 -v --oauth-user <user_github_user_name> --conn-info "host=localhost user=docker port=5432 dbname=docker password=docker" --port=8081
 ```
 
 You can find more options for different configurations, posting message to slack, etc by running `--help` to the pipeline executable.

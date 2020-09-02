@@ -3,6 +3,7 @@ module Git = Current_git
 module Github = Current_github
 module Docker = Current_docker.Default
 module Slack = Current_slack
+module Logging = Logging
 
 let pool = Current.Pool.create ~label:"docker" 1
 
@@ -142,8 +143,8 @@ let process_pipeline ?slack_path ?docker_cpu ?docker_numa_node ~docker_shm_size
 
 type token = { token_file : string; token_api_file : Github.Api.t }
 
-let main config mode github_token repo slack_path docker_cpu docker_numa_node
-    docker_shm_size conninfo () =
+let v ~config ~server:mode ~token:github_token ~repo ?slack_path ?docker_cpu
+    ?docker_numa_node ~docker_shm_size conninfo () =
   let github = github_token.token_api_file in
   let engine =
     Current.Engine.create ~config
@@ -159,79 +160,3 @@ let main config mode github_token repo slack_path docker_cpu docker_numa_node
   in
   Logging.run
     (Lwt.choose [ Current.Engine.thread engine; Current_web.run ~mode site ])
-
-(* Command-line parsing *)
-
-open Cmdliner
-
-let path = Arg.conv ~docv:"PATH" Fpath.(of_string, pp)
-
-let slack_path =
-  let doc =
-    "File containing the Slack endpoint URI to use for result notifications."
-  in
-  Arg.(value & opt (some path) None & info [ "s"; "slack" ] ~doc)
-
-let docker_cpu =
-  let doc = "CPU/core that should run the benchmarks." in
-  Arg.(value & opt (some int) None & info [ "docker-cpu" ] ~doc)
-
-let docker_numa_node =
-  let doc =
-    "NUMA node to use for memory and tmpfs storage (should match CPU core if \
-     enabled, see `lscpu`)"
-  in
-  Arg.(value & opt (some int) None & info [ "docker-numa-node" ] ~doc)
-
-let docker_shm_size =
-  let doc = "Size of tmpfs volume to be mounted in /dev/shm (in GB)." in
-  Arg.(value & opt int 4 & info [ "docker-shm-size" ] ~doc)
-
-let repo =
-  Arg.required
-  @@ Arg.pos 0 (Arg.some Github.Repo_id.cmdliner) None
-  @@ Arg.info ~doc:"The GitHub repository (owner/name) to monitor." ~docv:"REPO"
-       []
-
-let setup_log =
-  let init style_renderer level = Logging.init ?style_renderer ?level () in
-  Term.(const init $ Fmt_cli.style_renderer () $ Logs_cli.level ())
-
-let token_file =
-  Arg.required
-  @@ Arg.opt Arg.(some file) None
-  @@ Arg.info ~doc:"A file containing the GitHub OAuth token." ~docv:"PATH"
-       [ "github-token-file" ]
-
-let conninfo =
-  Arg.required
-  @@ Arg.opt Arg.(some string) None
-  @@ Arg.info ~doc:"Connection info for Postgres DB" ~docv:"PATH"
-       [ "conn-info" ]
-
-let make_config token_file =
-  {
-    token_file;
-    token_api_file =
-      Github.Api.of_oauth @@ String.trim (Utils.read_file token_file);
-  }
-
-let git_cmdliner = Term.(const make_config $ token_file)
-
-let cmd =
-  let doc = "Monitor a GitHub repository." in
-  ( Term.(
-      const main
-      $ Current.Config.cmdliner
-      $ Current_web.cmdliner
-      $ git_cmdliner
-      $ repo
-      $ slack_path
-      $ docker_cpu
-      $ docker_numa_node
-      $ docker_shm_size
-      $ conninfo
-      $ setup_log),
-    Term.info "github" ~doc )
-
-let () = Term.(exit @@ eval cmd)

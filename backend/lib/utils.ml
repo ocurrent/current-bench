@@ -11,14 +11,6 @@ let merge_json repo owner commit json =
         ("result", json);
       ])
 
-let read_file path =
-  let ch = open_in_bin path in
-  Fun.protect
-    (fun () ->
-      let len = in_channel_length ch in
-      really_input_string ch len)
-    ~finally:(fun () -> close_in ch)
-
 open Yojson.Basic.Util
 
 let format_benchmark_data commit bench_name time mbs_per_sec ops_per_sec
