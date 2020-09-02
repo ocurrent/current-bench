@@ -73,10 +73,13 @@ let pipeline ?slack_path ~conninfo ~(info : pr_info) ~head ~name ~owner
     in
     let commit = Github.Api.Commit.hash head in
     let content =
-      Utils.merge_json name owner commit (Yojson.Basic.from_string output)
+      Utils.merge_json ~repo:name ~owner ~commit
+        (Yojson.Basic.from_string output)
     in
-    let pr_str = string_pr_info owner name info in
-    let () = Utils.populate_postgres conninfo commit content pr_str in
+    let () =
+      let pr_info = string_pr_info owner name info in
+      Utils.populate_postgres ~conninfo ~commit ~json_string:content ~pr_info
+    in
     match slack_path with Some p -> Some (p, content) | None -> None
   in
   s

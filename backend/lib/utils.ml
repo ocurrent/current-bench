@@ -2,7 +2,7 @@
 
 let read_fpath p = Bos.OS.File.read p |> Rresult.R.error_msg_to_invalid_arg
 
-let merge_json repo owner commit json =
+let merge_json ~repo ~owner ~commit json =
   Yojson.Basic.pretty_to_string
     (`Assoc
       [
@@ -40,7 +40,7 @@ let construct_data_for_benchmarks_run commit json pr_str =
 
 open! Postgresql
 
-let populate_postgres conninfo commit json_string pr_info =
+let populate_postgres ~conninfo ~commit ~json_string ~pr_info =
   try
     let repository = get_repo json_string in
     let c = new connection ~conninfo () in
