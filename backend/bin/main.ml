@@ -35,9 +35,9 @@ let setup_log =
   in
   Term.(const init $ Fmt_cli.style_renderer () $ Logs_cli.level ())
 
-let token_file =
+let github_token_path =
   Arg.required
-  @@ Arg.opt Arg.(some file) None
+  @@ Arg.opt Arg.(some path) None
   @@ Arg.info ~doc:"A file containing the GitHub OAuth token." ~docv:"PATH"
        [ "github-token-file" ]
 
@@ -47,24 +47,6 @@ let conninfo =
   @@ Arg.info ~doc:"Connection info for Postgres DB" ~docv:"PATH"
        [ "conn-info" ]
 
-let read_file path =
-  let ch = open_in_bin path in
-  Fun.protect
-    (fun () ->
-      let len = in_channel_length ch in
-      really_input_string ch len)
-    ~finally:(fun () -> close_in ch)
-
-let make_config token_file =
-  Pipeline.
-    {
-      token_file;
-      token_api_file =
-        Current_github.Api.of_oauth @@ String.trim (read_file token_file);
-    }
-
-let git_cmdliner = Term.(const make_config $ token_file)
-
 let cmd =
   let doc = "Monitor a GitHub repository." in
   ( Term.(
@@ -72,8 +54,8 @@ let cmd =
         (fun
           config
           server
-          token
           repo
+          github_token
           slack_path
           docker_cpu
           docker_numa_node
@@ -81,12 +63,12 @@ let cmd =
           conninfo
           ()
         ->
-          Pipeline.v ~config ~server ~token ~repo ?slack_path ?docker_cpu
+          Pipeline.v ~config ~server ~repo ~github_token ?slack_path ?docker_cpu
             ?docker_numa_node ~docker_shm_size conninfo)
       $ Current.Config.cmdliner
       $ Current_web.cmdliner
-      $ git_cmdliner
       $ repo
+      $ github_token_path
       $ slack_path
       $ docker_cpu
       $ docker_numa_node

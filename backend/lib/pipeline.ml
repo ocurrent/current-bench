@@ -141,11 +141,14 @@ let process_pipeline ?slack_path ?docker_cpu ?docker_numa_node ~docker_shm_size
       (* Skip all branches other than master, and check PRs *))
     refs (Current.return ())
 
-type token = { token_file : string; token_api_file : Github.Api.t }
-
-let v ~config ~server:mode ~token:github_token ~repo ?slack_path ?docker_cpu
+let v ~config ~server:mode ~repo ~github_token ?slack_path ?docker_cpu
     ?docker_numa_node ~docker_shm_size conninfo () =
-  let github = github_token.token_api_file in
+  let github =
+    github_token
+    |> Utils.read_fpath
+    |> String.trim
+    |> Current_github.Api.of_oauth
+  in
   let engine =
     Current.Engine.create ~config
       (process_pipeline ?slack_path ?docker_cpu ?docker_numa_node
