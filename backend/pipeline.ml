@@ -140,8 +140,6 @@ let process_pipeline ?slack_path ?docker_cpu ?docker_numa_node ~docker_shm_size
       (* Skip all branches other than master, and check PRs *))
     refs (Current.return ())
 
-let webhooks = [ ("github", Github.webhook) ]
-
 type token = { token_file : string; token_api_file : Github.Api.t }
 
 let main config mode github_token repo slack_path docker_cpu docker_numa_node
