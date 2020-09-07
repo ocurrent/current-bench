@@ -1,14 +1,28 @@
 module Logging = Logging
 
+module Source : sig
+  type t
+
+  val github :
+    token:Fpath.t ->
+    slack_path:Fpath.t option ->
+    repo:Current_github.Repo_id.t ->
+    t
+
+  val local : Fpath.t -> t
+end
+
+module Docker_config : sig
+  type t
+
+  val v : ?cpu:int -> ?numa_node:int -> shm_size:int -> t
+end
+
 val v :
-  config:Current.Config.t ->
+  current_config:Current.Config.t ->
+  docker_config:Docker_config.t ->
   server:Conduit_lwt_unix.server ->
-  repo:Current_github.Repo_id.t ->
-  github_token:Fpath.t ->
-  ?slack_path:Fpath.t ->
-  ?docker_cpu:int ->
-  ?docker_numa_node:int ->
-  docker_shm_size:int ->
+  source:Source.t ->
   string ->
   unit ->
   unit Current.or_error

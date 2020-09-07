@@ -5,6 +5,28 @@ module Docker = Current_docker.Default
 module Slack = Current_slack
 module Logging = Logging
 
+let ( >>| ) x f = Current.map f x
+
+module Source = struct
+  type github = {
+    token : Fpath.t;
+    slack_path : Fpath.t option;
+    repo : Github.Repo_id.t;
+  }
+
+  type t = Github of github | Local of Fpath.t
+
+  let github ~token ~slack_path ~repo = Github { token; slack_path; repo }
+
+  let local path = Local path
+end
+
+module Docker_config = struct
+  type t = { cpu : int option; numa_node : int option; shm_size : int }
+
+  let v ?cpu ?numa_node ~shm_size = { cpu; numa_node; shm_size }
+end
+
 let pool = Current.Pool.create ~label:"docker" 1
 
 let read_channel_uri p =
@@ -43,8 +65,15 @@ let github_status_of_state url = function
   | Error (`Active _) -> Github.Api.Status.v ~url `Pending
   | Error (`Msg m) -> Github.Api.Status.v ~url `Failure ~description:m
 
-let pipeline ?slack_path ~conninfo ~(info : pr_info) ~head ~name ~owner
-    ~dockerfile ~tmpfs ~docker_cpuset_cpus ~docker_cpuset_mems =
+let pipeline ~slack_path ~conninfo ~(info : pr_info) ~dockerfile ~tmpfs
+    ~docker_cpuset_cpus ~docker_cpuset_mems ~head ~name ~owner =
+  let src =
+    match head with
+    | `Github api_commit ->
+        Git.fetch (Current.map Github.Api.Commit.id (Current.return api_commit))
+    | `Local commit -> commit
+  in
+  let image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
   let s =
     let run_args =
       [ "--security-opt"; "seccomp=./aslr_seccomp.json" ]
@@ -53,10 +82,6 @@ let pipeline ?slack_path ~conninfo ~(info : pr_info) ~head ~name ~owner
       @ docker_cpuset_mems
     in
     let+ output =
-      let src =
-        Git.fetch (Current.map Github.Api.Commit.id (Current.return head))
-      in
-      let image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
       Docker.pread ~run_args image
         ~args:
           [
@@ -70,8 +95,11 @@ let pipeline ?slack_path ~conninfo ~(info : pr_info) ~head ~name ~owner
             "/dev/shm";
             "--json";
           ]
+    and+ commit =
+      match head with
+      | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
+      | `Local commit -> commit >>| Git.Commit.hash
     in
-    let commit = Github.Api.Commit.hash head in
     let content =
       Utils.merge_json ~repo:name ~owner ~commit
         (Yojson.Basic.from_string output)
@@ -87,76 +115,84 @@ let pipeline ?slack_path ~conninfo ~(info : pr_info) ~head ~name ~owner
          Current.component "post"
          |> let** path, _ = p in
             let channel = read_channel_uri path in
-            Slack.post channel ~key:"output" (Current.map snd p))
+            Slack.post channel ~key:"output" (p >>| snd))
   |> Current.state
-  |> Current.map (github_status_of_state (get_url name owner info))
-  |> Github.Api.Commit.set_status (Current.return head) "benchmark"
-  |> Current.ignore_value
+  |> fun result ->
+  match head with
+  | `Local _ -> Current.ignore_value result
+  | `Github head ->
+      result
+      >>| github_status_of_state (get_url name owner info)
+      |> Github.Api.Commit.set_status (Current.return head) "benchmark"
+      |> Current.ignore_value
 
-let process_pipeline ?slack_path ?docker_cpu ?docker_numa_node ~docker_shm_size
-    ~conninfo ~github ~(repo : Github.Repo_id.t) () =
-  let name = repo.name in
-  let owner = repo.owner in
+let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
+    ~(source : Source.t) () =
   let dockerfile =
     let+ base = Docker.pull ~schedule:weekly "ocaml/opam2" in
     `Contents (dockerfile ~base)
   in
   let docker_cpuset_cpus =
-    match docker_cpu with
+    match docker_config.cpu with
     | Some i -> [ "--cpuset-cpus"; string_of_int i ]
     | None -> []
   in
   let docker_cpuset_mems =
-    match docker_numa_node with
+    match docker_config.numa_node with
     | Some i -> [ "--cpuset-mems"; string_of_int i ]
     | None -> []
   in
   let tmpfs =
-    match docker_numa_node with
+    match docker_config.numa_node with
     | Some i ->
         [
           "--tmpfs";
           Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg,mpol=bind:%d"
-            docker_shm_size i;
+            docker_config.shm_size i;
         ]
     | None ->
         [
           "--tmpfs";
-          Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg" docker_shm_size;
+          Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg" docker_config.shm_size;
         ]
   in
-  let repo = Current.return (github, repo) in
-  let* refs =
-    Current.component "Get PRs"
-    |> let> api, repo = repo in
-       Github.Api.refs api repo
+  let pipeline =
+    pipeline ~conninfo ~dockerfile ~tmpfs ~docker_cpuset_cpus
+      ~docker_cpuset_mems
   in
-  Github.Api.Ref_map.fold
-    (fun key head _ ->
-      match key with
-      | `Ref "refs/heads/master" ->
-          pipeline ?slack_path ~conninfo ~info:(`Branch "master") ~head ~name
-            ~owner ~dockerfile ~tmpfs ~docker_cpuset_cpus ~docker_cpuset_mems
-      | `PR pr_num ->
-          pipeline ?slack_path ~conninfo ~info:(`PR pr_num) ~head ~name ~owner
-            ~dockerfile ~tmpfs ~docker_cpuset_cpus ~docker_cpuset_mems
-      | `Ref _ -> Current.return ()
-      (* Skip all branches other than master, and check PRs *))
-    refs (Current.return ())
+  match source with
+  | Github { repo; slack_path; token } ->
+      let pipeline = pipeline ~slack_path ~name:repo.name ~owner:repo.owner in
+      let* refs =
+        let token =
+          token
+          |> Utils.read_fpath
+          |> String.trim
+          |> Current_github.Api.of_oauth
+        in
+        let repo = Current.return (token, repo) in
+        Current.component "Get PRs"
+        |> let> api, repo = repo in
+           Github.Api.refs api repo
+      in
+      Github.Api.Ref_map.fold
+        (fun key head _ ->
+          let head = `Github head in
+          match key with
+          | `Ref "refs/heads/master" -> pipeline ~head ~info:(`Branch "master")
+          | `PR pr_num -> pipeline ~head ~info:(`PR pr_num)
+          | `Ref _ -> Current.return ()
+          (* Skip all branches other than master, and check PRs *))
+        refs (Current.return ())
+  | Local path ->
+      let head = `Local (Git.Local.head_commit (Git.Local.v path)) in
+      pipeline ~info:(`Branch "HEAD") ~head ~name:"local" ~owner:"local"
+        ~slack_path:None
 
-let v ~config ~server:mode ~repo ~github_token ?slack_path ?docker_cpu
-    ?docker_numa_node ~docker_shm_size conninfo () =
-  let github =
-    github_token
-    |> Utils.read_fpath
-    |> String.trim
-    |> Current_github.Api.of_oauth
-  in
-  let engine =
-    Current.Engine.create ~config
-      (process_pipeline ?slack_path ?docker_cpu ?docker_numa_node
-         ~docker_shm_size ~conninfo ~github ~repo)
-  in
+let v ~current_config ~docker_config ~server:mode ~(source : Source.t) conninfo
+    () =
+  let pipeline = process_pipeline ~docker_config ~conninfo ~source in
+  let engine = Current.Engine.create ~config:current_config pipeline in
   let routes =
     Routes.((s "webhooks" / s "github" /? nil) @--> Github.webhook)
     :: Current_web.routes engine
