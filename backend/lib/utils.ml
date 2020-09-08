@@ -2,7 +2,7 @@
 
 let read_fpath p = Bos.OS.File.read p |> Rresult.R.error_msg_to_invalid_arg
 
-let merge_json repo owner commit json =
+let merge_json ~repo ~owner ~commit json =
   Yojson.Basic.pretty_to_string
     (`Assoc
       [
@@ -11,33 +11,7 @@ let merge_json repo owner commit json =
         ("result", json);
       ])
 
-let read_file path =
-  let ch = open_in_bin path in
-  Fun.protect
-    (fun () ->
-      let len = in_channel_length ch in
-      really_input_string ch len)
-    ~finally:(fun () -> close_in ch)
-
 open Yojson.Basic.Util
-
-let format_benchmark_data commit bench_name time mbs_per_sec ops_per_sec
-    timestamp pr =
-  "('"
-  ^ commit
-  ^ "', '"
-  ^ bench_name
-  ^ "',"
-  ^ time
-  ^ ", "
-  ^ mbs_per_sec
-  ^ ", "
-  ^ ops_per_sec
-  ^ ","
-  ^ timestamp
-  ^ ",'"
-  ^ pr
-  ^ "') "
 
 let get_repo json = Yojson.Basic.from_string json |> member "repo" |> to_string
 
@@ -55,31 +29,27 @@ let construct_data_for_benchmarks_run commit json pr_str =
     List.map2
       (fun json bench_name ->
         let metrics = json |> member "metrics" in
-        (format_benchmark_data commit bench_name
-           (metrics |> member "time" |> to_float |> string_of_float)
-           (metrics |> member "mbs_per_sec" |> to_float |> string_of_float)
-           (metrics |> member "ops_per_sec" |> to_float |> string_of_float))
-          (Unix.time () |> string_of_float)
-          pr_str)
+        let time = metrics |> member "time" |> to_float in
+        let mbs_per_sec = metrics |> member "mbs_per_sec" |> to_float in
+        let ops_per_sec = metrics |> member "ops_per_sec" |> to_float in
+        Fmt.str "('%s', '%s', %f, %f, %f, %f, '%s')" commit bench_name time
+          mbs_per_sec ops_per_sec (Unix.time ()) pr_str)
       bench_objects bench_names
   in
   String.concat " , " result_string
 
 open! Postgresql
 
-let populate_postgres conninfo commit json_string pr_info =
+let populate_postgres ~conninfo ~commit ~json_string ~pr_info =
   try
     let repository = get_repo json_string in
     let c = new connection ~conninfo () in
     let _ =
       c#exec ~expect:[ Command_ok ]
-        ( "insert into benchmarks(repositories, commits, json_data) values ( '"
-        ^ repository
-        ^ "', '"
-        ^ commit
-        ^ "', '"
-        ^ json_string
-        ^ "' )" )
+        (Fmt.str
+           "insert into benchmarks(repositories, commits, json_data) values \
+            ('%s', '%s', '%s')"
+           repository commit json_string)
     in
     let data_to_insert =
       construct_data_for_benchmarks_run commit json_string pr_info
