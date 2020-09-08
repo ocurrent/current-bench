@@ -89,8 +89,6 @@ let pipeline ~slack_path ~conninfo ~(info : pr_info) ~dockerfile ~tmpfs
             "x86_64";
             "--addr-no-randomize";
             "_build/default/bench/bench.exe";
-            "--nb-entries";
-            "10000";
             "-d";
             "/dev/shm";
             "--json";

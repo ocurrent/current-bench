@@ -32,7 +32,7 @@ let construct_data_for_benchmarks_run commit json pr_str =
         let time = metrics |> member "time" |> to_float in
         let mbs_per_sec = metrics |> member "mbs_per_sec" |> to_float in
         let ops_per_sec = metrics |> member "ops_per_sec" |> to_float in
-        Fmt.str "('%s', '%s', %f, %f, %f, %f, %s)" commit bench_name time
+        Fmt.str "('%s', '%s', %f, %f, %f, %f, '%s')" commit bench_name time
           mbs_per_sec ops_per_sec (Unix.time ()) pr_str)
       bench_objects bench_names
   in
