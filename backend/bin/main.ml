@@ -37,6 +37,9 @@ module Source = struct
       @@ Arg.info ~doc:"Path to a Git repository on disk" ~docv:"PATH" []
     in
     Term.(const Pipeline.Source.local $ path)
+
+  let github_app =
+    Term.(const Pipeline.Source.github_app $ Current_github.App.cmdliner)
 end
 
 module Docker = struct
@@ -102,4 +105,8 @@ let () =
              Term.info ~doc:"Monitor a Git repository on disk." "local" );
            ( cmd $ Source.github,
              Term.info ~doc:"Monitor a remote GitHub repository." "github" );
+           ( cmd $ Source.github_app,
+             Term.info
+               ~doc:"Monitor all repositories associated with github_app."
+               "github_app" );
          ])

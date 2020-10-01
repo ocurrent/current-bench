@@ -1,4 +1,4 @@
-(*To keep all the utis function for reading files, manipulating jsons, etc.*)
+(*To keep all the utils function for reading files, manipulating jsons, etc.*)
 
 let read_fpath p = Bos.OS.File.read p |> Rresult.R.error_msg_to_invalid_arg
 
