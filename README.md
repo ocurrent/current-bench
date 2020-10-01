@@ -1,4 +1,3 @@
-# index-benchmarks
 
 Prototype for running predictable, IO-bound benchmarks in an ocurrent pipeline. This is *work in progress*.
 
