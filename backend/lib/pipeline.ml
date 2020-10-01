@@ -14,11 +14,13 @@ module Source = struct
     repo : Github.Repo_id.t;
   }
 
-  type t = Github of github | Local of Fpath.t
+  type t = Github of github | Local of Fpath.t | Github_app of Github.App.t
 
   let github ~token ~slack_path ~repo = Github { token; slack_path; repo }
 
   let local path = Local path
+
+  let github_app t = Github_app t
 end
 
 module Docker_config = struct
@@ -121,7 +123,7 @@ let pipeline ~slack_path ~conninfo ~(info : pr_info) ~dockerfile ~tmpfs
   | `Github head ->
       result
       >>| github_status_of_state (get_url name owner info)
-      |> Github.Api.Commit.set_status (Current.return head) "benchmark"
+      |> Github.Api.Commit.set_status (Current.return head) "ocaml-benchmarks"
       |> Current.ignore_value
 
 let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
@@ -186,6 +188,32 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
       let head = `Local (Git.Local.head_commit (Git.Local.v path)) in
       pipeline ~info:(`Branch "HEAD") ~head ~name:"local" ~owner:"local"
         ~slack_path:None
+  | Github_app app ->
+      Github.App.installations app
+      |> Current.list_iter (module Github.Installation) @@ fun installation ->
+         let repos = Github.Installation.repositories installation in
+         repos
+         |> Current.list_iter ~collapse_key:"repo" (module Github.Api.Repo)
+            @@ fun repo ->
+            let* refs =
+              Current.component "Get PRS"
+              |> let> api, repo = repo in
+                 Github.Api.refs api repo
+            in
+            let* _, repo = repo in
+            let pipeline =
+              pipeline ~slack_path:None ~name:repo.name ~owner:repo.name
+            in
+            Github.Api.Ref_map.fold
+              (fun key head _ ->
+                let head = `Github head in
+                match key with
+                | `Ref "refs/heads/master" ->
+                    pipeline ~head ~info:(`Branch "master")
+                | `PR pr_num -> pipeline ~head ~info:(`PR pr_num)
+                | `Ref _ -> Current.return ()
+                (* Skip all branches other than master, and check PRs *))
+              refs (Current.return ())
 
 let v ~current_config ~docker_config ~server:mode ~(source : Source.t) conninfo
     () =

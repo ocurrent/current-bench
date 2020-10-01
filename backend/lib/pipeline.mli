@@ -1,15 +1,15 @@
 module Logging = Logging
+module Github = Current_github
 
 module Source : sig
   type t
 
   val github :
-    token:Fpath.t ->
-    slack_path:Fpath.t option ->
-    repo:Current_github.Repo_id.t ->
-    t
+    token:Fpath.t -> slack_path:Fpath.t option -> repo:Github.Repo_id.t -> t
 
   val local : Fpath.t -> t
+
+  val github_app : Github.App.t -> t
 end
 
 module Docker_config : sig
