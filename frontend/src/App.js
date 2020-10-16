@@ -4,11 +4,11 @@ import MetricSelector from "./MetricSelector.js";
 import Graph from "./Graph.js";
 import { ThemeProvider } from "@material-ui/core/styles";
 import { Box, Container, Grid, Divider } from "@material-ui/core";
-import ListItemText from '@material-ui/core/ListItemText';
-import ListItem from '@material-ui/core/ListItem';
+import ListItemText from "@material-ui/core/ListItemText";
+import ListItem from "@material-ui/core/ListItem";
 import "./App.css";
 import { length, mapAccum, isNil, map } from "ramda";
-import { BrowserRouter as Router, Route, Link} from 'react-router-dom';
+import { BrowserRouter as Router, Route, Link } from "react-router-dom";
 
 import theme from "./theme.js";
 
@@ -17,14 +17,14 @@ import ApolloClient from "apollo-client";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { HttpLink } from "apollo-link-http";
 
-require('dotenv').config();
-const graphql_key = process.env['REACT_APP_GRAPHQL_KEY'];
+require("dotenv").config();
+const graphql_key = process.env["REACT_APP_GRAPHQL_KEY"];
 
 const client = new ApolloClient({
   link: new HttpLink({
     uri: "http://autumn.ocamllabs.io:8080/v1/graphql",
     headers: {
-      'x-hasura-admin-secret': graphql_key
+      "x-hasura-admin-secret": graphql_key,
     },
   }),
   cache: new InMemoryCache(),
@@ -97,17 +97,20 @@ function getBenchCharts(pr) {
   const benchmarkNames = Array.from(new Set(data_info.map(getName)));
 
   function getBranch(obj) {
-    return obj['branch'];
+    return obj["branch"];
   }
 
   branches = Array.from(new Set(data_info.map(getBranch)));
 
   function getData(name, obj) {
-    if (name === obj["name"] && (pr.includes(obj['branch']) || obj['branch'].includes('master') )) {
+    if (
+      name === obj["name"] &&
+      (pr.includes(obj["branch"]) || obj["branch"].includes("master"))
+    ) {
       return {
         name: obj["name"],
         hash: obj["commits"],
-        branch: obj['branch'],
+        branch: obj["branch"],
         stats: {
           time: obj["time"],
           ops_per_sec: obj["ops_per_sec"],
@@ -136,19 +139,39 @@ const HomePage = () => {
   getBenchCharts("master");
   return (
     <ThemeProvider theme={theme}>
+      <Container maxWidth="md">
+        <Box p={2}>
+          <Container>
+            <MetricSelector metrics={["a", "b", "c"]} />
+          </Container>
+        </Box>
+        <Divider variant="middle" />
+        <Box mt={2}>
+          <Grid container spacing={2}>
+            {benches.map((bench) => (
+              <Grid item xs>
+                <Graph bench={bench} />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      </Container>
+    </ThemeProvider>
+  );
+};
+
+const PRSPage = () => {
+  return (
+      <ThemeProvider theme={theme}>
         <Container maxWidth="md">
-          <Box p={2}>
-            <Container>
-              <MetricSelector metrics={["a", "b", "c"]} />
-            </Container>
-          </Box>
-          <Divider variant="middle" />
           <Box mt={2}>
             <Grid container spacing={2}>
-              {benches.map((bench) => (
-                <Grid item xs>
-                  <Graph bench={bench} />
-                </Grid>
+              {branches.map((branch, _) => (
+                <h5 key={branch}>
+                  <ListItem button component={Link} to={`/pr/${branch}`}>
+                    <ListItemText>{branch}</ListItemText>
+                  </ListItem>
+                </h5>
               ))}
             </Grid>
           </Box>
@@ -157,54 +180,29 @@ const HomePage = () => {
   );
 };
 
-
-const PRSPage = () => {
-return (
-    <>
-       <ThemeProvider theme={theme}>
-        <Container maxWidth="md">
-          <Box mt={2}>
-            <Grid container spacing={2}>
-      {branches.map((branch, _) => (
-        <h5 key={branch}>
-          <ListItem button component={Link} to={`/pr/${branch}`}>
-          <ListItemText>{branch}</ListItemText>
-        </ListItem>
-        </h5>
-      ))}
-           </Grid>
-          </Box>
-        </Container>
-      </ThemeProvider>
-
-    </>
-  );
-};
-
-const PRPage = ( {match}) => {
+const PRPage = ({ match }) => {
   getBenchCharts(match.url);
   return (
     <ThemeProvider theme={theme}>
-        <Container maxWidth="md">
-          <Box p={2}>
-            <Container>
-              <MetricSelector metrics={["a", "b", "c"]} />
-            </Container>
-          </Box>
-          <Divider variant="middle" />
-          <Box mt={2}>
-            <Grid container spacing={2}>
-              {benches.map((bench) => (
-                <Grid item xs>
-                  <Graph bench={bench} />
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-        </Container>
-      </ThemeProvider>
+      <Container maxWidth="md">
+        <Box p={2}>
+          <Container>
+            <MetricSelector metrics={["a", "b", "c"]} />
+          </Container>
+        </Box>
+        <Divider variant="middle" />
+        <Box mt={2}>
+          <Grid container spacing={2}>
+            {benches.map((bench) => (
+              <Grid item xs>
+                <Graph bench={bench} />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      </Container>
+    </ThemeProvider>
   );
-
 };
 
 var benches = [];
@@ -227,17 +225,16 @@ function App() {
 
   getBenchCharts("master");
 
-
- const title = "mirage/index";
+  const title = "mirage/index";
 
   return (
     <div className="App">
       <Router>
-      <Navbar title={title} />
-      <Route exact path="/" component={HomePage} />
-      <Route exact path="/prs" component={PRSPage}/>
-      <Route path="/pr/:owner/:name/:pr" component={PRPage} />
-     </Router> 
+        <Navbar title={title} />
+        <Route exact path="/" component={HomePage} />
+        <Route exact path="/prs" component={PRSPage} />
+        <Route path="/pr/:owner/:name/:pr" component={PRPage} />
+      </Router>
     </div>
   );
 }

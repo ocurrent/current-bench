@@ -11,8 +11,8 @@ import {
 import { makeStyles } from "@material-ui/core/styles";
 
 import GitHubIcon from "@material-ui/icons/GitHub";
-import HomeIcon from '@material-ui/icons/Home';
-import MergeIcon from '@material-ui/icons/MergeType';
+import HomeIcon from "@material-ui/icons/Home";
+import MergeIcon from "@material-ui/icons/MergeType";
 
 const projectUrl = "https://github.com/CraigFe/current-bench";
 
@@ -48,7 +48,7 @@ const Navbar = ({ title }) => {
               </a>
             </Typography>
             <div style={{ flexGrow: 1 }} />
-                        <Tooltip title={"home"} enterDelay={300}>
+            <Tooltip title={"home"} enterDelay={300}>
               <IconButton
                 edge="end"
                 component="a"
@@ -57,11 +57,11 @@ const Navbar = ({ title }) => {
                 data-ga-event-category="AppBar"
                 data-ga-event-action="home"
               >
-                <HomeIcon/>
+                <HomeIcon />
               </IconButton>
             </Tooltip>
 
-    <Tooltip title={"pull requests"} enterDelay={300}>
+            <Tooltip title={"pull requests"} enterDelay={300}>
               <IconButton
                 edge="end"
                 component="a"
@@ -74,7 +74,7 @@ const Navbar = ({ title }) => {
               </IconButton>
             </Tooltip>
 
-<Tooltip title={"github"} enterDelay={300}>
+            <Tooltip title={"github"} enterDelay={300}>
               <IconButton
                 edge="end"
                 component="a"
@@ -86,9 +86,6 @@ const Navbar = ({ title }) => {
                 <GitHubIcon />
               </IconButton>
             </Tooltip>
-            
-
-
           </Toolbar>
         </Container>
       </AppBar>
