@@ -129,7 +129,7 @@ let pipeline ~slack_path ~conninfo ~(info : pr_info) ~dockerfile ~tmpfs
 let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
     ~(source : Source.t) () =
   let dockerfile =
-    let+ base = Docker.pull ~schedule:weekly "ocaml/opam2" in
+    let+ base = Docker.pull ~schedule:weekly "ocurrent/opam" in
     `Contents (dockerfile ~base)
   in
   let docker_cpuset_cpus =
