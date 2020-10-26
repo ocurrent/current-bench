@@ -202,7 +202,7 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
             in
             let* _, repo = repo in
             let pipeline =
-              pipeline ~slack_path:None ~name:repo.name ~owner:repo.name
+              pipeline ~slack_path:None ~name:repo.name ~owner:repo.owner
             in
             Github.Api.Ref_map.fold
               (fun key head _ ->
