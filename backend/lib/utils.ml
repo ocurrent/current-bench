@@ -2,16 +2,16 @@
 
 let read_fpath p = Bos.OS.File.read p |> Rresult.R.error_msg_to_invalid_arg
 
+open Yojson.Basic.Util
+
 let merge_json ~repo ~owner ~commit json =
   Yojson.Basic.pretty_to_string
     (`Assoc
       [
         ("repo", `String (Printf.sprintf "%s/%s" owner repo));
         ("commit", `String commit);
-        ("result", json);
+        ("result", Yojson.Basic.from_string json);
       ])
-
-open Yojson.Basic.Util
 
 let get_repo json = Yojson.Basic.from_string json |> member "repo" |> to_string
 

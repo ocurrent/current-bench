@@ -100,10 +100,7 @@ let pipeline ~slack_path ~conninfo ~(info : pr_info) ~dockerfile ~tmpfs
       | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
       | `Local commit -> commit >>| Git.Commit.hash
     in
-    let content =
-      Utils.merge_json ~repo:name ~owner ~commit
-        (Yojson.Basic.from_string output)
-    in
+    let content = Utils.merge_json ~repo:name ~owner ~commit output in
     let () =
       let pr_info = string_pr_info owner name info in
       Utils.populate_postgres ~conninfo ~commit ~json_string:content ~pr_info
