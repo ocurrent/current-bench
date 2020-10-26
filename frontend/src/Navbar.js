@@ -14,7 +14,7 @@ import GitHubIcon from "@material-ui/icons/GitHub";
 import HomeIcon from "@material-ui/icons/Home";
 import MergeIcon from "@material-ui/icons/MergeType";
 
-const projectUrl = "https://github.com/CraigFe/current-bench";
+const projectUrl = "https://github.com/ocurrent/current-bench";
 
 const useStyles = makeStyles((theme) => ({
   root: {

@@ -20,7 +20,7 @@ First you will need to build the docker images, and pass the build argument to t
 docker-compose build --build-arg FRONTEND_DIRECTORY="<location of frontend directory>"
 ```
 
-You can clone the frontend from [here](https://github.com/CraigFe/current-bench/). You might also need to setup the
+You can clone the frontend from [here](https://github.com/ocurrent/current-bench/). You might also need to setup the
 FRONTEND_DIRECTORY as an env variable before you can `docker-compose build`.
 
 The graphql engine can be protected by setting up `GRAPHQL_KEY` as an env variable.
