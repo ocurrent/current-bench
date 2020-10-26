@@ -166,7 +166,7 @@ const PRSPage = () => {
         <Container maxWidth="md">
           <Box mt={2}>
             <Grid container spacing={2}>
-              {branches.map((branch, _) => (
+              {branches.sort().map((branch, _) => (
                 <h5 key={branch}>
                   <ListItem button component={Link} to={`/pr/${branch}`}>
                     <ListItemText>{branch}</ListItemText>
