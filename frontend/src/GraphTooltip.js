@@ -24,10 +24,10 @@ const GraphTooltip = ({ active, payload, _ }) => {
     };
 
     return (
-      <div onClick={() => onClick(github)}>
+      <div onClick={onClick(github)}>
         <div className="custom-tooltip">
           <p className="label">
-            <a href={`commit: ${hash}`}>{`commit: ${hash}`}</a>
+            <a href={"github"}>{`commit: ${hash}`}</a>
           </p>
           <p className="label">{`opsPerSec : ${opsPerSec}`}</p>
           <p className="label">{`time: ${time}`}</p>
