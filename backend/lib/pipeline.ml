@@ -40,12 +40,11 @@ let dockerfile ~base =
   from (Docker.Image.hash base)
   @@ run
        "sudo apt-get update && sudo apt-get install -qq -yy libffi-dev \
-        liblmdb-dev m4 pkg-config gnuplot-x11"
-  @@ copy ~src:[ "--chown=opam:opam ." ] ~dst:"index" ()
-  @@ workdir "index"
+        liblmdb-dev m4 pkg-config gnuplot-x11 libgmp-dev libssl-dev"
+  @@ copy ~src:[ "--chown=opam:opam ." ] ~dst:"bench-dir" ()
+  @@ workdir "bench-dir"
   @@ run "opam install -y --deps-only -t ."
   @@ add ~src:[ "--chown=opam ." ] ~dst:"." ()
-  @@ run "opam config exec -- dune build @@default bench/bench.exe"
   @@ run "eval $(opam env)"
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 1) ()
@@ -87,13 +86,7 @@ let pipeline ~slack_path ~conninfo ~(info : pr_info) ~dockerfile ~tmpfs
       Docker.pread ~run_args image
         ~args:
           [
-            "/usr/bin/setarch";
-            "x86_64";
-            "--addr-no-randomize";
-            "_build/default/bench/bench.exe";
-            "-d";
-            "/dev/shm";
-            "--json";
+            "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "make"; "bench";
           ]
     and+ commit =
       match head with
