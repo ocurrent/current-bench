@@ -3,7 +3,8 @@ GRANT ALL PRIVILEGES ON DATABASE docker TO docker;
 CREATE TABLE benchmarks(
 	repositories varchar(256),
 	commits varchar(50) NOT NULL UNIQUE,
-	json_data jsonb
+	json_data jsonb,
+	timestamp float8
 );
 
 CREATE TABLE benchmarksrun (
