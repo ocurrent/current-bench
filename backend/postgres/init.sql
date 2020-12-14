@@ -4,7 +4,8 @@ CREATE TABLE benchmarks(
 	repositories varchar(256),
 	commits varchar(50) NOT NULL UNIQUE,
 	json_data jsonb,
-	timestamp float8
+	timestamp float8,
+	branch varchar(256)
 );
 
 CREATE TABLE benchmarksrun (
