@@ -58,6 +58,12 @@ module Docker = struct
     let doc = "Size of tmpfs volume to be mounted in /dev/shm (in GB)." in
     Arg.(value & opt int 4 & info [ "docker-shm-size" ] ~doc)
 
+  let cmd =
+    let doc =
+      "The command used to start the benchmarks in the docker container."
+    in
+    Arg.(value & opt (some string) None & info [ "cmd" ] ~doc)
+
   let v =
     Term.(
       const (fun cpu numa_node shm_size ->
@@ -81,11 +87,13 @@ let conninfo =
 
 let cmd : (Pipeline.Source.t -> (unit, [ `Msg of string ]) result) Term.t =
   Term.(
-    const (fun current_config server docker_config conninfo () source ->
-        Pipeline.v ~current_config ~docker_config ~server ~source conninfo ())
+    const (fun current_config server docker_config cmd conninfo () source ->
+        Pipeline.v ~current_config ~docker_config ?cmd ~server ~source conninfo
+          ())
     $ Current.Config.cmdliner
     $ Current_web.cmdliner
     $ Docker.v
+    $ Docker.cmd
     $ conninfo
     $ setup_log)
 
