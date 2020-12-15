@@ -64,6 +64,50 @@ dune exec bin/main.exe -- github mirage/index \
 
 You can find more options for different configurations, posting message to slack, etc by running `--help` to the pipeline executable.
 
+### Customising the Docker image
+
+The pipeline executes the benchmarking targets in docker containers. The
+default docker image used for this is specialised for opam projects. This works
+well for the majority of the OCaml projects and provides a convenient way to
+add benchmarking.
+
+<details>
+<summary>Default Dockerfile for opam projects: </summary>
+
+```
+FROM ocurrent/opam
+
+RUN sudo apt-get update && sudo apt-get install -qq -yy libffi-dev \
+  liblmdb-dev m4 pkg-config gnuplot-x11 libgmp-dev libssl-dev
+
+COPY --chown=opam:opam . bench-dir
+WORKDIR bench-dir
+RUN opam install -y --deps-only -t .
+ADD --chown=opam . .
+RUN eval $(opam env)
+```
+
+</details>
+
+In some situations, the provided docker environment needed to run the
+benchmarks might not be sufficient. Users of the piepline can provide
+a custom dockerfile as a command-line argument:
+
+```
+dune exec bin/main.exe -- local "/home/user/repos/mirage/index" \
+    --dockerfile "bench.docker"
+    --docker-cpu 3 \
+    --conn-info "host=localhost user=docker port=5432 dbname=docker password=docker" \
+    --port=8081 \
+    --verbose
+```
+
+The path of the docker file is resolved relative to the project's root directory.
+
+> Note: the dockerfile **must not** set an entrypoint. Currently `make bench`
+> is executed to run the benchmarks.
+
+
 ### Benchmarks format
 
 If you want to enroll your repository or setup this benchmark repository for your repository,
