@@ -69,7 +69,7 @@ You can find more options for different configurations, posting message to slack
 If you want to enroll your repository or setup this benchmark repository for your repository,
 we make the following assumptions.
 
-1. There is a dune bench target which can run the benchmarks.
+1. There is a `make bench` target which can run the benchmarks.
 2. The benchmarks results are json with of the following format:
 ```
 {
@@ -89,6 +89,17 @@ we make the following assumptions.
 [Here's](https://gist.github.com/gs0510/9ef5d47582b7fbf8dda6df0af08537e4) an example from [index](https://github.com/mirage/index) with regards to what the format looks like.
 
 The metadata about `repo`, `branch` and `commit` is added by the pipeline. Your repo only needs to output the results as a json.
+
+#### Custom benchmark command
+
+The default benchmarking command executed in the docker container is:
+
+```
+/usr/bin/setarch x86_64 --addr-no-randomize make bench
+```
+
+This can be overriden by the `cmd` option in the pipeline executable. See the `--help` output for details.
+
 
 ### Starting a graphql engine connected to the Postgres Database
 
