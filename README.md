@@ -72,7 +72,7 @@ well for the majority of the OCaml projects and provides a convenient way to
 add benchmarking.
 
 <details>
-<summary>Default Dockerfile for opam projects: </summary>
+<summary>Default Dockerfile for opam projects.</summary>
 
 ```
 FROM ocurrent/opam
