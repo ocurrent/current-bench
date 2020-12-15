@@ -7,7 +7,7 @@ let cmd_conv =
     let res = Bos.Cmd.of_string str in
     Result.map Bos.Cmd.to_list res
   in
-  let pp ppf cmd = Bos.Cmd.(Bos.Cmd.pp ppf (of_list cmd)) in
+  let pp ppf cmd = Bos.Cmd.(pp ppf (of_list cmd)) in
   Arg.conv ~docv:"CMD" (of_string, pp)
 
 module Source = struct
