@@ -35,7 +35,7 @@ let read_channel_uri p =
   Utils.read_fpath p |> String.trim |> Uri.of_string |> Current_slack.channel
 
 (* Generate a Dockerfile for building all the opam packages in the build context. *)
-let dockerfile ~base =
+let make_default_dockerfile ~base =
   let open Dockerfile in
   from (Docker.Image.hash base)
   @@ run
@@ -116,12 +116,8 @@ let pipeline ~slack_path ~conninfo ~(info : pr_info) ~dockerfile ~tmpfs
       |> Github.Api.Commit.set_status (Current.return head) "ocaml-benchmarks"
       |> Current.ignore_value
 
-let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
+let process_pipeline ~(docker_config : Docker_config.t) ~dockerfile ~conninfo
     ~(source : Source.t) () =
-  let dockerfile =
-    let+ base = Docker.pull ~schedule:weekly "ocurrent/opam" in
-    `Contents (dockerfile ~base)
-  in
   let docker_cpuset_cpus =
     match docker_config.cpu with
     | Some i -> [ "--cpuset-cpus"; string_of_int i ]
@@ -205,9 +201,18 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
                 (* Skip all branches other than master, and check PRs *))
               refs (Current.return ())
 
-let v ~current_config ~docker_config ~server:mode ~(source : Source.t) conninfo
-    () =
-  let pipeline = process_pipeline ~docker_config ~conninfo ~source in
+let v ~current_config ~docker_config ?dockerfile ~server:mode
+    ~(source : Source.t) conninfo () =
+  let dockerfile =
+    match dockerfile with
+    | Some path -> Current.return (`File path)
+    | None ->
+        let+ base = Docker.pull ~schedule:weekly "ocurrent/opam" in
+        `Contents (make_default_dockerfile ~base)
+  in
+  let pipeline =
+    process_pipeline ~docker_config ~dockerfile ~conninfo ~source
+  in
   let engine = Current.Engine.create ~config:current_config pipeline in
   let routes =
     Routes.((s "webhooks" / s "github" /? nil) @--> Github.webhook)
