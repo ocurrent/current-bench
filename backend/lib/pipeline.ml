@@ -47,6 +47,9 @@ let dockerfile ~base =
   @@ add ~src:[ "--chown=opam ." ] ~dst:"." ()
   @@ run "eval $(opam env)"
 
+let default_docker_cmd =
+  "/usr/bin/setarch x86_64 --addr-no-randomize make bench"
+
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 1) ()
 
 type pr_info = [ `PR of int | `Branch of string ]
@@ -66,7 +69,7 @@ let github_status_of_state url = function
   | Error (`Active _) -> Github.Api.Status.v ~url `Pending
   | Error (`Msg m) -> Github.Api.Status.v ~url `Failure ~description:m
 
-let pipeline ~slack_path ~conninfo ~(info : pr_info) ~dockerfile ~tmpfs
+let pipeline ~slack_path ~conninfo ~(info : pr_info) ~dockerfile ~cmd ~tmpfs
     ~docker_cpuset_cpus ~docker_cpuset_mems ~head ~name ~owner =
   let src =
     match head with
@@ -83,11 +86,7 @@ let pipeline ~slack_path ~conninfo ~(info : pr_info) ~dockerfile ~tmpfs
       @ docker_cpuset_mems
     in
     let+ output =
-      Docker.pread ~run_args image
-        ~args:
-          [
-            "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "make"; "bench";
-          ]
+      Docker.pread ~run_args image ~args:(String.split_on_char ' ' cmd)
     and+ commit =
       match head with
       | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
@@ -116,7 +115,7 @@ let pipeline ~slack_path ~conninfo ~(info : pr_info) ~dockerfile ~tmpfs
       |> Github.Api.Commit.set_status (Current.return head) "ocaml-benchmarks"
       |> Current.ignore_value
 
-let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
+let process_pipeline ~(docker_config : Docker_config.t) ~cmd ~conninfo
     ~(source : Source.t) () =
   let dockerfile =
     let+ base = Docker.pull ~schedule:weekly "ocurrent/opam" in
@@ -147,7 +146,7 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
         ]
   in
   let pipeline =
-    pipeline ~conninfo ~dockerfile ~tmpfs ~docker_cpuset_cpus
+    pipeline ~conninfo ~dockerfile ~cmd ~tmpfs ~docker_cpuset_cpus
       ~docker_cpuset_mems
   in
   match source with
@@ -205,9 +204,9 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
                 (* Skip all branches other than master, and check PRs *))
               refs (Current.return ())
 
-let v ~current_config ~docker_config ~server:mode ~(source : Source.t) conninfo
-    () =
-  let pipeline = process_pipeline ~docker_config ~conninfo ~source in
+let v ~current_config ~docker_config ?(cmd = default_docker_cmd) ~server:mode
+    ~(source : Source.t) conninfo () =
+  let pipeline = process_pipeline ~docker_config ~cmd ~conninfo ~source in
   let engine = Current.Engine.create ~config:current_config pipeline in
   let routes =
     Routes.((s "webhooks" / s "github" /? nil) @--> Github.webhook)
