@@ -48,7 +48,7 @@ let dockerfile ~base =
   @@ run "eval $(opam env)"
 
 let default_docker_cmd =
-  "/usr/bin/setarch x86_64 --addr-no-randomize make bench"
+  [ "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "make"; "bench" ]
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 1) ()
 
@@ -85,8 +85,7 @@ let pipeline ~slack_path ~conninfo ~(info : pr_info) ~dockerfile ~cmd ~tmpfs
       @ docker_cpuset_cpus
       @ docker_cpuset_mems
     in
-    let+ output =
-      Docker.pread ~run_args image ~args:(String.split_on_char ' ' cmd)
+    let+ output = Docker.pread ~run_args image ~args:cmd
     and+ commit =
       match head with
       | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)

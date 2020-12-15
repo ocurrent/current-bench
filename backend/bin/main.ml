@@ -2,6 +2,14 @@ open Cmdliner
 
 let path = Arg.conv ~docv:"PATH" Fpath.(of_string, pp)
 
+let cmd_conv =
+  let of_string str =
+    let res = Bos.Cmd.of_string str in
+    Result.map Bos.Cmd.to_list res
+  in
+  let pp ppf cmd = Bos.Cmd.(Bos.Cmd.pp ppf (of_list cmd)) in
+  Arg.conv ~docv:"CMD" (of_string, pp)
+
 module Source = struct
   let github =
     let repo =
@@ -62,7 +70,7 @@ module Docker = struct
     let doc =
       "The command used to start the benchmarks in the docker container."
     in
-    Arg.(value & opt (some string) None & info [ "cmd" ] ~doc)
+    Arg.(value & opt (some cmd_conv) None & info [ "cmd" ] ~docv:"CMD" ~doc)
 
   let v =
     Term.(

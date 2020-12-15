@@ -21,7 +21,7 @@ end
 val v :
   current_config:Current.Config.t ->
   docker_config:Docker_config.t ->
-  ?cmd:string ->
+  ?cmd:string list ->
   server:Conduit_lwt_unix.server ->
   source:Source.t ->
   string ->
