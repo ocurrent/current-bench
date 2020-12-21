@@ -43,6 +43,7 @@ let dockerfile ~base =
         liblmdb-dev m4 pkg-config gnuplot-x11 libgmp-dev libssl-dev"
   @@ copy ~src:[ "--chown=opam:opam ." ] ~dst:"bench-dir" ()
   @@ workdir "bench-dir"
+  @@ run "opam remote add origin https://opam.ocaml.org"
   @@ run "opam install -y --deps-only -t ."
   @@ add ~src:[ "--chown=opam ." ] ~dst:"." ()
   @@ run "eval $(opam env)"
