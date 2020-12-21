@@ -27,14 +27,26 @@ let construct_data_for_benchmarks_run commit json pr_str =
   in
   String.concat " , " result_string
 
-let merge_json ~repo ~owner ~commit json =
-  Yojson.Basic.pretty_to_string
-    (`Assoc
-      [
-        ("repo", `String (Printf.sprintf "%s/%s" owner repo));
-        ("commit", `String commit);
-        ("result", Yojson.Basic.from_string json);
-      ])
+let stream_to_list stream =
+  let acc = ref [] in
+  Stream.iter (fun x -> acc := x :: !acc) stream;
+  List.rev !acc
+
+let json_parse_many string =
+  stream_to_list (Yojson.Basic.stream_from_string string)
+
+let merge_json ~repo ~owner ~commit multi_json =
+  let json_result_to_string result =
+    Yojson.Basic.pretty_to_string
+      (`Assoc
+        [
+          ("repo", `String (Printf.sprintf "%s/%s" owner repo));
+          ("commit", `String commit);
+          ("result", result);
+        ])
+  in
+  let json_results = json_parse_many multi_json in
+  List.map json_result_to_string json_results
 
 let get_repo json = Yojson.Basic.from_string json |> member "repo" |> to_string
 
@@ -51,14 +63,14 @@ let populate_postgres ~conninfo ~commit ~json_string ~pr_info =
             timestamp, branch) values ('%s', '%s', '%s', '%f', '%s')"
            repository commit json_string (Unix.time ()) pr_info)
     in
-        let data_to_insert =
+    let data_to_insert =
       construct_data_for_benchmarks_run commit json_string pr_info
     in
     let _ =
       c#exec ~expect:[ Command_ok ]
-        ( "insert into benchmarksrun(commits, name, time, mbs_per_sec, \
-           ops_per_sec, timestamp, branch) values "
-        ^ data_to_insert )
+        ("insert into benchmarksrun(commits, name, time, mbs_per_sec, \
+          ops_per_sec, timestamp, branch) values "
+        ^ data_to_insert)
     in
     c#finish
   with
