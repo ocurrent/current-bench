@@ -18,9 +18,9 @@ let construct_data_for_benchmarks_run commit json pr_str =
     List.map2
       (fun json bench_name ->
         let metrics = json |> member "metrics" in
-        let time = metrics |> member "time" |> to_float in
-        let mbs_per_sec = metrics |> member "mbs_per_sec" |> to_float in
-        let ops_per_sec = metrics |> member "ops_per_sec" |> to_float in
+        let time = metrics |> member "time" |> to_number in
+        let mbs_per_sec = metrics |> member "mbs_per_sec" |> to_number in
+        let ops_per_sec = metrics |> member "ops_per_sec" |> to_number in
         Fmt.str "('%s', '%s', %f, %f, %f, %f, '%s')" commit bench_name time
           mbs_per_sec ops_per_sec (Unix.time ()) pr_str)
       bench_objects bench_names
@@ -69,7 +69,7 @@ let populate_postgres ~conninfo ~commit ~json_string ~pr_info =
     let _ =
       c#exec ~expect:[ Command_ok ]
         ("insert into benchmarksrun(commits, name, time, mbs_per_sec, \
-          ops_per_sec, timestamp, branch) values "
+           ops_per_sec, timestamp, branch) values "
         ^ data_to_insert)
     in
     c#finish
