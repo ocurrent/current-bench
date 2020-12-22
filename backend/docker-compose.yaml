@@ -27,7 +27,7 @@ services:
       context: ${FRONTEND_DIRECTORY}
       dockerfile: Dockerfile
     ports:
-    - "3000:3000"
+    - "3000:82"
     restart: always
        
 volumes:
