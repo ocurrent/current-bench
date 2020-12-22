@@ -94,19 +94,23 @@ let pipeline ~slack_path ~conninfo ~(info : pr_info) ~dockerfile ~tmpfs
       | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
       | `Local commit -> commit >>| Git.Commit.hash
     in
-    let content = Utils.merge_json ~repo:name ~owner ~commit output in
-    let () =
-      let pr_info = string_pr_info owner name info in
-      Utils.populate_postgres ~conninfo ~commit ~json_string:content ~pr_info
-    in
-    match slack_path with Some p -> Some (p, content) | None -> None
+    let results = Utils.merge_json ~repo:name ~owner ~commit output in
+    List.iter
+      (fun json_string ->
+        let pr_info = string_pr_info owner name info in
+        Utils.populate_postgres ~conninfo ~commit ~json_string ~pr_info)
+      results;
+    match slack_path with Some p -> Some (p, results) | None -> None
   in
   s
   |> Current.option_map (fun p ->
          Current.component "post"
          |> let** path, _ = p in
             let channel = read_channel_uri path in
-            Slack.post channel ~key:"output" (p >>| snd))
+            let results =
+              Current.map (fun (_, results) -> String.concat "\n" results) p
+            in
+            Slack.post channel ~key:"output" results)
   |> Current.state
   |> fun result ->
   match head with
