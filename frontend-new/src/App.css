@@ -52,7 +52,7 @@ code {
   font-weight: 600;
   font-size: 11px;
   cursor: pointer;
-  margin-right: 12px;
+  margin-right: 20px;
 }
 
 .dygraph-axis-label-x:hover {
