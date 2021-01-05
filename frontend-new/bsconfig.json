@@ -1,0 +1,46 @@
+{
+  "name": "app-template-reason-react",
+  "reason": {
+    "react-jsx": 3
+  },
+  "bsc-flags": [
+    "-bs-super-errors"
+  ],
+  "sources": [
+    {
+      "dir": "src",
+      "subdirs": [
+        {
+          "dir": "__tests__",
+          "type": "dev"
+        }
+      ]
+    }
+  ],
+  "package-specs": [
+    {
+      "module": "es6",
+      "in-source": true
+    }
+  ],
+  "suffix": ".bs.js",
+  "namespace": true,
+  "bs-dependencies": [
+    "reason-react",
+    "bs-css",
+    "bs-css-emotion",
+    "@reasonml-community/graphql-ppx",
+    "reason-urql",
+    "wonka",
+    "bs-fetch",
+    "@glennsl/bs-json"
+  ],
+  "bs-dev-dependencies": [
+    "@glennsl/bs-jest",
+    "bs-react-testing-library"
+  ],
+  "ppx-flags": [
+    "@reasonml-community/graphql-ppx/ppx"
+  ],
+  "refmt": 3
+}
