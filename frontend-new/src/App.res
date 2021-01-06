@@ -1,38 +1,9 @@
 %%raw(`import './App.css';`)
 
-let jsonFieldExn = (type a, json, field, kind: Js.Json.kind<a>): a => {
-  open Belt
-  let x = json->Js.Json.decodeObject->Option.getExn->Js.Dict.get(field)->Option.getExn
-  switch kind {
-  | Js.Json.String => Js.Json.decodeString(x)->Option.getExn
-  | Js.Json.Number => Js.Json.decodeNumber(x)->Option.getExn
-  | Js.Json.Object => Js.Json.decodeObject(x)->Option.getExn
-  | Js.Json.Array => Js.Json.decodeArray(x)->Option.getExn
-  | Js.Json.Boolean => Js.Json.decodeBoolean(x)->Option.getExn
-  | Js.Json.Null => (Obj.magic(Js.Json.decodeNull(x)->Option.getExn): Js.Types.null_val)
-  }
-}
-
+open! Prelude
+open JsHelpers
+open JsonHelpers
 open Components
-
-// Styling eXtensions
-module Sx = Sx.Make({
-  let theme = {
-    ...Sx.default,
-    fontSizes: {
-      xs: 12,
-      sm: 14,
-      md: 16,
-      lg: 18,
-      xl: 20,
-      xl2: 24,
-      xl3: 32,
-      xl4: 48,
-      xl5: 56,
-      xl6: 72,
-    },
-  }
-})
 
 module GetBenchmarks = %graphql(`
 query {
@@ -46,10 +17,10 @@ query {
   }
 `)
 
-type testResults = {
+type testMetrics = {
   name: string,
   commit: string,
-  metrics: Js.Dict.t<float>,
+  metrics: Belt.Map.String.t<float>,
 }
 
 let commitUrl = commit => `https://github.com/mirage/index/commit/${commit}`
@@ -59,7 +30,7 @@ let goToCommitLink = commit => {
 }
 
 module BenchmarkTest = {
-  let groupByTestName = (acc, item: testResults, idx) => {
+  let groupByTestName = (acc, item: testMetrics, idx) => {
     let go = vOpt => {
       let idxs = switch vOpt {
       | Some(idxs) => idxs
@@ -80,7 +51,7 @@ module BenchmarkTest = {
     }
   }
 
-  let getTestResults = (item: GetBenchmarks.t_benchmarks): array<testResults> => {
+  let getTestMetrics = (item: GetBenchmarks.t_benchmarks): array<testMetrics> => {
     item.json_data
     ->Belt.Option.getExn
     ->jsonFieldExn("result", Js.Json.Object)
@@ -91,74 +62,94 @@ module BenchmarkTest = {
     ->Belt.Array.map(result => {
       {
         name: jsonFieldExn(result, "name", Js.Json.String),
-        metrics: jsonFieldExn(result, "metrics", Js.Json.Object) |> Js.Dict.map((. v) =>
-          decodeMetricValue(v)
-        ),
+        metrics: result
+        ->jsonFieldExn("metrics", Js.Json.Object)
+        ->jsDictToMap
+        ->Belt.Map.String.map(v => decodeMetricValue(v)),
         commit: item.commits,
       }
     })
   }
 
   let collectMetricsByKey = (
-    ~metric_name,
-    items: array<testResults>,
+    ~metricName,
+    items: array<testMetrics>,
     selection: Belt.Set.Int.t,
-  ) => {
+  ): array<array<float>> => {
     let data = Belt.Array.makeUninitializedUnsafe(Belt.Set.Int.size(selection))
     Belt.Set.Int.reduce(selection, 0, (i, idx) => {
-      let item: testResults = Belt.Array.getExn(items, idx)
-      let metricWithIndex = [
-        idx->float_of_int,
-        item.metrics->Js.Dict.get(metric_name)->Belt.Option.getExn,
-      ]
+      let item: testMetrics = Belt.Array.getExn(items, idx)
+      let metricWithIndex = [idx->float_of_int, item.metrics->Belt.Map.String.getExn(metricName)]
       Belt.Array.setExn(data, i, metricWithIndex)
       i + 1
     })->ignore
     data
   }
 
-  let renderMetricRow = (~metric_name, ~commit, ~second_to_last_value, ~last_value) => {
-    let delta = {
-      let n = if second_to_last_value == 0.0 {
-        0.0
-      } else {
-        let n = (second_to_last_value -. last_value) /. second_to_last_value *. 100.
-        last_value < second_to_last_value ? -.n : abs_float(n)
-      }
-      if n > 0.0 {
-        "+" ++ n->Js.Float.toFixedWithPrecision(~digits=2) ++ "%"
-      } else {
-        n->Js.Float.toFixedWithPrecision(~digits=2) ++ "%"
-      }
+  let groupDataByMetric = (items: array<testMetrics>, selection: Belt.Set.Int.t): Belt.Map.String.t<
+    array<array<float>>,
+  > => {
+    open Belt
+
+    let addMetricValue = (selectionIdx, acc, metricName, metricValue) => {
+      let row = [selectionIdx->float_of_int, metricValue]
+      BeltHelpers.MapString.addToArray(acc, metricName, row)
     }
-    <Table.Row key=metric_name>
-      <Table.Col> {Rx.text(metric_name)} </Table.Col>
-      <Table.Col> <Link target="_blank" href={commitUrl(commit)} text=commit /> </Table.Col>
-      <Table.Col> {Rx.text(last_value->Js.Float.toFixedWithPrecision(~digits=2))} </Table.Col>
-      <Table.Col sx=[Sx.text.right]> {Rx.text(delta)} </Table.Col>
-    </Table.Row>
+
+    let groupByMetric = (acc, selectionIdx) => {
+      let testMetrics = Array.getExn(items, selectionIdx)
+      testMetrics.metrics->Map.String.reduce(acc, addMetricValue(selectionIdx))
+    }
+
+    selection->Set.Int.reduce(Map.String.empty, groupByMetric)
+  }
+
+  let renderMetricOverviewRow = (~xTicks, metricName, data) => {
+    if Belt.Array.length(data) == 0 {
+      React.null
+    } else {
+      let second_to_last_value = try Belt.Array.getExn(
+        data,
+        Belt.Array.length(data) - 2,
+      )->Belt.Array.getExn(1) catch {
+      | _ => 0.0
+      }
+
+      let last_value = Belt.Array.getExn(data, Belt.Array.length(data) - 1)->Belt.Array.getExn(1)
+      let idx = Belt.Array.getExn(data, Belt.Array.length(data) - 1)->Belt.Array.getExn(0)
+      let commit = Belt.Map.Int.getExn(xTicks, idx->Belt.Float.toInt)
+
+      let delta = {
+        let n = if second_to_last_value == 0.0 {
+          0.0
+        } else {
+          let n = (second_to_last_value -. last_value) /. second_to_last_value *. 100.
+          last_value < second_to_last_value ? -.n : abs_float(n)
+        }
+        if n > 0.0 {
+          "+" ++ n->Js.Float.toFixedWithPrecision(~digits=2) ++ "%"
+        } else {
+          n->Js.Float.toFixedWithPrecision(~digits=2) ++ "%"
+        }
+      }
+      <Table.Row key=metricName>
+        <Table.Col> {Rx.text(metricName)} </Table.Col>
+        <Table.Col> <Link target="_blank" href={commitUrl(commit)} text=commit /> </Table.Col>
+        <Table.Col> {Rx.text(last_value->Js.Float.toFixedWithPrecision(~digits=2))} </Table.Col>
+        <Table.Col sx=[Sx.text.right]> {Rx.text(delta)} </Table.Col>
+      </Table.Row>
+    }
   }
 
   @react.component
-  let make = (~dataframe, ~test_name, ~selection, ~synchronize=true) => {
-    // TODO: Extract from payload
-    let metric_names = [
-      "mbs_per_sec",
-      "merge_durations_us",
-      "nb_merges",
-      "ops_per_sec",
-      "read_amplification_calls",
-      "read_amplification_size",
-      "replace_durations",
-      "time",
-      "write_amplification_calls",
-      "write_amplification_size",
-    ]
+  let make = (~dataframe, ~testName, ~testSelection, ~synchronize=true) => {
+    let dataByMetrics = dataframe->groupDataByMetric(testSelection)
     let graphRefs = ref(list{})
     let onGraphRender = graph => graphRefs := Belt.List.add(graphRefs.contents, graph)
 
-    let xTicks = selection->Belt.Set.Int.reduce(Belt.Map.Int.empty, (acc, idx) => {
-      let item: testResults = Belt.Array.getExn(dataframe, idx)
+    // Compute xTicks, i.e., commits.
+    let xTicks = testSelection->Belt.Set.Int.reduce(Belt.Map.Int.empty, (acc, idx) => {
+      let item: testMetrics = Belt.Array.getExn(dataframe, idx)
       let tick = item.commit
       let tick = String.length(tick) > 7 ? String.sub(tick, 0, 7) : tick
       Belt.Map.Int.set(acc, idx, tick)
@@ -182,48 +173,34 @@ module BenchmarkTest = {
           </tr>
         </thead>
         <tbody>
-          {metric_names
-          ->Belt.Array.map(metric_name => {
-            // TODO: Avoid recomputation of data
-            let data = collectMetricsByKey(~metric_name, dataframe, selection)
-            let second_to_last_value =
-              Belt.Array.getExn(data, Belt.Array.length(data) - 2)->Belt.Array.getExn(1)
-            let last_value =
-              Belt.Array.getExn(data, Belt.Array.length(data) - 1)->Belt.Array.getExn(1)
-            let idx = Belt.Array.getExn(data, Belt.Array.length(data) - 1)->Belt.Array.getExn(0)
-            let commit = Belt.Map.Int.getExn(xTicks, idx->Belt.Float.toInt)
-
-            {
-              renderMetricRow(~metric_name, ~commit, ~second_to_last_value, ~last_value)
-            }
-          })
+          {dataByMetrics
+          ->Belt.Map.String.mapWithKey(renderMetricOverviewRow(~xTicks))
+          ->Belt.Map.String.valuesToArray
           ->Rx.array}
         </tbody>
       </Table>
     }
 
-    let metric_graphs =
-      metric_names
-      ->Belt.Array.map(metric_name => {
-        let data = collectMetricsByKey(~metric_name, dataframe, selection)
-
-        <LineGraph
-          onXLabelClick=goToCommitLink
-          onRender=onGraphRender
-          key=metric_name
-          title=metric_name
-          xTicks
-          data
-          labels=["idx", "value"]
-        />
-      })
-      ->Rx.array
+    let metric_graphs = dataByMetrics
+    ->Belt.Map.String.mapWithKey((metricName, data) => {
+      <LineGraph
+        onXLabelClick=goToCommitLink
+        onRender=onGraphRender
+        key=metricName
+        title=metricName
+        xTicks
+        data
+        labels=["idx", "value"]
+      />
+    })
+    ->Belt.Map.String.valuesToArray
+    ->Rx.array
 
     <details className={Sx.make([Sx.w.full])} open_=true>
       <summary className={Sx.make([Sx.pointer])}>
-        <Text sx=[Sx.text.xl3, Sx.text.bold]> {Rx.text(test_name)} </Text>
+        <Text sx=[Sx.text.xl3, Sx.text.bold]> {Rx.text(testName)} </Text>
       </summary>
-      <VStack sx=[Sx.mt.xl]> metric_table <Flex wrap=true> metric_graphs </Flex> </VStack>
+      <Column sx=[Sx.mt.xl]> metric_table <Flex wrap=true> metric_graphs </Flex> </Column>
     </details>
   }
 }
@@ -242,22 +219,22 @@ module BenchmarkResults = {
     | PartialData(data, _) =>
       let dataframe =
         data.benchmarks
-        ->Belt.Array.slice(~offset=0, ~len=20)
-        ->Belt.Array.map(BenchmarkTest.getTestResults)
+        ->Belt.Array.sliceToEnd(-20)
+        ->Belt.Array.map(BenchmarkTest.getTestMetrics)
         ->Belt.Array.concatMany
       let selectionByTestName =
         dataframe->Belt.Array.reduceWithIndex(Belt.Map.String.empty, BenchmarkTest.groupByTestName)
 
       let graphs = {
         selectionByTestName
-        ->Belt.Map.String.mapWithKey((test_name, selection) =>
-          <BenchmarkTest synchronize key={test_name} dataframe test_name selection />
+        ->Belt.Map.String.mapWithKey((testName, testSelection) =>
+          <BenchmarkTest synchronize key={testName} dataframe testName testSelection />
         )
         ->Belt.Map.String.valuesToArray
         ->Rx.array
       }
 
-      <VStack spacing=Sx.xl3> graphs </VStack>
+      <Column spacing=Sx.xl3> graphs </Column>
 
     | Error(e) =>
       switch e.networkError {
@@ -279,26 +256,12 @@ let make = () => {
   }
 
   <div className={Sx.make([Sx.container, Sx.d.flex, Sx.flex.wrap])}>
-    <div className={Sx.make(Styles.sidebarSx)}>
-      <HStack spacing=Sx.lg>
-        <Block sx=[Sx.w.xl2, Sx.mt.xl]> <Icon svg=Icon.ocaml /> </Block>
-        <Heading text="Benchmarks" />
-      </HStack>
-      <VStack stretch=true spacing=Sx.md>
-        <Link active={url.hash == "/#"} href="#" icon=Icon.bolt text="mirage/index" />
-      </VStack>
-      <Field sx=[Sx.mb.md, Sx.self.end, Sx.mt.auto] label="Settings">
-        <HStack spacing=#between>
-          {React.string("Synchronize graphs")}
-          <Switch onToggle=onSynchronizeToggle on=synchronize />
-        </HStack>
-      </Field>
-    </div>
+    <Sidebar url onSynchronizeToggle synchronize pulls=[] />
     <div className={Sx.make(Styles.topbarSx)}>
-      <HStack spacing=#between>
+      <Row spacing=#between>
         <Text sx=[Sx.text.bold]> {Rx.text("Results")} </Text>
         <Link href="https://github.com/mirage/index" sx=[Sx.mr.xl] icon=Icon.github />
-      </HStack>
+      </Row>
     </div>
     <div className={Sx.make(Styles.mainSx)}>
       {switch url.hash {
