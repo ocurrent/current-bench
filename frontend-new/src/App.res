@@ -6,8 +6,8 @@ open JsonHelpers
 open Components
 
 module GetBenchmarks = %graphql(`
-query {
-  benchmarks {
+query ($startDate: float8!, $endDate: float8!) {
+  benchmarks(where: {_and: [{timestamp: {_gte: $startDate}}, {timestamp: {_lt: $endDate}}]}) {
       repositories
       json_data
       commits
@@ -207,11 +207,15 @@ module BenchmarkTest = {
 
 module BenchmarkResults = {
   @react.component
-  let make = (~synchronize) => {
-    let ({ReasonUrql.Hooks.response: response}, _) = ReasonUrql.Hooks.useQuery(
-      ~query=module(GetBenchmarks),
-      (),
-    )
+  let make = (~dateRange as (startDate, endDate), ~synchronize) => {
+    let ({ReasonUrql.Hooks.response: response}, _) = {
+      let startDate = (Js.Date.getTime(startDate) /. 1000.0)->Js.Json.number
+      let endDate = (Js.Date.getTime(endDate) /. 1000.0)->Js.Json.number
+      ReasonUrql.Hooks.useQuery(
+        ~query=module(GetBenchmarks),
+        {startDate: startDate, endDate: endDate},
+      )
+    }
 
     switch response {
     | Fetching => Rx.string("Loading...")
@@ -231,10 +235,11 @@ module BenchmarkResults = {
           <BenchmarkTest synchronize key={testName} dataframe testName testSelection />
         )
         ->Belt.Map.String.valuesToArray
-        ->Rx.array
       }
 
-      <Column spacing=Sx.xl3> graphs </Column>
+      <Column spacing=Sx.xl3>
+        {graphs->Rx.array(~empty=<Message text="No data for selected interval." />)}
+      </Column>
 
     | Error(e) =>
       switch e.networkError {
@@ -246,9 +251,22 @@ module BenchmarkResults = {
   }
 }
 
+let getDefaultDateRange = {
+  let hourMs = 3600.0 *. 1000.
+  let dayMs = hourMs *. 24.
+  () => {
+    let ts2 = Js.Date.now()
+    let ts1 = ts2 -. 90. *. dayMs
+    Js.log([ts1, ts2])
+    (Js.Date.fromFloat(ts1), Js.Date.fromFloat(ts2))
+  }
+}
+
 @react.component
 let make = () => {
   let url = ReasonReact.Router.useUrl()
+
+  let ((startDate, endDate) as dateRange, setDateRange) = React.useState(getDefaultDateRange)
 
   let (synchronize, setSynchronize) = React.useState(() => false)
   let onSynchronizeToggle = () => {
@@ -258,15 +276,17 @@ let make = () => {
   <div className={Sx.make([Sx.container, Sx.d.flex, Sx.flex.wrap])}>
     <Sidebar url onSynchronizeToggle synchronize pulls=[] />
     <div className={Sx.make(Styles.topbarSx)}>
-      <Row spacing=#between>
-        <Text sx=[Sx.text.bold]> {Rx.text("Results")} </Text>
+      <Row alignY=#center spacing=#between>
         <Link href="https://github.com/mirage/index" sx=[Sx.mr.xl] icon=Icon.github />
+        <Text sx=[Sx.text.bold]> {Rx.text("Results")} </Text>
+        <Litepicker
+          startDate endDate onSelect={(d1, d2) => setDateRange(_ => (d1, d2))} sx=[Sx.w.xl5]
+        />
       </Row>
     </div>
     <div className={Sx.make(Styles.mainSx)}>
       {switch url.hash {
-      | "" => <BenchmarkResults synchronize />
-      | "/showcase" => <Showcase />
+      | "" => <BenchmarkResults dateRange synchronize />
       | _ => <h1> {Rx.string("Unknown route")} </h1>
       }}
     </div>
