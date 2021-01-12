@@ -52,8 +52,6 @@ let make = (~sx as uSx=[], ~startDate=?, ~endDate=?, ~onSelect=?) => {
   let sx = Array.append(uSx, containerSx)
   <Row sx alignX=#center alignY=#center>
     <Icon svg=Icon.calendar />
-    <input
-      onChange={Js.log} className={Sx.make(elementSx)} ref={ReactDOMRe.Ref.domRef(elementRef)}
-    />
+    <input className={Sx.make(elementSx)} ref={ReactDOMRe.Ref.domRef(elementRef)} />
   </Row>
 }

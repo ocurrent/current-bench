@@ -205,49 +205,37 @@ module BenchmarkTest = {
   }
 }
 
+let collectBranches = (data: array<GetBenchmarks.t_benchmarks>) => {
+  data
+  ->Belt.Array.map((item: GetBenchmarks.t_benchmarks) =>
+    item.branch->Belt.Option.getWithDefault("Unknown")
+  )
+  ->Belt.Set.String.fromArray
+  ->Belt.Set.String.toArray
+}
+
 module BenchmarkResults = {
   @react.component
-  let make = (~dateRange as (startDate, endDate), ~synchronize) => {
-    let ({ReasonUrql.Hooks.response: response}, _) = {
-      let startDate = (Js.Date.getTime(startDate) /. 1000.0)->Js.Json.number
-      let endDate = (Js.Date.getTime(endDate) /. 1000.0)->Js.Json.number
-      ReasonUrql.Hooks.useQuery(
-        ~query=module(GetBenchmarks),
-        {startDate: startDate, endDate: endDate},
+  let make = (~benchmarks, ~synchronize) => {
+    let dataframe =
+      benchmarks
+      ->Belt.Array.sliceToEnd(-20)
+      ->Belt.Array.map(BenchmarkTest.getTestMetrics)
+      ->Belt.Array.concatMany
+    let selectionByTestName =
+      dataframe->Belt.Array.reduceWithIndex(Belt.Map.String.empty, BenchmarkTest.groupByTestName)
+
+    let graphs = {
+      selectionByTestName
+      ->Belt.Map.String.mapWithKey((testName, testSelection) =>
+        <BenchmarkTest synchronize key={testName} dataframe testName testSelection />
       )
+      ->Belt.Map.String.valuesToArray
     }
 
-    switch response {
-    | Fetching => Rx.string("Loading...")
-    | Data(data)
-    | PartialData(data, _) =>
-      let dataframe =
-        data.benchmarks
-        ->Belt.Array.sliceToEnd(-20)
-        ->Belt.Array.map(BenchmarkTest.getTestMetrics)
-        ->Belt.Array.concatMany
-      let selectionByTestName =
-        dataframe->Belt.Array.reduceWithIndex(Belt.Map.String.empty, BenchmarkTest.groupByTestName)
-
-      let graphs = {
-        selectionByTestName
-        ->Belt.Map.String.mapWithKey((testName, testSelection) =>
-          <BenchmarkTest synchronize key={testName} dataframe testName testSelection />
-        )
-        ->Belt.Map.String.valuesToArray
-      }
-
-      <Column spacing=Sx.xl3>
-        {graphs->Rx.array(~empty=<Message text="No data for selected interval." />)}
-      </Column>
-
-    | Error(e) =>
-      switch e.networkError {
-      | Some(_e) => <div> {"Network Error"->React.string} </div>
-      | None => <div> {"Other Error"->React.string} </div>
-      }
-    | Empty => <div> {"Something went wrong!"->React.string} </div>
-    }
+    <Column spacing=Sx.xl3>
+      {graphs->Rx.array(~empty=<Message text="No data for selected interval." />)}
+    </Column>
   }
 }
 
@@ -266,29 +254,53 @@ let getDefaultDateRange = {
 let make = () => {
   let url = ReasonReact.Router.useUrl()
 
-  let ((startDate, endDate) as dateRange, setDateRange) = React.useState(getDefaultDateRange)
+  let ((startDate, endDate), setDateRange) = React.useState(getDefaultDateRange)
+
+  // Fetch benchmarks data
+  let ({ReasonUrql.Hooks.response: response}, _) = {
+    let startDate = (Js.Date.getTime(startDate) /. 1000.0)->Js.Json.number
+    let endDate = (Js.Date.getTime(endDate) /. 1000.0)->Js.Json.number
+    ReasonUrql.Hooks.useQuery(
+      ~query=module(GetBenchmarks),
+      {startDate: startDate, endDate: endDate},
+    )
+  }
 
   let (synchronize, setSynchronize) = React.useState(() => false)
   let onSynchronizeToggle = () => {
     setSynchronize(v => !v)
   }
 
-  <div className={Sx.make([Sx.container, Sx.d.flex, Sx.flex.wrap])}>
-    <Sidebar url onSynchronizeToggle synchronize pulls=[] />
-    <div className={Sx.make(Styles.topbarSx)}>
-      <Row alignY=#center spacing=#between>
-        <Link href="https://github.com/mirage/index" sx=[Sx.mr.xl] icon=Icon.github />
-        <Text sx=[Sx.text.bold]> {Rx.text("Results")} </Text>
-        <Litepicker
-          startDate endDate onSelect={(d1, d2) => setDateRange(_ => (d1, d2))} sx=[Sx.w.xl5]
-        />
-      </Row>
+  switch response {
+  | Error(e) =>
+    switch e.networkError {
+    | Some(_e) => <div> {"Network Error"->React.string} </div>
+    | None => <div> {"Unknown Error"->React.string} </div>
+    }
+  | Empty => <div> {"Something went wrong!"->React.string} </div>
+  | Fetching => Rx.string("Loading...")
+  | Data(data)
+  | PartialData(data, _) =>
+    let benchmarks = data.benchmarks
+    let branches = collectBranches(benchmarks)
+
+    <div className={Sx.make([Sx.container, Sx.d.flex, Sx.flex.wrap])}>
+      <Sidebar url onSynchronizeToggle synchronize branches />
+      <div className={Sx.make(Styles.topbarSx)}>
+        <Row alignY=#center spacing=#between>
+          <Link href="https://github.com/mirage/index" sx=[Sx.mr.xl] icon=Icon.github />
+          <Text sx=[Sx.text.bold]> {Rx.text("Results")} </Text>
+          <Litepicker
+            startDate endDate onSelect={(d1, d2) => setDateRange(_ => (d1, d2))} sx=[Sx.w.xl5]
+          />
+        </Row>
+      </div>
+      <div className={Sx.make(Styles.mainSx)}>
+        {switch url.hash {
+        | "" => <BenchmarkResults synchronize benchmarks />
+        | _ => <h1> {Rx.string("Unknown route")} </h1>
+        }}
+      </div>
     </div>
-    <div className={Sx.make(Styles.mainSx)}>
-      {switch url.hash {
-      | "" => <BenchmarkResults dateRange synchronize />
-      | _ => <h1> {Rx.string("Unknown route")} </h1>
-      }}
-    </div>
-  </div>
+  }
 }
