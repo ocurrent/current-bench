@@ -1,12 +1,17 @@
 open! Prelude
 open Components
 
+let linkForBranch = branch => {
+  let name = DataHelpers.getBranchName(branch)
+  "/#/branch/" ++ name
+}
+
 let branchesMenu = (~branches) => {
   <Column sx=[Sx.mt.lg]>
-    <Text color=Sx.gray700 weight=#bold uppercase=true size=#md> {Rx.text("Branches")} </Text>
+    <Text color=Sx.gray700 weight=#bold uppercase=true size=#md> {Rx.text("Pull Requests")} </Text>
     {branches
     ->Belt.Array.mapWithIndex((i, branch) =>
-      <Link key={string_of_int(i)} href="#todo" text=branch />
+      <Link key={string_of_int(i)} href={linkForBranch(branch)} text=branch />
     )
     ->Rx.array}
   </Column>
