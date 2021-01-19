@@ -1,5 +1,5 @@
 CREATE TABLE benchmarks(
-    run_at timestamp without time zone default (now() at time zone 'utc'),
+    run_at timestamp without time zone not null,
 	duration interval NOT NULL,
 	repo_id varchar(256) NOT NULL,
 	commit varchar(50) NOT NULL,
