@@ -1,5 +1,9 @@
 val read_fpath : Fpath.t -> string
 
+module Json_utils : sig
+  val parse_many : string -> Yojson.Safe.t list
+end
+
 module Sql_utils : sig
   type value = string
 
