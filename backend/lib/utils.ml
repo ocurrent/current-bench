@@ -67,8 +67,6 @@ let merge_json ~repo ~owner ~commit multi_json =
   let json_results = Json_utils.parse_many multi_json in
   List.map json_result_to_string json_results
 
-let get_repo json = Yojson.Safe.from_string json |> member "repo" |> to_string
-
 open! Postgresql
 
 let populate_postgres ~conninfo ~commit ~json_string ~pr_info =
