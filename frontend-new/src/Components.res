@@ -1,4 +1,34 @@
-open! Import
+module Option = {
+  type t<'a> = option<'a>
+
+  let map = (f, self) =>
+    switch self {
+    | Some(x) => Some(f(x))
+    | None => None
+    }
+
+  let if_some = (f, self) =>
+    switch self {
+    | Some(x) => f(x)
+    | _ => ()
+    }
+
+  let if_none = (f, self) =>
+    switch self {
+    | None => f()
+    | _ => ()
+    }
+
+  let or = (self, default) =>
+    switch self {
+    | Some(x) => x
+    | None => default
+    }
+}
+
+let or = Option.or
+
+let identity = x => x
 
 type align = [#left | #center | #right]
 
@@ -31,7 +61,7 @@ let alignY_rule = alignY =>
 
  */
 
-module VStack = {
+module Column = {
   type spacing = [#between | #around | #even | Css.Types.Length.t]
 
   let spacing_rule = (spacing: spacing) =>
@@ -73,7 +103,7 @@ module VStack = {
   }
 }
 
-module HStack = {
+module Row = {
   type align = [#left | #center | #right]
 
   let alignX_rule = alignX =>
@@ -892,26 +922,18 @@ module Link = {
     | Some(svg) => (sx_icon, svg)
     | None => ([], React.null)
     }
-    let sx = Array.append(
+    let sx = Array.concat(list{
       uSx,
-      Array.append(
-        sx_base,
-        Array.append(
-          sx_size,
-          Array.append(
-            sx_icon,
-            Array.append(
-              sx_icon_hover,
-              if active {
-                [Sx.text.color(Sx.primary)]
-              } else {
-                []
-              },
-            ),
-          ),
-        ),
-      ),
-    )
+      sx_base,
+      sx_size,
+      sx_icon,
+      sx_icon_hover,
+      if active {
+        [Sx.text.color(Sx.primary)]
+      } else {
+        []
+      },
+    })
     <a className={Sx.make(sx)} ?href ?target> icon_svg text </a>
   }
 }
@@ -949,14 +971,43 @@ module Heading = {
 
 module Text = {
   @react.component
-  let make = (~sx as uSx=[], ~align=#left, ~children) => {
-    let sx = Array.append(
-      {
-        open Sx
-        [text.sans, text.normal, leadingNormal]
-      },
-      uSx,
-    )
+  let make = (
+    ~sx as uSx=[],
+    ~weight=?,
+    ~uppercase=?,
+    ~align=#left,
+    ~size=?,
+    ~color=?,
+    ~children,
+  ) => {
+    let sx = Array.append([Sx.text.sans, Sx.leadingNormal], uSx)
+    let sx = Array.append([Sx.with_some(Sx.text.color, color)], sx)
+    let sx = Array.append([Sx.with_some(flag => flag ? Sx.text.upper : Sx.empty, uppercase)], sx)
+    let sx = switch size {
+    | None => sx
+    | Some(#xs) => Array.append([Sx.text.xs], sx)
+    | Some(#sm) => Array.append([Sx.text.sm], sx)
+    | Some(#md) => Array.append([Sx.text.md], sx)
+    | Some(#lg) => Array.append([Sx.text.lg], sx)
+    | Some(#xl) => Array.append([Sx.text.xl], sx)
+    | Some(#xl2) => Array.append([Sx.text.xl2], sx)
+    | Some(#xl3) => Array.append([Sx.text.xl3], sx)
+    | Some(#xl4) => Array.append([Sx.text.xl4], sx)
+    | Some(#xl5) => Array.append([Sx.text.xl5], sx)
+    | Some(#xl6) => Array.append([Sx.text.xl6], sx)
+    }
+    let sx = switch weight {
+    | None => sx
+    | Some(#hairline) => Array.append([Sx.text.hairline], sx)
+    | Some(#thin) => Array.append([Sx.text.thin], sx)
+    | Some(#light) => Array.append([Sx.text.light], sx)
+    | Some(#normal) => Array.append([Sx.text.normal], sx)
+    | Some(#medium) => Array.append([Sx.text.medium], sx)
+    | Some(#semibold) => Array.append([Sx.text.semibold], sx)
+    | Some(#bold) => Array.append([Sx.text.bold], sx)
+    | Some(#extrabold) => Array.append([Sx.text.extrabold], sx)
+    | Some(#black) => Array.append([Sx.text.black], sx)
+    }
     let sx = switch align {
     | #left => sx
     | #right => Array.append([Sx.text.right], sx)
@@ -1087,16 +1138,16 @@ module Showcase = {
   @react.component
   let make = () => {
     let (flag, setFlag) = React.useState(() => false)
-    <VStack sx=[Sx.p.xl]>
-      <VStack spacing=Sx.md>
+    <Column sx=[Sx.p.xl]>
+      <Column spacing=Sx.md>
         <Heading level=#h1 text="Heading level 1" />
         <Heading level=#h2 text="Heading level 2" />
         <Heading level=#h3 text="Heading level 3" />
         <Heading level=#h4 text="Heading level 4" />
         <Heading level=#h5 text="Heading level 5" />
-      </VStack>
+      </Column>
       <Heading level=#h1 text="Text" />
-      <VStack spacing=Sx.xl>
+      <Column spacing=Sx.xl>
         <Text> {Rx.string("A simple text component")} </Text>
         <Text>
           {Rx.string(
@@ -1104,16 +1155,16 @@ module Showcase = {
           )}
         </Text>
         <Message sx=[Sx.text.xl] text="Colorless green ideas sleep furiously." />
-      </VStack>
+      </Column>
       <Heading level=#h1 text="Buttons" />
-      <VStack>
-        <HStack spacing=Sx.xl4 alignY=#center alignX=#center>
+      <Column>
+        <Row spacing=Sx.xl4 alignY=#center alignX=#center>
           <Button text="Simple" />
           <Button text="Smaller!" size=#small />
           <Button text="With icon" icon=Icon.alarm />
           <Button text="Click me!" size=#small icon=Icon.layers />
           <Button icon=Icon.layers />
-        </HStack>
+        </Row>
         <Code
           content=`<Button text="Simple" />
 <Button text="Smaller!" size=\`small />
@@ -1121,23 +1172,23 @@ module Showcase = {
 <Button text="Click me!" size=\`small icon=Icon.layers />
 <Button icon=Icon.layers />`
         />
-      </VStack>
+      </Column>
       <Heading level=#h1 text="Input and controls" />
-      <VStack sx=[Sx.w.half] spacing=Sx.xl>
+      <Column sx=[Sx.w.half] spacing=Sx.xl>
         <Slider />
-        <HStack spacing=Sx.xl>
+        <Row spacing=Sx.xl>
           <Radio
             label="Something" name="radio" checked={!flag} onChange={_ => setFlag(_ => !flag)}
           />
           <Radio
             label="Something better" name="radio" checked=flag onChange={_ => setFlag(_ => !flag)}
           />
-        </HStack>
+        </Row>
         <Field label="Switch"> <Switch /> </Field>
-        <HStack spacing=Sx.xl>
+        <Row spacing=Sx.xl>
           <Field label="Unchecked"> <Checkbox name="checkbox" /> </Field>
           <Field label="Checked"> <Checkbox name="checkbox" defaultChecked=true /> </Field>
-        </HStack>
+        </Row>
         <Field label="Field"> <Input placeholder="Input" /> </Field>
         <Field label="Select">
           <Select defaultValue="a" onChange=ignore placeholder="Options...">
@@ -1148,7 +1199,7 @@ module Showcase = {
         </Field>
         <Field label="Textarea"> <Textarea placeholder="Textarea" /> </Field>
         <LineGraph data labels=["date", "value"] />
-      </VStack>
-    </VStack>
+      </Column>
+    </Column>
   }
 }
