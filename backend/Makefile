@@ -16,3 +16,12 @@ db-migrate-up:
 .PHONY: db-migrate-down
 db-migrate-down:
 	omigrate down --verbose --source=${DB_MIGRATIONS_DIR} --database=${DB_URI}
+
+.PHONY: build
+build:
+	dune build --profile=release bin/main.exe
+
+.PHONY: docker-build
+docker-build:
+	docker build -t current-bench-pipeline-build -f build.docker .
+	docker run -it -v $$PWD/_build/_docker:/mnt/export current-bench-pipeline-build
