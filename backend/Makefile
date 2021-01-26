@@ -27,8 +27,7 @@ _build/_docker/current-bench-pipeline:
 	docker build -t current-bench-pipeline-build -f build.docker .
 	docker run -it -v $$PWD/_build/_docker:/mnt/export current-bench-pipeline-build
 
-PREFIX := /usr/local/bin
+PREFIX ?= /usr/local/bin
 .PHONY: docker-install
 docker-install: _build/_docker/current-bench-pipeline
-	mkdir -p $(PREFIX)
-	cp _build/_docker/current-bench-pipeline $(PREFIX)/current-bench-pipeline
+	cp _build/_docker/current-bench-pipeline ${PREFIX}/current-bench-pipeline
