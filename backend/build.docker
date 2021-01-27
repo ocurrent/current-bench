@@ -1,4 +1,4 @@
-FROM ocaml/opam
+FROM ocaml/opam as build
 
 RUN sudo apt-get update && \
     sudo apt-get install -qq -yy \
@@ -8,6 +8,7 @@ RUN sudo apt-get update && \
     libssl-dev \
     libgmp-dev \
     libpq-dev \
+    graphviz \
     capnproto \
     libsqlite3-dev \
     libcapnp-dev
@@ -22,9 +23,6 @@ COPY --chown=opam . .
 # Build the project.
 RUN opam exec -- dune build --profile=release bin/main.exe
 
-# Export the target.
-# The produced pipeline needs to be run natively to be able to build and run
-# docker containers. We simply copy the executable produced during the build
-# to the mounted export folder.
-VOLUME /mnt/export
-CMD cp /mnt/project/_build/default/bin/main.exe /mnt/export/current-bench-pipeline
+# Export targets.
+FROM scratch as export
+COPY --from=build /mnt/project/_build/default/bin/main.exe /

@@ -24,8 +24,8 @@ build:
 .PHONY: docker-build
 docker-build: _build/_docker/current-bench-pipeline
 _build/_docker/current-bench-pipeline:
-	docker build -t current-bench-pipeline-build -f build.docker .
-	docker run -it -v $$PWD/_build/_docker:/mnt/export current-bench-pipeline-build
+	export DOCKER_BUILDKIT=1 \
+	docker build --target=export --output="type=local,dest=$$PWD/_build/_docker" -f build.docker .
 
 PREFIX ?= /usr/local/bin
 .PHONY: docker-install
