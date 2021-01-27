@@ -1,0 +1,21 @@
+[Unit]
+Description=OCaml Benchmarks Pipeline
+Requires=docker.service
+After=docker.service
+
+[Service]
+User=current-bench
+Type=oneshot
+RemainAfterExit=true
+WorkingDirectory=/home/current-bench/
+ExecStart=/home/current-bench/bin/current-bench-pipeline github_app \
+    --github-app-id=$GITHUB_APP_ID \
+    --github-account-whitelist=mirage \
+    --github-private-key-file=$PATH_TO_PEM \
+    --docker-cpu=3 \
+    --conn-info="host=localhost user=docker port=5432 dbname=docker password=$DB_PASSWD" \
+    --port=8081 \
+    --verbose
+
+[Install]
+WantedBy=multi-user.target
