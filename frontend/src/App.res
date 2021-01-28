@@ -2,17 +2,16 @@
 
 open! Prelude
 open JsHelpers
-open JsonHelpers
 open Components
 
 module GetBenchmarks = %graphql(`
-query ($startDate: float8!, $endDate: float8!) {
-  benchmarks(where: {_and: [{timestamp: {_gte: $startDate}}, {timestamp: {_lt: $endDate}}]}) {
-      repositories
-      json_data
-      commits
+query ($startDate: timestamp!, $endDate: timestamp!) {
+  benchmarks(where: {_and: [{run_at: {_gte: $startDate}}, {run_at: {_lt: $endDate}}]}) {
+      repo_id
+      metrics
+      commit
       branch
-      timestamp
+      run_at
     }
   }
 `)
@@ -26,24 +25,17 @@ let collectBranches = (data: array<GetBenchmarks.t_benchmarks>) => {
   ->Belt.Set.String.toArray
 }
 
-let getTestMetrics = (item: GetBenchmarks.t_benchmarks): array<BenchmarkTest.testMetrics> => {
-  item.json_data
-  ->Belt.Option.getExn
-  ->jsonFieldExn("result", Js.Json.Object)
-  ->Js.Dict.get("results")
-  ->Belt.Option.getExn
-  ->Js.Json.decodeArray
-  ->Belt.Option.getExn
-  ->Belt.Array.map(result => {
-    {
-      BenchmarkTest.name: jsonFieldExn(result, "name", Js.Json.String),
-      metrics: result
-      ->jsonFieldExn("metrics", Js.Json.Object)
-      ->jsDictToMap
-      ->Belt.Map.String.map(v => BenchmarkTest.decodeMetricValue(v)),
-      commit: item.commits,
-    }
-  })
+let getTestMetrics = (item: GetBenchmarks.t_benchmarks): BenchmarkTest.testMetrics => {
+  {
+    BenchmarkTest.name: item.repo_id,
+    metrics: item.metrics
+    ->Belt.Option.getExn
+    ->Js.Json.decodeObject
+    ->Belt.Option.getExn
+    ->jsDictToMap
+    ->Belt.Map.String.map(v => BenchmarkTest.decodeMetricValue(v)),
+    commit: item.commit,
+  }
 }
 
 module BenchmarkBranchResults = {
@@ -57,7 +49,7 @@ module BenchmarkBranchResults = {
       Js.log(itemBranch)
       itemBranch == branch
     })
-    let data = dataForBranch->Belt.Array.map(getTestMetrics)->Belt.Array.concatMany
+    let data = dataForBranch->Belt.Array.map(getTestMetrics)
     let selectionByTestName =
       data->Belt.Array.reduceWithIndex(Belt.Map.String.empty, BenchmarkTest.groupByTestName)
 
@@ -93,11 +85,14 @@ let make = () => {
 
   // Fetch benchmarks data
   let ({ReasonUrql.Hooks.response: response}, _) = {
-    let startDate = (Js.Date.getTime(startDate) /. 1000.0)->Js.Json.number
-    let endDate = (Js.Date.getTime(endDate) /. 1000.0)->Js.Json.number
+    let startDate = Js.Date.toISOString(startDate)->Js.Json.string
+    let endDate = Js.Date.toISOString(endDate)->Js.Json.string
     ReasonUrql.Hooks.useQuery(
       ~query=module(GetBenchmarks),
-      {startDate: startDate, endDate: endDate},
+      {
+        startDate: startDate,
+        endDate: endDate,
+      },
     )
   }
 
