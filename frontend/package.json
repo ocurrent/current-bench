@@ -1,41 +1,38 @@
 {
-  "name": "frontend-js",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "@apollo/react-hooks": "^4.0.0",
-    "@material-ui/core": "^4.11.0",
-    "@material-ui/icons": "^4.9.1",
-    "apollo-boost": "^0.4.9",
-    "dotenv": "^8.2.0",
-    "err": "^2.1.12",
-    "graphql": "^15.3.0",
-    "graphql-tools": "^6.2.4",
-    "ramda": "^0.27.1",
-    "react": "^16.14.0",
-    "react-bootstrap": "^1.3.0",
-    "react-dom": "^16.14.0",
-    "react-router-dom": "^5.2.0",
-    "react-scripts": "^3.4.3",
-    "recharts": "^2.0.0-beta.1"
-  },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "snowpack dev",
+    "build": "snowpack build",
+    "test": "jest",
+    "build:re": "bsb -make-world",
+    "clean:re": "bsb -clean-world"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "devDependencies": {
+    "@glennsl/bs-jest": "^0.6.0",
+    "@reasonml-community/graphql-ppx": "^1.0.0-beta.22",
+    "@snowpack/app-scripts-react": "^1.12.6",
+    "@snowpack/plugin-run-script": "^2.2.1",
+    "@testing-library/jest-dom": "^5.11.5",
+    "@testing-library/react": "^11.1.1",
+    "bs-platform": "^8.4.2",
+    "bs-react-testing-library": "^0.8.0",
+    "gentype": "^3.41.0",
+    "jest": "^26.6.3",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "reason-react": "^0.9.1",
+    "snowpack": "^2.18.5"
   },
-  "devDependencies": {}
+  "dependencies": {
+    "@glennsl/bs-json": "^5.0.2",
+    "bs-css-emotion": "^2.2.0",
+    "bs-fetch": "^0.6.2",
+    "dygraphs": "^2.1.0",
+    "graphql": "^15.4.0",
+    "litepicker": "^1.5.7",
+    "reason-urql": "^3.2.0",
+    "urql": "^1.11.4"
+  },
+  "resolutions": {
+    "wonka": "5.0.0-rc.1"
+  }
 }

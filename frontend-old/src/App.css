@@ -1,0 +1,36 @@
+.App {
+  text-align: center;
+}
+
+.App-header {
+  width: 100%;
+  /* max-width: 600px; */
+  text-align: center;
+  font-weight: 800;
+  border-bottom: 2px dashed lightgray;
+  margin-bottom: 2em;
+}
+
+.App-header-link {
+  text-decoration: none;
+  color: inherit;
+  border-bottom: medium solid lightgray;
+  transition: border-color 500ms;
+  text-transform: uppercase;
+}
+
+.App-header-link:hover {
+  border-color: darkgray;
+}
+
+.App-chart-container {
+  display: inline-block;
+}
+
+.custom-tooltip {
+  margin: 0px;
+  padding: 10px;
+  background-color: rgb(255, 255, 255);
+  border: 1px solid rgb(204, 204, 204);
+  white-space: nowrap;
+}

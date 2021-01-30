@@ -1,31 +1,26 @@
 # pull official base image
-FROM node:13.12.0-alpine as builder
+FROM node:lts AS builder
 
 # set working directory
 WORKDIR /app
 
-# install app dependencies
-COPY package.json ./
-
-RUN npm install --save err && npm config set registry https://skimdb.npmjs.com/registry && npm install --silent
+COPY package.json yarn.lock /app/
+RUN yarn install
 
 # add app
-COPY . ./
+COPY . /app/
 
-RUN npm run build
+RUN yarn --verbose build
 
-FROM nginx:alpine
+# build nginx image with static files built previously
+FROM nginx:stable-alpine
 
-#!/bin/sh
-
-COPY ./.nginx/nginx.conf /etc/nginx/nginx.conf
+COPY ./nginx.conf /etc/nginx/nginx.conf
 
 ## Remove default nginx index page
 RUN rm -rf /usr/share/nginx/html/*
 
 COPY --from=builder /app/build /usr/share/nginx/html
-
-EXPOSE 3000 82
 
 ENTRYPOINT ["nginx", "-g", "daemon off;"]
 
