@@ -8,6 +8,7 @@ module GetBenchmarks = %graphql(`
 query ($startDate: timestamp!, $endDate: timestamp!) {
   benchmarks(where: {_and: [{run_at: {_gte: $startDate}}, {run_at: {_lt: $endDate}}]}) {
       repo_id
+      test_name
       metrics
       commit
       branch
@@ -27,7 +28,7 @@ let collectBranches = (data: array<GetBenchmarks.t_benchmarks>) => {
 
 let getTestMetrics = (item: GetBenchmarks.t_benchmarks): BenchmarkTest.testMetrics => {
   {
-    BenchmarkTest.name: item.repo_id,
+    BenchmarkTest.name: item.test_name,
     metrics: item.metrics
     ->Belt.Option.getExn
     ->Js.Json.decodeObject

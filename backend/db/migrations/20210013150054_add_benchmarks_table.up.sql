@@ -4,6 +4,7 @@
 		commit varchar(50) NOT NULL,
 		branch varchar(256),
 		pull_number integer,
-		name varchar(256),
+		benchmark_name varchar(256),
+		test_name  varchar(256) NOT NULL,
 		metrics jsonb
 	);
