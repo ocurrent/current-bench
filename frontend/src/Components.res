@@ -573,7 +573,7 @@ module SelectX = {
     <Select ?name ?sx ?disabled ?id ?placeholder ?value onChange>
       {options
       |> Array.mapi((i, opt) => <option key={string_of_int(i)}> {Rx.string(encode(opt))} </option>)
-      |> Rx.array}
+      |> (el => Rx.array(el))}
     </Select>
   }
 }
@@ -680,7 +680,7 @@ module Switch = {
   @react.component
   let make = (~name=?, ~onToggle=?, ~on as checked=?) => {
     let onChange = switch onToggle {
-    | Some(f) => Some(event => f())
+    | Some(f) => Some(_ => f())
     | None => None
     }
 

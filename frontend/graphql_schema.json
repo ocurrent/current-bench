@@ -58,6 +58,146 @@
         "__typename": "__Type"
       },
       {
+        "kind": "INPUT_OBJECT",
+        "name": "Int_comparison_exp",
+        "description": "expression to compare columns of type Int. All fields are combined with logical 'AND'.",
+        "fields": null,
+        "inputFields": [
+          {
+            "name": "_eq",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "_gt",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "_gte",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "_in",
+            "description": null,
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null,
+                  "__typename": "__Type"
+                },
+                "__typename": "__Type"
+              },
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "_is_null",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "_lt",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "_lte",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "_neq",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "_nin",
+            "description": null,
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null,
+                  "__typename": "__Type"
+                },
+                "__typename": "__Type"
+              },
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          }
+        ],
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null,
+        "__typename": "__Type"
+      },
+      {
         "kind": "SCALAR",
         "name": "String",
         "description": null,
@@ -1213,6 +1353,20 @@
         "description": "columns and relationships of \"benchmarks\"",
         "fields": [
           {
+            "name": "benchmark_name",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "__typename": "__Field"
+          },
+          {
             "name": "branch",
             "description": null,
             "args": [],
@@ -1227,7 +1381,7 @@
             "__typename": "__Field"
           },
           {
-            "name": "commits",
+            "name": "commit",
             "description": null,
             "args": [],
             "type": {
@@ -1246,7 +1400,7 @@
             "__typename": "__Field"
           },
           {
-            "name": "json_data",
+            "name": "metrics",
             "description": null,
             "args": [
               {
@@ -1273,12 +1427,12 @@
             "__typename": "__Field"
           },
           {
-            "name": "repositories",
+            "name": "pull_number",
             "description": null,
             "args": [],
             "type": {
               "kind": "SCALAR",
-              "name": "String",
+              "name": "Int",
               "ofType": null,
               "__typename": "__Type"
             },
@@ -1287,13 +1441,56 @@
             "__typename": "__Field"
           },
           {
-            "name": "timestamp",
+            "name": "repo_id",
             "description": null,
             "args": [],
             "type": {
-              "kind": "SCALAR",
-              "name": "float8",
-              "ofType": null,
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null,
+                "__typename": "__Type"
+              },
+              "__typename": "__Type"
+            },
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "__typename": "__Field"
+          },
+          {
+            "name": "run_at",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "timestamp",
+                "ofType": null,
+                "__typename": "__Type"
+              },
+              "__typename": "__Type"
+            },
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "__typename": "__Field"
+          },
+          {
+            "name": "test_name",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null,
+                "__typename": "__Type"
+              },
               "__typename": "__Type"
             },
             "isDeprecated": false,
@@ -1714,7 +1911,7 @@
         "fields": null,
         "inputFields": [
           {
-            "name": "json_data",
+            "name": "metrics",
             "description": null,
             "type": {
               "kind": "SCALAR",
@@ -1763,18 +1960,6 @@
             },
             "defaultValue": null,
             "__typename": "__InputValue"
-          },
-          {
-            "name": "on_conflict",
-            "description": null,
-            "type": {
-              "kind": "INPUT_OBJECT",
-              "name": "benchmarks_on_conflict",
-              "ofType": null,
-              "__typename": "__Type"
-            },
-            "defaultValue": null,
-            "__typename": "__InputValue"
           }
         ],
         "interfaces": null,
@@ -1788,7 +1973,7 @@
         "description": "aggregate avg on columns",
         "fields": [
           {
-            "name": "timestamp",
+            "name": "pull_number",
             "description": null,
             "args": [],
             "type": {
@@ -1815,7 +2000,7 @@
         "fields": null,
         "inputFields": [
           {
-            "name": "timestamp",
+            "name": "pull_number",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -1885,6 +2070,18 @@
             "__typename": "__InputValue"
           },
           {
+            "name": "benchmark_name",
+            "description": null,
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "String_comparison_exp",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
             "name": "branch",
             "description": null,
             "type": {
@@ -1897,7 +2094,7 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "commits",
+            "name": "commit",
             "description": null,
             "type": {
               "kind": "INPUT_OBJECT",
@@ -1909,7 +2106,7 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "json_data",
+            "name": "metrics",
             "description": null,
             "type": {
               "kind": "INPUT_OBJECT",
@@ -1921,7 +2118,19 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "repositories",
+            "name": "pull_number",
+            "description": null,
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "Int_comparison_exp",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "repo_id",
             "description": null,
             "type": {
               "kind": "INPUT_OBJECT",
@@ -1933,11 +2142,23 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "timestamp",
+            "name": "run_at",
             "description": null,
             "type": {
               "kind": "INPUT_OBJECT",
-              "name": "float8_comparison_exp",
+              "name": "timestamp_comparison_exp",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "test_name",
+            "description": null,
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "String_comparison_exp",
               "ofType": null,
               "__typename": "__Type"
             },
@@ -1951,32 +2172,13 @@
         "__typename": "__Type"
       },
       {
-        "kind": "ENUM",
-        "name": "benchmarks_constraint",
-        "description": "unique or primary key constraints on table \"benchmarks\"",
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": [
-          {
-            "name": "benchmarks_commits_key",
-            "description": "unique or primary key constraint",
-            "isDeprecated": false,
-            "deprecationReason": null,
-            "__typename": "__EnumValue"
-          }
-        ],
-        "possibleTypes": null,
-        "__typename": "__Type"
-      },
-      {
         "kind": "INPUT_OBJECT",
         "name": "benchmarks_delete_at_path_input",
         "description": "delete the field or element with specified path (for JSON arrays, negative integers count from the end)",
         "fields": null,
         "inputFields": [
           {
-            "name": "json_data",
+            "name": "metrics",
             "description": null,
             "type": {
               "kind": "LIST",
@@ -2005,7 +2207,7 @@
         "fields": null,
         "inputFields": [
           {
-            "name": "json_data",
+            "name": "metrics",
             "description": null,
             "type": {
               "kind": "SCALAR",
@@ -2029,7 +2231,7 @@
         "fields": null,
         "inputFields": [
           {
-            "name": "json_data",
+            "name": "metrics",
             "description": null,
             "type": {
               "kind": "SCALAR",
@@ -2053,11 +2255,11 @@
         "fields": null,
         "inputFields": [
           {
-            "name": "timestamp",
+            "name": "pull_number",
             "description": null,
             "type": {
               "kind": "SCALAR",
-              "name": "float8",
+              "name": "Int",
               "ofType": null,
               "__typename": "__Type"
             },
@@ -2077,6 +2279,18 @@
         "fields": null,
         "inputFields": [
           {
+            "name": "benchmark_name",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
             "name": "branch",
             "description": null,
             "type": {
@@ -2089,7 +2303,7 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "commits",
+            "name": "commit",
             "description": null,
             "type": {
               "kind": "SCALAR",
@@ -2101,7 +2315,7 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "json_data",
+            "name": "metrics",
             "description": null,
             "type": {
               "kind": "SCALAR",
@@ -2113,7 +2327,19 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "repositories",
+            "name": "pull_number",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "repo_id",
             "description": null,
             "type": {
               "kind": "SCALAR",
@@ -2125,11 +2351,23 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "timestamp",
+            "name": "run_at",
             "description": null,
             "type": {
               "kind": "SCALAR",
-              "name": "float8",
+              "name": "timestamp",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "test_name",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
               "ofType": null,
               "__typename": "__Type"
             },
@@ -2148,6 +2386,20 @@
         "description": "aggregate max on columns",
         "fields": [
           {
+            "name": "benchmark_name",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "__typename": "__Field"
+          },
+          {
             "name": "branch",
             "description": null,
             "args": [],
@@ -2162,7 +2414,7 @@
             "__typename": "__Field"
           },
           {
-            "name": "commits",
+            "name": "commit",
             "description": null,
             "args": [],
             "type": {
@@ -2176,7 +2428,21 @@
             "__typename": "__Field"
           },
           {
-            "name": "repositories",
+            "name": "pull_number",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "__typename": "__Field"
+          },
+          {
+            "name": "repo_id",
             "description": null,
             "args": [],
             "type": {
@@ -2190,12 +2456,26 @@
             "__typename": "__Field"
           },
           {
-            "name": "timestamp",
+            "name": "run_at",
             "description": null,
             "args": [],
             "type": {
               "kind": "SCALAR",
-              "name": "float8",
+              "name": "timestamp",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "__typename": "__Field"
+          },
+          {
+            "name": "test_name",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
               "ofType": null,
               "__typename": "__Type"
             },
@@ -2217,6 +2497,18 @@
         "fields": null,
         "inputFields": [
           {
+            "name": "benchmark_name",
+            "description": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
             "name": "branch",
             "description": null,
             "type": {
@@ -2229,7 +2521,7 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "commits",
+            "name": "commit",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -2241,7 +2533,7 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "repositories",
+            "name": "pull_number",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -2253,7 +2545,31 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "timestamp",
+            "name": "repo_id",
+            "description": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "run_at",
+            "description": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "test_name",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -2276,6 +2592,20 @@
         "description": "aggregate min on columns",
         "fields": [
           {
+            "name": "benchmark_name",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "__typename": "__Field"
+          },
+          {
             "name": "branch",
             "description": null,
             "args": [],
@@ -2290,7 +2620,7 @@
             "__typename": "__Field"
           },
           {
-            "name": "commits",
+            "name": "commit",
             "description": null,
             "args": [],
             "type": {
@@ -2304,7 +2634,21 @@
             "__typename": "__Field"
           },
           {
-            "name": "repositories",
+            "name": "pull_number",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "__typename": "__Field"
+          },
+          {
+            "name": "repo_id",
             "description": null,
             "args": [],
             "type": {
@@ -2318,12 +2662,26 @@
             "__typename": "__Field"
           },
           {
-            "name": "timestamp",
+            "name": "run_at",
             "description": null,
             "args": [],
             "type": {
               "kind": "SCALAR",
-              "name": "float8",
+              "name": "timestamp",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "__typename": "__Field"
+          },
+          {
+            "name": "test_name",
+            "description": null,
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
               "ofType": null,
               "__typename": "__Type"
             },
@@ -2345,6 +2703,18 @@
         "fields": null,
         "inputFields": [
           {
+            "name": "benchmark_name",
+            "description": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
             "name": "branch",
             "description": null,
             "type": {
@@ -2357,7 +2727,7 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "commits",
+            "name": "commit",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -2369,7 +2739,7 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "repositories",
+            "name": "pull_number",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -2381,7 +2751,31 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "timestamp",
+            "name": "repo_id",
+            "description": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "run_at",
+            "description": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "test_name",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -2480,86 +2874,6 @@
             },
             "defaultValue": null,
             "__typename": "__InputValue"
-          },
-          {
-            "name": "on_conflict",
-            "description": null,
-            "type": {
-              "kind": "INPUT_OBJECT",
-              "name": "benchmarks_on_conflict",
-              "ofType": null,
-              "__typename": "__Type"
-            },
-            "defaultValue": null,
-            "__typename": "__InputValue"
-          }
-        ],
-        "interfaces": null,
-        "enumValues": null,
-        "possibleTypes": null,
-        "__typename": "__Type"
-      },
-      {
-        "kind": "INPUT_OBJECT",
-        "name": "benchmarks_on_conflict",
-        "description": "on conflict condition type for table \"benchmarks\"",
-        "fields": null,
-        "inputFields": [
-          {
-            "name": "constraint",
-            "description": null,
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "ENUM",
-                "name": "benchmarks_constraint",
-                "ofType": null,
-                "__typename": "__Type"
-              },
-              "__typename": "__Type"
-            },
-            "defaultValue": null,
-            "__typename": "__InputValue"
-          },
-          {
-            "name": "update_columns",
-            "description": null,
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "ENUM",
-                    "name": "benchmarks_update_column",
-                    "ofType": null,
-                    "__typename": "__Type"
-                  },
-                  "__typename": "__Type"
-                },
-                "__typename": "__Type"
-              },
-              "__typename": "__Type"
-            },
-            "defaultValue": null,
-            "__typename": "__InputValue"
-          },
-          {
-            "name": "where",
-            "description": null,
-            "type": {
-              "kind": "INPUT_OBJECT",
-              "name": "benchmarks_bool_exp",
-              "ofType": null,
-              "__typename": "__Type"
-            },
-            "defaultValue": null,
-            "__typename": "__InputValue"
           }
         ],
         "interfaces": null,
@@ -2574,6 +2888,18 @@
         "fields": null,
         "inputFields": [
           {
+            "name": "benchmark_name",
+            "description": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
             "name": "branch",
             "description": null,
             "type": {
@@ -2586,7 +2912,7 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "commits",
+            "name": "commit",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -2598,7 +2924,7 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "json_data",
+            "name": "metrics",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -2610,7 +2936,7 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "repositories",
+            "name": "pull_number",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -2622,7 +2948,31 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "timestamp",
+            "name": "repo_id",
+            "description": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "run_at",
+            "description": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "test_name",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -2646,7 +2996,7 @@
         "fields": null,
         "inputFields": [
           {
-            "name": "json_data",
+            "name": "metrics",
             "description": null,
             "type": {
               "kind": "SCALAR",
@@ -2672,6 +3022,13 @@
         "interfaces": null,
         "enumValues": [
           {
+            "name": "benchmark_name",
+            "description": "column name",
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "__typename": "__EnumValue"
+          },
+          {
             "name": "branch",
             "description": "column name",
             "isDeprecated": false,
@@ -2679,28 +3036,42 @@
             "__typename": "__EnumValue"
           },
           {
-            "name": "commits",
+            "name": "commit",
             "description": "column name",
             "isDeprecated": false,
             "deprecationReason": null,
             "__typename": "__EnumValue"
           },
           {
-            "name": "json_data",
+            "name": "metrics",
             "description": "column name",
             "isDeprecated": false,
             "deprecationReason": null,
             "__typename": "__EnumValue"
           },
           {
-            "name": "repositories",
+            "name": "pull_number",
             "description": "column name",
             "isDeprecated": false,
             "deprecationReason": null,
             "__typename": "__EnumValue"
           },
           {
-            "name": "timestamp",
+            "name": "repo_id",
+            "description": "column name",
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "__typename": "__EnumValue"
+          },
+          {
+            "name": "run_at",
+            "description": "column name",
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "__typename": "__EnumValue"
+          },
+          {
+            "name": "test_name",
             "description": "column name",
             "isDeprecated": false,
             "deprecationReason": null,
@@ -2717,6 +3088,18 @@
         "fields": null,
         "inputFields": [
           {
+            "name": "benchmark_name",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
             "name": "branch",
             "description": null,
             "type": {
@@ -2729,7 +3112,7 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "commits",
+            "name": "commit",
             "description": null,
             "type": {
               "kind": "SCALAR",
@@ -2741,7 +3124,7 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "json_data",
+            "name": "metrics",
             "description": null,
             "type": {
               "kind": "SCALAR",
@@ -2753,7 +3136,19 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "repositories",
+            "name": "pull_number",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "repo_id",
             "description": null,
             "type": {
               "kind": "SCALAR",
@@ -2765,11 +3160,23 @@
             "__typename": "__InputValue"
           },
           {
-            "name": "timestamp",
+            "name": "run_at",
             "description": null,
             "type": {
               "kind": "SCALAR",
-              "name": "float8",
+              "name": "timestamp",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "test_name",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
               "ofType": null,
               "__typename": "__Type"
             },
@@ -2788,7 +3195,7 @@
         "description": "aggregate stddev on columns",
         "fields": [
           {
-            "name": "timestamp",
+            "name": "pull_number",
             "description": null,
             "args": [],
             "type": {
@@ -2815,7 +3222,7 @@
         "fields": null,
         "inputFields": [
           {
-            "name": "timestamp",
+            "name": "pull_number",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -2838,7 +3245,7 @@
         "description": "aggregate stddev_pop on columns",
         "fields": [
           {
-            "name": "timestamp",
+            "name": "pull_number",
             "description": null,
             "args": [],
             "type": {
@@ -2865,7 +3272,7 @@
         "fields": null,
         "inputFields": [
           {
-            "name": "timestamp",
+            "name": "pull_number",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -2888,7 +3295,7 @@
         "description": "aggregate stddev_samp on columns",
         "fields": [
           {
-            "name": "timestamp",
+            "name": "pull_number",
             "description": null,
             "args": [],
             "type": {
@@ -2915,7 +3322,7 @@
         "fields": null,
         "inputFields": [
           {
-            "name": "timestamp",
+            "name": "pull_number",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -2938,12 +3345,12 @@
         "description": "aggregate sum on columns",
         "fields": [
           {
-            "name": "timestamp",
+            "name": "pull_number",
             "description": null,
             "args": [],
             "type": {
               "kind": "SCALAR",
-              "name": "float8",
+              "name": "Int",
               "ofType": null,
               "__typename": "__Type"
             },
@@ -2965,7 +3372,7 @@
         "fields": null,
         "inputFields": [
           {
-            "name": "timestamp",
+            "name": "pull_number",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -2983,59 +3390,12 @@
         "__typename": "__Type"
       },
       {
-        "kind": "ENUM",
-        "name": "benchmarks_update_column",
-        "description": "update columns of table \"benchmarks\"",
-        "fields": null,
-        "inputFields": null,
-        "interfaces": null,
-        "enumValues": [
-          {
-            "name": "branch",
-            "description": "column name",
-            "isDeprecated": false,
-            "deprecationReason": null,
-            "__typename": "__EnumValue"
-          },
-          {
-            "name": "commits",
-            "description": "column name",
-            "isDeprecated": false,
-            "deprecationReason": null,
-            "__typename": "__EnumValue"
-          },
-          {
-            "name": "json_data",
-            "description": "column name",
-            "isDeprecated": false,
-            "deprecationReason": null,
-            "__typename": "__EnumValue"
-          },
-          {
-            "name": "repositories",
-            "description": "column name",
-            "isDeprecated": false,
-            "deprecationReason": null,
-            "__typename": "__EnumValue"
-          },
-          {
-            "name": "timestamp",
-            "description": "column name",
-            "isDeprecated": false,
-            "deprecationReason": null,
-            "__typename": "__EnumValue"
-          }
-        ],
-        "possibleTypes": null,
-        "__typename": "__Type"
-      },
-      {
         "kind": "OBJECT",
         "name": "benchmarks_var_pop_fields",
         "description": "aggregate var_pop on columns",
         "fields": [
           {
-            "name": "timestamp",
+            "name": "pull_number",
             "description": null,
             "args": [],
             "type": {
@@ -3062,7 +3422,7 @@
         "fields": null,
         "inputFields": [
           {
-            "name": "timestamp",
+            "name": "pull_number",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -3085,7 +3445,7 @@
         "description": "aggregate var_samp on columns",
         "fields": [
           {
-            "name": "timestamp",
+            "name": "pull_number",
             "description": null,
             "args": [],
             "type": {
@@ -3112,7 +3472,7 @@
         "fields": null,
         "inputFields": [
           {
-            "name": "timestamp",
+            "name": "pull_number",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -3135,7 +3495,7 @@
         "description": "aggregate variance on columns",
         "fields": [
           {
-            "name": "timestamp",
+            "name": "pull_number",
             "description": null,
             "args": [],
             "type": {
@@ -3162,7 +3522,7 @@
         "fields": null,
         "inputFields": [
           {
-            "name": "timestamp",
+            "name": "pull_number",
             "description": null,
             "type": {
               "kind": "ENUM",
@@ -6285,18 +6645,6 @@
                 },
                 "defaultValue": null,
                 "__typename": "__InputValue"
-              },
-              {
-                "name": "on_conflict",
-                "description": "on conflict condition",
-                "type": {
-                  "kind": "INPUT_OBJECT",
-                  "name": "benchmarks_on_conflict",
-                  "ofType": null,
-                  "__typename": "__Type"
-                },
-                "defaultValue": null,
-                "__typename": "__InputValue"
               }
             ],
             "type": {
@@ -6325,18 +6673,6 @@
                     "ofType": null,
                     "__typename": "__Type"
                   },
-                  "__typename": "__Type"
-                },
-                "defaultValue": null,
-                "__typename": "__InputValue"
-              },
-              {
-                "name": "on_conflict",
-                "description": "on conflict condition",
-                "type": {
-                  "kind": "INPUT_OBJECT",
-                  "name": "benchmarks_on_conflict",
-                  "ofType": null,
                   "__typename": "__Type"
                 },
                 "defaultValue": null,
@@ -7520,6 +7856,157 @@
         ],
         "inputFields": null,
         "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null,
+        "__typename": "__Type"
+      },
+      {
+        "kind": "SCALAR",
+        "name": "timestamp",
+        "description": null,
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null,
+        "__typename": "__Type"
+      },
+      {
+        "kind": "INPUT_OBJECT",
+        "name": "timestamp_comparison_exp",
+        "description": "expression to compare columns of type timestamp. All fields are combined with logical 'AND'.",
+        "fields": null,
+        "inputFields": [
+          {
+            "name": "_eq",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "timestamp",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "_gt",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "timestamp",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "_gte",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "timestamp",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "_in",
+            "description": null,
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "timestamp",
+                  "ofType": null,
+                  "__typename": "__Type"
+                },
+                "__typename": "__Type"
+              },
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "_is_null",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "_lt",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "timestamp",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "_lte",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "timestamp",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "_neq",
+            "description": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "timestamp",
+              "ofType": null,
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          },
+          {
+            "name": "_nin",
+            "description": null,
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "timestamp",
+                  "ofType": null,
+                  "__typename": "__Type"
+                },
+                "__typename": "__Type"
+              },
+              "__typename": "__Type"
+            },
+            "defaultValue": null,
+            "__typename": "__InputValue"
+          }
+        ],
+        "interfaces": null,
         "enumValues": null,
         "possibleTypes": null,
         "__typename": "__Type"

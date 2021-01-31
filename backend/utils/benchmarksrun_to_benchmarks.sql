@@ -2,7 +2,7 @@
 -- Populates the benchmarks table with all the records from benchmarksrun.
 BEGIN;
 INSERT INTO
-    benchmarks(run_at, repo_id, commit, branch, pull_number, name, metrics)
+    benchmarks(run_at, repo_id, commit, branch, pull_number, test_name, metrics)
 SELECT
     to_timestamp(timestamp) AS run_at,
     split_part(branch, '/', 1) || '/' || split_part(branch, '/', 2)  AS repo_id,
@@ -19,7 +19,7 @@ SELECT
     ELSE
         NULL
     END AS pull_number,
-    NULL AS name,
+    name AS test_name,
     ('{"time":' || time ||
     ', "ops_per_sec":' || ops_per_sec || 
     ', "mbs_per_sec":' || mbs_per_sec || '}')::jsonb AS metrics
