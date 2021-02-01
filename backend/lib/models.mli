@@ -23,9 +23,9 @@ module Benchmark : sig
 
   val pull_number : t -> int option
 
-  val name : t -> string option
+  val test_name : t -> string
 
-  val data : t -> Yojson.Safe.t
+  val metrics : t -> Yojson.Safe.t
 
   val pp : t Fmt.t
 
