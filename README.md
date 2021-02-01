@@ -73,6 +73,7 @@ we make the following assumptions.
 2. The benchmarks results are json with of the following format:
 ```
 {
+  "name": <name-of-the-benchmark>
   "results" : [
     {
       "name": <name-of-the-test>,
@@ -87,7 +88,7 @@ we make the following assumptions.
 }
 ```
 
-> Note: multiple concatenated JSON objects can be produced and will be interpreted as different benchmarks. The names of the benchmark test must be unique across the benchmark results.
+> Note: multiple concatenated JSON objects can be produced and will be interpreted as different benchmarks. The name of the benchmark is optional when there is only one output, but must be present if multiple result objects are produced.
 
 [Here's](https://gist.github.com/gs0510/9ef5d47582b7fbf8dda6df0af08537e4) an example from [index](https://github.com/mirage/index) with regards to what the format looks like.
 
