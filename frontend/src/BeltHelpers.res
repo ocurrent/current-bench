@@ -12,3 +12,21 @@ module MapString = {
     Map.String.update(map, k, maybeAdd)
   }
 }
+
+exception StopIteration
+let arrayFindRev = (arr, pred) => {
+  let len = Belt.Array.length(arr)
+  let out = ref(None)
+  try {
+    for i in len - 1 downto 0 {
+      let item = Belt.Array.getExn(arr, i)
+      if pred(item) {
+        out := Some(item)
+        raise(StopIteration)
+      }
+    }
+  } catch {
+  | StopIteration => ()
+  }
+  out.contents
+}
