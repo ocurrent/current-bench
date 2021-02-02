@@ -1029,7 +1029,7 @@ module Table = {
       border.xs,
       border.color(color),
       selector("thead > tr", [borderB.sm, borderB.color(color)]),
-      selector("thead tr > th", [px.lg, py.sm, text.left]),
+      selector("thead tr > th", [px.lg, py.sm, text.center]),
     ]
   }
 
@@ -1062,7 +1062,7 @@ module Table = {
   module Col = {
     let sx = {
       open Sx
-      [px.lg, py.sm]
+      [px.lg, py.sm, borderR.xs, border.color(color)]
     }
 
     @react.component
