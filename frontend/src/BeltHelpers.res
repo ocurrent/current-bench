@@ -13,20 +13,16 @@ module MapString = {
   }
 }
 
-exception StopIteration
-let arrayFindRev = (arr, pred) => {
-  let len = Belt.Array.length(arr)
-  let out = ref(None)
-  try {
-    for i in len - 1 downto 0 {
-      let item = Belt.Array.getExn(arr, i)
-      if pred(item) {
-        out := Some(item)
-        raise(StopIteration)
+module Array = {
+  let findRev = (arr, pred) => {
+    let len = Belt.Array.length(arr)
+    let rec loop = (i, out) =>
+      if i == -1 {
+        out
+      } else {
+        let item = Belt.Array.getExn(arr, i)
+        pred(item) ? Some(item) : loop(i - 1, None)
       }
-    }
-  } catch {
-  | StopIteration => ()
+    loop(len - 1, None)
   }
-  out.contents
 }

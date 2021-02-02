@@ -45,7 +45,7 @@ let getTestMetrics = (item: GetBenchmarks.t_benchmarks): BenchmarkTest.testMetri
 }
 
 let getLatestMasterEntry = (~testName, benchmarks) => {
-  BeltHelpers.arrayFindRev(benchmarks, (item: GetBenchmarks.t_benchmarks) => {
+  BeltHelpers.Array.findRev(benchmarks, (item: GetBenchmarks.t_benchmarks) => {
     item.pull_number == None && item.test_name == testName
   })
 }
