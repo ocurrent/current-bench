@@ -96,12 +96,12 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
       let db = new Postgresql.connection ~conninfo () in
       output
       |> Json_utils.parse_many
-      |> List.iter (fun json ->
+      |> List.iter (fun output_json ->
              let benchmark_name =
-               Yojson.Safe.Util.(member "name" json)
+               Yojson.Safe.Util.(member "name" output_json)
                |> Yojson.Safe.Util.to_string_option
              in
-             Yojson.Safe.Util.(member "results" json)
+             Yojson.Safe.Util.(member "results" output_json)
              |> Yojson.Safe.Util.to_list
              |> List.map
                   (Benchmark.make ~duration ~run_at ~repo_id ~benchmark_name
