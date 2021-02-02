@@ -28,7 +28,6 @@ let collectPulls = (data: array<GetBenchmarks.t_benchmarks>): array<(int, option
     Belt.Option.flatMap(item.pull_number, pull_number => Some(pull_number, item.branch))
   )
   let data = List.sort_uniq(comparePulls, data)
-  Js.log(Array.of_list(data))
   Belt.List.toArray(data)
 }
 
@@ -45,10 +44,16 @@ let getTestMetrics = (item: GetBenchmarks.t_benchmarks): BenchmarkTest.testMetri
   }
 }
 
-module BenchmarkBranchResults = {
+let getLatestMasterEntry = (~testName, benchmarks) => {
+  BeltHelpers.arrayFindRev(benchmarks, (item: GetBenchmarks.t_benchmarks) => {
+    item.pull_number == None && item.test_name == testName
+  })
+}
+
+module BenchmarkResults = {
   @react.component
   let make = (~benchmarks: array<GetBenchmarks.t_benchmarks>, ~pullNumber=?, ~synchronize) => {
-    let data = Belt.Array.keep(benchmarks, item => {
+    let data = Belt.Array.keep(benchmarks, (item: GetBenchmarks.t_benchmarks) => {
       // pullNumber is assumed to be None only for master
       item.pull_number == pullNumber
     })
@@ -56,11 +61,18 @@ module BenchmarkBranchResults = {
     let selectionByTestName =
       data->Belt.Array.reduceWithIndex(Belt.Map.String.empty, BenchmarkTest.groupByTestName)
 
+    let comparisonMetricsByTestName = {
+      Belt.Map.String.mapWithKey(selectionByTestName, (testName, _) =>
+        getLatestMasterEntry(~testName, benchmarks)->Belt.Option.map(getTestMetrics)
+      )
+    }
+
     let graphs = {
       selectionByTestName
-      ->Belt.Map.String.mapWithKey((testName, testSelection) =>
-        <BenchmarkTest synchronize key={testName} data testName testSelection />
-      )
+      ->Belt.Map.String.mapWithKey((testName, testSelection) => {
+        let comparisonMetrics = Belt.Map.String.getExn(comparisonMetricsByTestName, testName)
+        <BenchmarkTest ?comparisonMetrics synchronize key={testName} data testName testSelection />
+      })
       ->Belt.Map.String.valuesToArray
     }
 
@@ -119,11 +131,11 @@ let make = () => {
 
     let (main, mainTitle) = {
       switch String.split_on_char('/', url.hash) {
-      | list{""} => (<BenchmarkBranchResults synchronize benchmarks />, "master")
+      | list{""} => (<BenchmarkResults synchronize benchmarks />, "master")
       | list{"", "pull", pullNumberStr} =>
         switch Belt.Int.fromString(pullNumberStr) {
         | Some(pullNumber) => (
-            <BenchmarkBranchResults synchronize pullNumber benchmarks />,
+            <BenchmarkResults synchronize pullNumber benchmarks />,
             "#" ++ pullNumberStr,
           )
         | None => (<h1> {Rx.string("Invalid pull number: " ++ pullNumberStr)} </h1>, "Not found")
