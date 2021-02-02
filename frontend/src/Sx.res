@@ -639,8 +639,8 @@ module Make = (
   }
 
   let overflow = _overflow(Css.overflow)
-  let overflowX = _overflow(Css.overflowY)
-  let overflowY = _overflow(Css.overflowX)
+  let overflowX = _overflow(Css.overflowX)
+  let overflowY = _overflow(Css.overflowY)
 
   // Border Radius
 
