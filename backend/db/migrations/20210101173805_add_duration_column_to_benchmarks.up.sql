@@ -1,1 +1,0 @@
-ALTER TABLE benchmarks ADD duration interval NOT NULL;

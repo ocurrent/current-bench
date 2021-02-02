@@ -3,7 +3,6 @@ module Benchmark : sig
 
   val make :
     run_at:Ptime.t ->
-    duration:Ptime.span ->
     repo_id:string * string ->
     commit:string ->
     ?branch:string ->
@@ -12,8 +11,6 @@ module Benchmark : sig
     t
 
   val run_at : t -> Ptime.t
-
-  val duration : t -> Ptime.span
 
   val repo_id : t -> string * string
 

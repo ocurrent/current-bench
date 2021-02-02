@@ -90,16 +90,13 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
       | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
       | `Local commit -> commit >>| Git.Commit.hash
     in
-    let duration = Ptime.diff (Ptime_clock.now ()) run_at in
     let () =
       let db = new Postgresql.connection ~conninfo () in
       output
       |> Yojson.Safe.from_string
       |> Yojson.Safe.Util.(member "results")
       |> Yojson.Safe.Util.to_list
-      |> List.map
-           (Benchmark.make ~run_at ~duration ~repo_id ~commit ?pull_number
-              ?branch)
+      |> List.map (Benchmark.make ~run_at ~repo_id ~commit ?pull_number ?branch)
       |> List.iter (Models.Benchmark.Db.insert db);
       db#finish
     in
