@@ -12,18 +12,24 @@ query ($startDate: timestamp!, $endDate: timestamp!) {
       metrics
       commit
       branch
+      pull_number
       run_at
     }
   }
 `)
 
-let collectBranches = (data: array<GetBenchmarks.t_benchmarks>) => {
-  data
-  ->Belt.Array.map((item: GetBenchmarks.t_benchmarks) =>
-    item.branch->Belt.Option.getWithDefault("Unknown")
+let comparePulls = ((pn1, _b1), (pn2, _b2)) => {
+  -compare(pn1, pn2)
+}
+
+let collectPulls = (data: array<GetBenchmarks.t_benchmarks>): array<(int, option<string>)> => {
+  let data = Belt.List.fromArray(data)
+  let data = Belt.List.keepMap(data, (item: GetBenchmarks.t_benchmarks) =>
+    Belt.Option.flatMap(item.pull_number, pull_number => Some(pull_number, item.branch))
   )
-  ->Belt.Set.String.fromArray
-  ->Belt.Set.String.toArray
+  let data = List.sort_uniq(comparePulls, data)
+  Js.log(Array.of_list(data))
+  Belt.List.toArray(data)
 }
 
 let getTestMetrics = (item: GetBenchmarks.t_benchmarks): BenchmarkTest.testMetrics => {
@@ -41,16 +47,12 @@ let getTestMetrics = (item: GetBenchmarks.t_benchmarks): BenchmarkTest.testMetri
 
 module BenchmarkBranchResults = {
   @react.component
-  let make = (~benchmarks: array<GetBenchmarks.t_benchmarks>, ~branch, ~synchronize) => {
-    let dataForBranch = Belt.Array.keep(benchmarks, item => {
-      let itemBranch =
-        item.branch
-        ->Belt.Option.map(DataHelpers.getBranchName)
-        ->Belt.Option.getWithDefault("master")
-      Js.log(itemBranch)
-      itemBranch == branch
+  let make = (~benchmarks: array<GetBenchmarks.t_benchmarks>, ~pullNumber=?, ~synchronize) => {
+    let data = Belt.Array.keep(benchmarks, item => {
+      // pullNumber is assumed to be None only for master
+      item.pull_number == pullNumber
     })
-    let data = dataForBranch->Belt.Array.map(getTestMetrics)
+    let data = data->Belt.Array.map(getTestMetrics)
     let selectionByTestName =
       data->Belt.Array.reduceWithIndex(Belt.Map.String.empty, BenchmarkTest.groupByTestName)
 
@@ -113,24 +115,25 @@ let make = () => {
   | Data(data)
   | PartialData(data, _) =>
     let benchmarks: array<GetBenchmarks.t_benchmarks> = data.benchmarks
-    let branches = collectBranches(benchmarks)
+    let pulls = collectPulls(benchmarks)
 
     let (main, mainTitle) = {
       switch String.split_on_char('/', url.hash) {
-      | list{""} | list{"", "branch", "master"} => (
-          <BenchmarkBranchResults synchronize branch="master" benchmarks />,
-          "Results: master",
-        )
-      | list{"", "branch", branch} => (
-          <BenchmarkBranchResults synchronize branch benchmarks />,
-          "Results: PR#" ++ branch,
-        )
+      | list{""} => (<BenchmarkBranchResults synchronize benchmarks />, "master")
+      | list{"", "pull", pullNumberStr} =>
+        switch Belt.Int.fromString(pullNumberStr) {
+        | Some(pullNumber) => (
+            <BenchmarkBranchResults synchronize pullNumber benchmarks />,
+            "#" ++ pullNumberStr,
+          )
+        | None => (<h1> {Rx.string("Invalid pull number: " ++ pullNumberStr)} </h1>, "Not found")
+        }
       | _ => (<h1> {Rx.string("Unknown route: " ++ url.hash)} </h1>, "Not found")
       }
     }
 
     <div className={Sx.make([Sx.container, Sx.d.flex, Sx.flex.wrap])}>
-      <Sidebar url onSynchronizeToggle synchronize branches />
+      <Sidebar url onSynchronizeToggle synchronize pulls />
       <div className={Sx.make(Styles.topbarSx)}>
         <Row alignY=#center spacing=#between>
           <Link href="https://github.com/mirage/index" sx=[Sx.mr.xl] icon=Icon.github />
