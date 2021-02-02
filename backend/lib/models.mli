@@ -5,6 +5,7 @@ module Benchmark : sig
     run_at:Ptime.t ->
     repo_id:string * string ->
     commit:string ->
+    benchmark_name:string option ->
     ?branch:string ->
     ?pull_number:int ->
     Yojson.Safe.t ->

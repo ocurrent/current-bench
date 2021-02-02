@@ -4,6 +4,7 @@ module Github = Current_github
 module Docker = Current_docker.Default
 module Slack = Current_slack
 module Logging = Logging
+module Json_utils = Utils.Json_utils
 module Benchmark = Models.Benchmark
 
 let ( >>| ) x f = Current.map f x
@@ -93,11 +94,18 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
     let () =
       let db = new Postgresql.connection ~conninfo () in
       output
-      |> Yojson.Safe.from_string
-      |> Yojson.Safe.Util.(member "results")
-      |> Yojson.Safe.Util.to_list
-      |> List.map (Benchmark.make ~run_at ~repo_id ~commit ?pull_number ?branch)
-      |> List.iter (Models.Benchmark.Db.insert db);
+      |> Json_utils.parse_many
+      |> List.iter (fun json ->
+             let benchmark_name =
+               Yojson.Safe.Util.(member "name" json)
+               |> Yojson.Safe.Util.to_string_option
+             in
+             Yojson.Safe.Util.(member "results" json)
+             |> Yojson.Safe.Util.to_list
+             |> List.map
+                  (Benchmark.make ~run_at ~repo_id ~benchmark_name ~commit
+                     ?pull_number ?branch)
+             |> List.iter (Models.Benchmark.Db.insert db));
       db#finish
     in
     match slack_path with Some p -> Some (p, output) | None -> None
