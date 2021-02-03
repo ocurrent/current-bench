@@ -3,6 +3,13 @@ type graph
 @new @module("dygraphs")
 external init: ('element, array<array<float>>, 'options) => graph = "default"
 
+@send
+external ready: (graph, unit => unit) => unit = "ready"
+
+@send
+external setAnnotations: (graph, array<{.."series": string, "x": 'floatOrDate}>) => unit =
+  "setAnnotations"
+
 type global
 @module("dygraphs")
 external global: global = "default"
@@ -155,6 +162,7 @@ let make = (
   ~xLabelFormatter=?,
   ~onRender: option<graph => unit>=?,
   ~onXLabelClick=?,
+  ~annotations=[],
   ~data,
 ) => {
   let graphRef = React.useRef(Js.Nullable.null)
@@ -171,6 +179,11 @@ let make = (
     switch onRender {
     | Some(f) => f(graph)
     | None => ()
+    }
+    if Array.length(annotations) > 0 {
+      graph->ready(() => {
+        graph->setAnnotations(annotations)
+      })
     }
 
     switch onXLabelClick {
