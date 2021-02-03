@@ -44,8 +44,8 @@ let getTestMetrics = (item: GetBenchmarks.t_benchmarks): BenchmarkTest.testMetri
   }
 }
 
-let getLatestMasterEntry = (~testName, benchmarks) => {
-  BeltHelpers.Array.findRev(benchmarks, (item: GetBenchmarks.t_benchmarks) => {
+let getLatestMasterIndex = (~testName, benchmarks) => {
+  BeltHelpers.Array.findIndexRev(benchmarks, (item: GetBenchmarks.t_benchmarks) => {
     item.pull_number == None && item.test_name == testName
   })
 }
@@ -62,9 +62,13 @@ module BenchmarkResults = {
       data->Belt.Array.reduceWithIndex(Belt.Map.String.empty, BenchmarkTest.groupByTestName)
 
     let comparisonMetricsByTestName = {
-      Belt.Map.String.mapWithKey(selectionByTestName, (testName, _) =>
-        getLatestMasterEntry(~testName, benchmarks)->Belt.Option.map(getTestMetrics)
-      )
+      Belt.Map.String.mapWithKey(selectionByTestName, (testName, _) => {
+        // TODO: Use the index load the data from master and add an annotation.
+        switch getLatestMasterIndex(~testName, benchmarks) {
+        | Some(idx) => Some(benchmarks[idx]->getTestMetrics)
+        | None => None
+        }
+      })
     }
 
     let graphs = {
