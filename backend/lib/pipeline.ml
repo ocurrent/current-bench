@@ -96,10 +96,17 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
       let db = new Postgresql.connection ~conninfo () in
       output
       |> Json_utils.parse_many
-      |> List.map
-           (Benchmark.make ~run_at ~duration ~repo_id ~commit ?pull_number
-              ?branch)
-      |> List.iter (Models.Benchmark.Db.insert db);
+      |> List.iter (fun output_json ->
+             let benchmark_name =
+               Yojson.Safe.Util.(member "name" output_json)
+               |> Yojson.Safe.Util.to_string_option
+             in
+             Yojson.Safe.Util.(member "results" output_json)
+             |> Yojson.Safe.Util.to_list
+             |> List.map
+                  (Benchmark.make ~duration ~run_at ~repo_id ~benchmark_name
+                     ~commit ?pull_number ?branch)
+             |> List.iter (Models.Benchmark.Db.insert db));
       db#finish
     in
     match slack_path with Some p -> Some (p, output) | None -> None

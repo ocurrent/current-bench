@@ -3,9 +3,10 @@ module Benchmark : sig
 
   val make :
     run_at:Ptime.t ->
-    duration:Ptime.span ->
     repo_id:string * string ->
     commit:string ->
+    duration:Ptime.span ->
+    benchmark_name:string option ->
     ?branch:string ->
     ?pull_number:int ->
     Yojson.Safe.t ->
@@ -23,9 +24,11 @@ module Benchmark : sig
 
   val pull_number : t -> int option
 
-  val name : t -> string option
+  val test_name : t -> string
 
-  val data : t -> Yojson.Safe.t
+  val benchmark_name : t -> string option
+
+  val metrics : t -> Yojson.Safe.t
 
   val pp : t Fmt.t
 
