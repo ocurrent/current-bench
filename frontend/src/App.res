@@ -18,17 +18,32 @@ query ($startDate: timestamp!, $endDate: timestamp!) {
   }
 `)
 
-let comparePulls = ((pn1, _b1), (pn2, _b2)) => {
-  -compare(pn1, pn2)
+module PullCompare = Belt.Id.MakeComparable({
+  type t = (int, option<string>)
+  let cmp = compare
+})
+
+let collectBenchmarksForRepo = (~repo, data: array<GetBenchmarks.t_benchmarks>): array<
+  GetBenchmarks.t_benchmarks,
+> => {
+  data->Belt.Array.keep(item => item.repo_id == repo)
 }
 
-let collectPulls = (data: array<GetBenchmarks.t_benchmarks>): array<(int, option<string>)> => {
-  let data = Belt.List.fromArray(data)
-  let data = Belt.List.keepMap(data, (item: GetBenchmarks.t_benchmarks) =>
+let collectPullsForRepo = (~repo, data: array<GetBenchmarks.t_benchmarks>): array<(
+  int,
+  option<string>,
+)> => {
+  data
+  ->collectBenchmarksForRepo(~repo)
+  ->Belt.Array.keepMap((item: GetBenchmarks.t_benchmarks) =>
     Belt.Option.flatMap(item.pull_number, pull_number => Some(pull_number, item.branch))
   )
-  let data = List.sort_uniq(comparePulls, data)
-  Belt.List.toArray(data)
+  ->Belt.Set.fromArray(~id=module(PullCompare))
+  ->Belt.Set.toArray
+}
+
+let collectRepos = (data: array<GetBenchmarks.t_benchmarks>): array<string> => {
+  data->Belt.Array.map(item => item.repo_id)->Belt.Set.String.fromArray->Belt.Set.String.toArray
 }
 
 let getTestMetrics = (item: GetBenchmarks.t_benchmarks): BenchmarkTest.testMetrics => {
@@ -52,12 +67,9 @@ let getLatestMasterIndex = (~testName, benchmarks) => {
 
 module BenchmarkResults = {
   @react.component
-  let make = (~benchmarks: array<GetBenchmarks.t_benchmarks>, ~pullNumber=?, ~synchronize) => {
-    let data = Belt.Array.keep(benchmarks, (item: GetBenchmarks.t_benchmarks) => {
-      // pullNumber is assumed to be None only for master
-      item.pull_number == pullNumber
-    })
-    let data = data->Belt.Array.map(getTestMetrics)
+  let make = (~benchmarks: array<GetBenchmarks.t_benchmarks>, ~synchronize, ~repo) => {
+    Js.log(benchmarks);
+    let data = benchmarks->Belt.Array.map(getTestMetrics)
     let selectionByTestName =
       data->Belt.Array.reduceWithIndex(Belt.Map.String.empty, BenchmarkTest.groupByTestName)
 
@@ -75,7 +87,9 @@ module BenchmarkResults = {
       selectionByTestName
       ->Belt.Map.String.mapWithKey((testName, testSelection) => {
         let comparisonMetrics = Belt.Map.String.getExn(comparisonMetricsByTestName, testName)
-        <BenchmarkTest ?comparisonMetrics synchronize key={testName} data testName testSelection />
+        <BenchmarkTest
+          ?comparisonMetrics synchronize key={testName} data testName testSelection repo
+        />
       })
       ->Belt.Map.String.valuesToArray
     }
@@ -96,11 +110,57 @@ let getDefaultDateRange = {
   }
 }
 
+module Content = {
+  @react.component
+  let make = (
+    ~pulls,
+    ~selectedRepo,
+    ~repos,
+    ~benchmarks,
+    ~startDate,
+    ~endDate,
+    ~onSelectDateRange,
+    ~synchronize,
+    ~onSynchronizeToggle,
+    ~selectedPull=?,
+  ) => {
+    <div className={Sx.make([Sx.container, Sx.d.flex, Sx.flex.wrap])}>
+      <Sidebar
+        pulls
+        selectedRepo
+        ?selectedPull
+        repos
+        onSelectRepo={selectedRepo => ReasonReact.Router.push("#/" ++ selectedRepo)}
+        synchronize
+        onSynchronizeToggle
+      />
+      <div className={Sx.make(Styles.topbarSx)}>
+        <Row alignY=#center spacing=#between>
+          <Link href={"https://github.com/" ++ selectedRepo} sx=[Sx.mr.xl] icon=Icon.github />
+          <Text sx=[Sx.text.bold]>
+            {Rx.text(
+              Belt.Option.mapWithDefault(selectedPull, "master", pull =>
+                "#" ++ string_of_int(pull)
+              ),
+            )}
+          </Text>
+          <Litepicker startDate endDate sx=[Sx.w.xl5] onSelect={onSelectDateRange} />
+        </Row>
+      </div>
+      <div className={Sx.make(Styles.mainSx)}>
+        <BenchmarkResults synchronize benchmarks repo=selectedRepo />
+      </div>
+    </div>
+  }
+}
+
 @react.component
 let make = () => {
   let url = ReasonReact.Router.useUrl()
 
   let ((startDate, endDate), setDateRange) = React.useState(getDefaultDateRange)
+
+  let onSelectDateRange = (d1, d2) => setDateRange(_ => (d1, d2))
 
   // Fetch benchmarks data
   let ({ReasonUrql.Hooks.response: response}, _) = {
@@ -120,6 +180,24 @@ let make = () => {
     setSynchronize(v => !v)
   }
 
+  React.useLayoutEffect2(() => {
+    switch response {
+    | Data(data) | PartialData(data, _) =>
+      switch String.split_on_char('/', url.hash) {
+      | list{""} => {
+          let allRepos = collectRepos(data.benchmarks)
+          switch Belt.Array.get(allRepos, 0) {
+          | Some(firstRepo) => ReasonReact.Router.replace("#/" ++ firstRepo)
+          | None => ()
+          }
+        }
+      | _ => ()
+      }
+    | _ => ()
+    }
+    None
+  }, (response, url))
+
   switch response {
   | Error(e) =>
     switch e.networkError {
@@ -131,35 +209,56 @@ let make = () => {
   | Data(data)
   | PartialData(data, _) =>
     let benchmarks: array<GetBenchmarks.t_benchmarks> = data.benchmarks
-    let pulls = collectPulls(benchmarks)
 
-    let (main, mainTitle) = {
-      switch String.split_on_char('/', url.hash) {
-      | list{""} => (<BenchmarkResults synchronize benchmarks />, "master")
-      | list{"", "pull", pullNumberStr} =>
-        switch Belt.Int.fromString(pullNumberStr) {
-        | Some(pullNumber) => (
-            <BenchmarkResults synchronize pullNumber benchmarks />,
-            "#" ++ pullNumberStr,
-          )
-        | None => (<h1> {Rx.string("Invalid pull number: " ++ pullNumberStr)} </h1>, "Not found")
+    switch String.split_on_char('/', url.hash) {
+    | list{""} => React.null
+    | list{"", orgName, repoName, ...rest} => {
+        let repos =
+          collectRepos(data.benchmarks)->Belt.Array.concat(["mirage/second", "mirage/third"])
+        let selectedRepo = repos->Belt.Array.getBy(repo => repo == orgName ++ "/" ++ repoName)
+        switch selectedRepo {
+        | Some(selectedRepo) => {
+            let benchmarksForRepo = collectBenchmarksForRepo(~repo=selectedRepo, benchmarks)
+            let pullsForRepo = collectPullsForRepo(~repo=selectedRepo, benchmarks)
+            switch rest {
+            | list{"pull", pullNumberStr} =>
+              switch Belt.Int.fromString(pullNumberStr) {
+              | Some(pullNumber) =>
+                <Content
+                  pulls=pullsForRepo
+                  selectedRepo
+                  repos
+                  benchmarks={Belt.Array.keep(benchmarks, (item: GetBenchmarks.t_benchmarks) => {
+                    item.pull_number == Some(pullNumber)
+                  })}
+                  selectedPull=pullNumber
+                  startDate
+                  endDate
+                  onSelectDateRange
+                  synchronize
+                  onSynchronizeToggle
+                />
+              | None => <div> {("Wrong pull number: " ++ pullNumberStr)->React.string} </div>
+              }
+            | _ =>
+              <Content
+                pulls=pullsForRepo
+                selectedRepo
+                repos
+                benchmarks=benchmarksForRepo
+                startDate
+                endDate
+                onSelectDateRange
+                synchronize
+                onSynchronizeToggle
+              />
+            }
+          }
+        | None => <div> {"This repo does not exist!"->React.string} </div>
         }
-      | _ => (<h1> {Rx.string("Unknown route: " ++ url.hash)} </h1>, "Not found")
       }
-    }
 
-    <div className={Sx.make([Sx.container, Sx.d.flex, Sx.flex.wrap])}>
-      <Sidebar url onSynchronizeToggle synchronize pulls />
-      <div className={Sx.make(Styles.topbarSx)}>
-        <Row alignY=#center spacing=#between>
-          <Link href="https://github.com/mirage/index" sx=[Sx.mr.xl] icon=Icon.github />
-          <Text sx=[Sx.text.bold]> {Rx.text(mainTitle)} </Text>
-          <Litepicker
-            startDate endDate onSelect={(d1, d2) => setDateRange(_ => (d1, d2))} sx=[Sx.w.xl5]
-          />
-        </Row>
-      </div>
-      <div className={Sx.make(Styles.mainSx)}> {main} </div>
-    </div>
+    | _ => <div> {Rx.string("Unknown route: " ++ url.hash)} </div>
+    }
   }
 }

@@ -7,10 +7,10 @@ type testMetrics = {
   metrics: Belt.Map.String.t<float>,
 }
 
-let commitUrl = commit => `https://github.com/mirage/index/commit/${commit}`
-let goToCommitLink = commit => {
+let commitUrl = (repo, commit) => `https://github.com/${repo}/commit/${commit}`
+let goToCommitLink = (repo, commit) => {
   let openUrl: string => unit = %raw(`function (url) { window.open(url, "_blank") }`)
-  openUrl(commitUrl(commit))
+  openUrl(commitUrl(repo, commit))
 }
 
 let groupByTestName = (acc, item: testMetrics, idx) => {
@@ -84,6 +84,7 @@ let calcDeltaStr = (a, b) => {
 let renderMetricOverviewRow = (
   ~comparisonMetrics: option<testMetrics>=?,
   ~xTicks,
+  ~repo,
   metricName,
   data,
 ) => {
@@ -108,7 +109,7 @@ let renderMetricOverviewRow = (
 
     <Table.Row key=metricName>
       <Table.Col> {Rx.text(metricName)} </Table.Col>
-      <Table.Col> <Link target="_blank" href={commitUrl(commit)} text=commit /> </Table.Col>
+      <Table.Col> <Link target="_blank" href={commitUrl(repo, commit)} text=commit /> </Table.Col>
       <Table.Col> {Rx.text(last_value->Js.Float.toFixedWithPrecision(~digits=2))} </Table.Col>
       <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterAbs)} </Table.Col>
       <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterRel)} </Table.Col>
@@ -117,7 +118,7 @@ let renderMetricOverviewRow = (
 }
 
 @react.component
-let make = (~data, ~testName, ~comparisonMetrics=?, ~testSelection, ~synchronize=true) => {
+let make = (~data, ~repo, ~testName, ~comparisonMetrics=?, ~testSelection, ~synchronize=true) => {
   let dataByMetrics = data->groupDataByMetric(testSelection)
   let graphRefs = ref(list{})
   let onGraphRender = graph => graphRefs := Belt.List.add(graphRefs.contents, graph)
@@ -150,7 +151,7 @@ let make = (~data, ~testName, ~comparisonMetrics=?, ~testSelection, ~synchronize
       </thead>
       <tbody>
         {dataByMetrics
-        ->Belt.Map.String.mapWithKey(renderMetricOverviewRow(~xTicks, ~comparisonMetrics?))
+        ->Belt.Map.String.mapWithKey(renderMetricOverviewRow(~xTicks, ~repo, ~comparisonMetrics?))
         ->Belt.Map.String.valuesToArray
         ->Rx.array}
       </tbody>
@@ -160,7 +161,7 @@ let make = (~data, ~testName, ~comparisonMetrics=?, ~testSelection, ~synchronize
   let metric_graphs = dataByMetrics
   ->Belt.Map.String.mapWithKey((metricName, data) => {
     <LineGraph
-      onXLabelClick=goToCommitLink
+      onXLabelClick={commit => goToCommitLink(repo, commit)}
       onRender=onGraphRender
       key=metricName
       title=metricName
