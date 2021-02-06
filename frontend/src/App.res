@@ -131,7 +131,7 @@ module Content = {
     ~onSelectDateRange,
     ~synchronize,
     ~onSynchronizeToggle,
-    ~selectedPull,
+    ~selectedPull=?,
   ) => {
     <div className={Sx.make([Sx.container, Sx.d.flex, Sx.flex.wrap])}>
       <Sidebar
@@ -161,13 +161,6 @@ module Content = {
       </div>
     </div>
   }
-}
-
-type contentData = {
-  benchmarks: array<GetBenchmarks.t_benchmarks>,
-  pulls: array<(int, option<string>)>,
-  selectedRepo: string,
-  selectedPull: option<int>,
 }
 
 @react.component
@@ -209,23 +202,29 @@ let make = () => {
     let benchmarks: array<GetBenchmarks.t_benchmarks> = data.benchmarks
     let repos = collectRepos(data.benchmarks)->Belt.Array.concat(["mirage/second", "mirage/third"])
 
-    let res = switch String.split_on_char('/', url.hash) {
+    switch String.split_on_char('/', url.hash) {
     | list{""} =>
       switch Belt.Array.get(repos, 0) {
-      | Some(firstRepo) => Error(#Redirect("#/" ++ firstRepo))
-      | None => Error(#Message("No data were found..."))
+      | Some(firstRepo) => {
+          ReasonReact.Router.replace("#/" ++ firstRepo)
+          React.null
+        }
+      | None => <div> {"No data were found..."->Rx.string} </div>
       }
     | list{"", orgName, repoName, ...rest} => {
         let selectedRepo = repos->Belt.Array.getBy(repo => repo == orgName ++ "/" ++ repoName)
         switch selectedRepo {
-        | None => Error(#Message("This repo does not exist!"))
+        | None => <div> {"This repo does not exist!"->Rx.string} </div>
         | Some(selectedRepo) => {
             let benchmarksForRepo = collectBenchmarksForRepo(~repo=selectedRepo, benchmarks)
             let pullsForRepo = collectPullsForRepo(~repo=selectedRepo, benchmarks)
             switch rest {
             | list{"pull", pullNumberStr} =>
               switch Belt.Int.fromString(pullNumberStr) {
-              | None => Error(#Message("Pull request must be an integer. Got: " ++ pullNumberStr))
+              | None =>
+                <div>
+                  {("Pull request must be an integer. Got: " ++ pullNumberStr)->Rx.string}
+                </div>
               | Some(selectedPull) =>
                 if pullsForRepo->Belt.Array.some(((pullNr, _)) => pullNr == selectedPull) {
                   let benchmarksForPull = collectBenchmarksForPull(
@@ -233,14 +232,20 @@ let make = () => {
                     ~pull=selectedPull,
                     benchmarks,
                   )
-                  Ok({
-                    benchmarks: benchmarksForPull,
-                    pulls: pullsForRepo,
-                    selectedRepo: selectedRepo,
-                    selectedPull: Some(selectedPull),
-                  })
+                  <Content
+                    pulls=pullsForRepo
+                    selectedRepo
+                    repos
+                    benchmarks=benchmarksForPull
+                    selectedPull
+                    startDate
+                    endDate
+                    onSelectDateRange
+                    synchronize
+                    onSynchronizeToggle
+                  />
                 } else {
-                  Error(#Message("This pull request does not exist!"))
+                  <div> {"This pull request does not exist!"->Rx.string} </div>
                 }
               }
             | _ =>
@@ -249,38 +254,22 @@ let make = () => {
               ) => {
                 Belt.Option.isNone(item.pull_number)
               })
-              Ok({
-                benchmarks: benchmarksForMaster,
-                pulls: pullsForRepo,
-                selectedRepo: selectedRepo,
-                selectedPull: None,
-              })
+              <Content
+                pulls=pullsForRepo
+                selectedRepo
+                repos
+                benchmarks=benchmarksForMaster
+                startDate
+                endDate
+                onSelectDateRange
+                synchronize
+                onSynchronizeToggle
+              />
             }
           }
         }
       }
-    | _ => Error(#Message("Unknown route: " ++ url.hash))
-    }
-
-    switch res {
-    | Error(#Redirect(route)) => {
-        ReasonReact.Router.replace(route)
-        React.null
-      }
-    | Error(#Message(errorStr)) => <div> {errorStr->Rx.string} </div>
-    | Ok({benchmarks, pulls, selectedRepo, selectedPull}) =>
-      <Content
-        pulls
-        selectedRepo
-        repos
-        benchmarks
-        selectedPull
-        startDate
-        endDate
-        onSelectDateRange
-        synchronize
-        onSynchronizeToggle
-      />
+    | _ => <div> {("Unknown route: " ++ url.hash)->Rx.string} </div>
     }
   }
 }
