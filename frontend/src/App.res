@@ -29,11 +29,11 @@ let collectBenchmarksForRepo = (~repo, data: array<GetBenchmarks.t_benchmarks>):
   data->Belt.Array.keep(item => item.repo_id == repo)
 }
 
-let collectPullsForRepo = (~repo, data: array<GetBenchmarks.t_benchmarks>): array<(
+let collectPullsForRepo = (~repo, benchmarks: array<GetBenchmarks.t_benchmarks>): array<(
   int,
   option<string>,
 )> => {
-  data
+  benchmarks
   ->collectBenchmarksForRepo(~repo)
   ->Belt.Array.keepMap((item: GetBenchmarks.t_benchmarks) =>
     Belt.Option.flatMap(item.pull_number, pull_number => Some(pull_number, item.branch))
@@ -42,9 +42,19 @@ let collectPullsForRepo = (~repo, data: array<GetBenchmarks.t_benchmarks>): arra
   ->Belt.Set.toArray
 }
 
-let collectRepos = (data: array<GetBenchmarks.t_benchmarks>): array<string> => {
-  data->Belt.Array.map(item => item.repo_id)->Belt.Set.String.fromArray->Belt.Set.String.toArray
+let collectRepos = (benchmarks: array<GetBenchmarks.t_benchmarks>): array<string> => {
+  benchmarks
+  ->Belt.Array.map(item => item.repo_id)
+  ->Belt.Set.String.fromArray
+  ->Belt.Set.String.toArray
 }
+
+let collectBenchmarksForPull = (~repo, ~pull, benchmarks) =>
+  benchmarks
+  ->collectBenchmarksForRepo(~repo)
+  ->Belt.Array.keep((item: GetBenchmarks.t_benchmarks) => {
+    item.pull_number == Some(pull)
+  })
 
 let getTestMetrics = (item: GetBenchmarks.t_benchmarks): BenchmarkTest.testMetrics => {
   {
@@ -68,7 +78,6 @@ let getLatestMasterIndex = (~testName, benchmarks) => {
 module BenchmarkResults = {
   @react.component
   let make = (~benchmarks: array<GetBenchmarks.t_benchmarks>, ~synchronize, ~repo) => {
-    Js.log(benchmarks);
     let data = benchmarks->Belt.Array.map(getTestMetrics)
     let selectionByTestName =
       data->Belt.Array.reduceWithIndex(Belt.Map.String.empty, BenchmarkTest.groupByTestName)
@@ -122,7 +131,7 @@ module Content = {
     ~onSelectDateRange,
     ~synchronize,
     ~onSynchronizeToggle,
-    ~selectedPull=?,
+    ~selectedPull,
   ) => {
     <div className={Sx.make([Sx.container, Sx.d.flex, Sx.flex.wrap])}>
       <Sidebar
@@ -154,6 +163,13 @@ module Content = {
   }
 }
 
+type contentData = {
+  benchmarks: array<GetBenchmarks.t_benchmarks>,
+  pulls: array<(int, option<string>)>,
+  selectedRepo: string,
+  selectedPull: option<int>,
+}
+
 @react.component
 let make = () => {
   let url = ReasonReact.Router.useUrl()
@@ -180,24 +196,6 @@ let make = () => {
     setSynchronize(v => !v)
   }
 
-  React.useLayoutEffect2(() => {
-    switch response {
-    | Data(data) | PartialData(data, _) =>
-      switch String.split_on_char('/', url.hash) {
-      | list{""} => {
-          let allRepos = collectRepos(data.benchmarks)
-          switch Belt.Array.get(allRepos, 0) {
-          | Some(firstRepo) => ReasonReact.Router.replace("#/" ++ firstRepo)
-          | None => ()
-          }
-        }
-      | _ => ()
-      }
-    | _ => ()
-    }
-    None
-  }, (response, url))
-
   switch response {
   | Error(e) =>
     switch e.networkError {
@@ -209,56 +207,80 @@ let make = () => {
   | Data(data)
   | PartialData(data, _) =>
     let benchmarks: array<GetBenchmarks.t_benchmarks> = data.benchmarks
+    let repos = collectRepos(data.benchmarks)->Belt.Array.concat(["mirage/second", "mirage/third"])
 
-    switch String.split_on_char('/', url.hash) {
-    | list{""} => React.null
+    let res = switch String.split_on_char('/', url.hash) {
+    | list{""} =>
+      switch Belt.Array.get(repos, 0) {
+      | Some(firstRepo) => Error(#Redirect("#/" ++ firstRepo))
+      | None => Error(#Message("No data were found..."))
+      }
     | list{"", orgName, repoName, ...rest} => {
-        let repos =
-          collectRepos(data.benchmarks)->Belt.Array.concat(["mirage/second", "mirage/third"])
         let selectedRepo = repos->Belt.Array.getBy(repo => repo == orgName ++ "/" ++ repoName)
         switch selectedRepo {
+        | None => Error(#Message("This repo does not exist!"))
         | Some(selectedRepo) => {
             let benchmarksForRepo = collectBenchmarksForRepo(~repo=selectedRepo, benchmarks)
             let pullsForRepo = collectPullsForRepo(~repo=selectedRepo, benchmarks)
             switch rest {
             | list{"pull", pullNumberStr} =>
               switch Belt.Int.fromString(pullNumberStr) {
-              | Some(pullNumber) =>
-                <Content
-                  pulls=pullsForRepo
-                  selectedRepo
-                  repos
-                  benchmarks={Belt.Array.keep(benchmarks, (item: GetBenchmarks.t_benchmarks) => {
-                    item.pull_number == Some(pullNumber)
-                  })}
-                  selectedPull=pullNumber
-                  startDate
-                  endDate
-                  onSelectDateRange
-                  synchronize
-                  onSynchronizeToggle
-                />
-              | None => <div> {("Wrong pull number: " ++ pullNumberStr)->React.string} </div>
+              | None => Error(#Message("Pull request must be an integer. Got: " ++ pullNumberStr))
+              | Some(selectedPull) =>
+                if pullsForRepo->Belt.Array.some(((pullNr, _)) => pullNr == selectedPull) {
+                  let benchmarksForPull = collectBenchmarksForPull(
+                    ~repo=selectedRepo,
+                    ~pull=selectedPull,
+                    benchmarks,
+                  )
+                  Ok({
+                    benchmarks: benchmarksForPull,
+                    pulls: pullsForRepo,
+                    selectedRepo: selectedRepo,
+                    selectedPull: Some(selectedPull),
+                  })
+                } else {
+                  Error(#Message("This pull request does not exist!"))
+                }
               }
             | _ =>
-              <Content
-                pulls=pullsForRepo
-                selectedRepo
-                repos
-                benchmarks=benchmarksForRepo
-                startDate
-                endDate
-                onSelectDateRange
-                synchronize
-                onSynchronizeToggle
-              />
+              let benchmarksForMaster = Belt.Array.keep(benchmarksForRepo, (
+                item: GetBenchmarks.t_benchmarks,
+              ) => {
+                Belt.Option.isNone(item.pull_number)
+              })
+              Ok({
+                benchmarks: benchmarksForMaster,
+                pulls: pullsForRepo,
+                selectedRepo: selectedRepo,
+                selectedPull: None,
+              })
             }
           }
-        | None => <div> {"This repo does not exist!"->React.string} </div>
         }
       }
+    | _ => Error(#Message("Unknown route: " ++ url.hash))
+    }
 
-    | _ => <div> {Rx.string("Unknown route: " ++ url.hash)} </div>
+    switch res {
+    | Error(#Redirect(route)) => {
+        ReasonReact.Router.replace(route)
+        React.null
+      }
+    | Error(#Message(errorStr)) => <div> {errorStr->Rx.string} </div>
+    | Ok({benchmarks, pulls, selectedRepo, selectedPull}) =>
+      <Content
+        pulls
+        selectedRepo
+        repos
+        benchmarks
+        selectedPull
+        startDate
+        endDate
+        onSelectDateRange
+        synchronize
+        onSynchronizeToggle
+      />
     }
   }
 }
