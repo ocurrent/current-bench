@@ -8,13 +8,26 @@ module Benchmark = struct
     commit : string;
     branch : string option;
     pull_number : int option;
-    name : string option;
-    data : Yojson.Safe.t;
+    benchmark_name : string option;
+    test_name : string;
+    metrics : Yojson.Safe.t;
   }
 
-  let make ~run_at ~duration ~repo_id ~commit ?branch ?pull_number data =
-    let name = Yojson.Safe.Util.(member "name" data |> to_string_option) in
-    { run_at; duration; repo_id; commit; branch; pull_number; name; data }
+  let make ~run_at ~repo_id ~commit ~duration ~benchmark_name ?branch
+      ?pull_number data =
+    let test_name = Yojson.Safe.Util.(member "name" data |> to_string) in
+    let metrics = Yojson.Safe.Util.(member "metrics" data) in
+    {
+      run_at;
+      duration;
+      repo_id;
+      commit;
+      branch;
+      pull_number;
+      benchmark_name;
+      test_name;
+      metrics;
+    }
 
   let run_at self = self.run_at
 
@@ -28,9 +41,11 @@ module Benchmark = struct
 
   let pull_number self = self.pull_number
 
-  let name self = self.name
+  let test_name self = self.test_name
 
-  let data self = self.data
+  let benchmark_name self = self.benchmark_name
+
+  let metrics self = self.metrics
 
   let pp =
     let open Fmt.Dump in
@@ -38,33 +53,46 @@ module Benchmark = struct
       [
         field "run_at" run_at Ptime.pp;
         field "duration" duration Ptime.Span.pp;
-        field "repo_id" duration Ptime.Span.pp;
+        field "repo_id" repo_id Fmt.(pair ~sep:(Fmt.any "/") string string);
         field "commit" commit Fmt.string;
         field "branch" branch Fmt.(option string);
         field "pull_number" pull_number Fmt.(option int);
-        field "name" name Fmt.(option string);
-        field "data" data Yojson.Safe.pp;
+        field "benchmark_name" benchmark_name Fmt.(option string);
+        field "test_name" test_name Fmt.(string);
+        field "metrics" metrics Yojson.Safe.pp;
       ]
 
   module Db = struct
     let insert_query
-        { run_at; duration; repo_id; commit; branch; pull_number; name; data } =
+        {
+          run_at;
+          duration;
+          repo_id;
+          commit;
+          branch;
+          pull_number;
+          benchmark_name;
+          test_name;
+          metrics;
+        } =
       let run_at = Sql_utils.time run_at in
       let duration = Sql_utils.span duration in
       let repository = Sql_utils.string (fst repo_id ^ "/" ^ snd repo_id) in
       let commit = Sql_utils.string commit in
       let branch = Sql_utils.(option string) branch in
       let pull_number = Sql_utils.(option int) pull_number in
-      let name = Sql_utils.(option string) name in
-      let data = Sql_utils.json data in
+      let benchmark_name = Sql_utils.(option string) benchmark_name in
+      let test_name = Sql_utils.(string) test_name in
+      let metrics = Sql_utils.json metrics in
       Fmt.str
         {|
 INSERT INTO
-  benchmarks(run_at, duration, repo_id, commit, branch, pull_number, name, data)
+  benchmarks(run_at, duration, repo_id, commit, branch, pull_number, benchmark_name, test_name,  metrics)
 VALUES
-  (%s, %s, %s, %s, %s, %s, %s, %s)
+  (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 |}
-        run_at duration repository commit branch pull_number name data
+        run_at duration repository commit branch pull_number benchmark_name
+        test_name metrics
 
     let insert (db : Postgresql.connection) self =
       let query = insert_query self in
