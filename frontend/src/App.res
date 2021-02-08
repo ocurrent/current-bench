@@ -250,6 +250,7 @@ let make = () => {
             let benchmarksForMaster = Belt.Array.keep(benchmarksForRepo, (
               item: GetBenchmarks.t_benchmarks,
             ) => {
+              // pullNumber is assumed to be None only for master
               Belt.Option.isNone(item.pull_number)
             })
             <Content
