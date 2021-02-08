@@ -215,57 +215,54 @@ let make = () => {
         let selectedRepo = repos->Belt.Array.getBy(repo => repo == orgName ++ "/" ++ repoName)
         switch selectedRepo {
         | None => <div> {"This repo does not exist!"->Rx.string} </div>
-        | Some(selectedRepo) => {
-            let benchmarksForRepo = collectBenchmarksForRepo(~repo=selectedRepo, benchmarks)
-            let pullsForRepo = collectPullsForRepo(~repo=selectedRepo, benchmarks)
-            switch rest {
-            | list{"pull", pullNumberStr} =>
-              switch Belt.Int.fromString(pullNumberStr) {
-              | None =>
-                <div>
-                  {("Pull request must be an integer. Got: " ++ pullNumberStr)->Rx.string}
-                </div>
-              | Some(selectedPull) =>
-                if pullsForRepo->Belt.Array.some(((pullNr, _)) => pullNr == selectedPull) {
-                  let benchmarksForPull = collectBenchmarksForPull(
-                    ~repo=selectedRepo,
-                    ~pull=selectedPull,
-                    benchmarks,
-                  )
-                  <Content
-                    pulls=pullsForRepo
-                    selectedRepo
-                    repos
-                    benchmarks=benchmarksForPull
-                    selectedPull
-                    startDate
-                    endDate
-                    onSelectDateRange
-                    synchronize
-                    onSynchronizeToggle
-                  />
-                } else {
-                  <div> {"This pull request does not exist!"->Rx.string} </div>
-                }
+        | Some(selectedRepo) =>
+          let pulls = collectPullsForRepo(~repo=selectedRepo, benchmarks)
+          switch rest {
+          | list{"pull", pullNumberStr} =>
+            switch Belt.Int.fromString(pullNumberStr) {
+            | None =>
+              <div> {("Pull request must be an integer. Got: " ++ pullNumberStr)->Rx.string} </div>
+            | Some(selectedPull) =>
+              if pulls->Belt.Array.some(((pullNr, _)) => pullNr == selectedPull) {
+                let benchmarksForPull = collectBenchmarksForPull(
+                  ~repo=selectedRepo,
+                  ~pull=selectedPull,
+                  benchmarks,
+                )
+                <Content
+                  pulls
+                  selectedRepo
+                  repos
+                  benchmarks=benchmarksForPull
+                  selectedPull
+                  startDate
+                  endDate
+                  onSelectDateRange
+                  synchronize
+                  onSynchronizeToggle
+                />
+              } else {
+                <div> {"This pull request does not exist!"->Rx.string} </div>
               }
-            | _ =>
-              let benchmarksForMaster = Belt.Array.keep(benchmarksForRepo, (
-                item: GetBenchmarks.t_benchmarks,
-              ) => {
-                Belt.Option.isNone(item.pull_number)
-              })
-              <Content
-                pulls=pullsForRepo
-                selectedRepo
-                repos
-                benchmarks=benchmarksForMaster
-                startDate
-                endDate
-                onSelectDateRange
-                synchronize
-                onSynchronizeToggle
-              />
             }
+          | _ =>
+            let benchmarksForRepo = collectBenchmarksForRepo(~repo=selectedRepo, benchmarks)
+            let benchmarksForMaster = Belt.Array.keep(benchmarksForRepo, (
+              item: GetBenchmarks.t_benchmarks,
+            ) => {
+              Belt.Option.isNone(item.pull_number)
+            })
+            <Content
+              pulls
+              selectedRepo
+              repos
+              benchmarks=benchmarksForMaster
+              startDate
+              endDate
+              onSelectDateRange
+              synchronize
+              onSynchronizeToggle
+            />
           }
         }
       }

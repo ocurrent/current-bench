@@ -1,8 +1,8 @@
 open! Prelude
 open Components
 
-let linkForPull = ((pull_number, _)) => {
-  "/pull/" ++ Belt.Int.toString(pull_number)
+let linkForPull = (repo, (pull_number, _)) => {
+  "#/" ++ repo ++ "/pull/" ++ Belt.Int.toString(pull_number)
 }
 
 let pullToString = ((pull_number, branch)) =>
@@ -27,7 +27,7 @@ module PullsMenu = {
             selectedPullNumber == pull_number
           )}
           key={string_of_int(i)}
-          href={"#/" ++ repo ++ linkForPull(pull)}
+          href={linkForPull(repo, pull)}
           text={pullToString(pull)}
         />
       })
