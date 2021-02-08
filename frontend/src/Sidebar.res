@@ -14,7 +14,6 @@ let pullToString = ((pull_number, branch)) =>
 module PullsMenu = {
   @react.component
   let make = (~pulls, ~repo, ~selectedPull=?) => {
-    Js.log(selectedPull)
     <Column>
       <Text color=Sx.gray700 weight=#bold uppercase=true size=#md>
         {Rx.text("Pull Requests")}
