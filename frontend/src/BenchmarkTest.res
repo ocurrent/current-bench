@@ -67,45 +67,57 @@ let groupDataByMetric = (items: array<testMetrics>, selection: Belt.Set.Int.t): 
   selection->Set.Int.reduce(Map.String.empty, groupByMetric)
 }
 
-let renderMetricOverviewRow = (~xTicks, metricName, data) => {
+let calcDeltaStr = (a, b) => {
+  let n = if b == 0.0 {
+    0.0
+  } else {
+    let n = (b -. a) /. b *. 100.
+    a < b ? -.n : abs_float(n)
+  }
+  if n > 0.0 {
+    "+" ++ n->Js.Float.toFixedWithPrecision(~digits=2) ++ "%"
+  } else {
+    n->Js.Float.toFixedWithPrecision(~digits=2) ++ "%"
+  }
+}
+
+let renderMetricOverviewRow = (
+  ~comparisonMetrics: option<testMetrics>=?,
+  ~xTicks,
+  metricName,
+  data,
+) => {
   if Belt.Array.length(data) == 0 {
     React.null
   } else {
-    let second_to_last_value = try Belt.Array.getExn(
-      data,
-      Belt.Array.length(data) - 2,
-    )->Belt.Array.getExn(1) catch {
-    | _ => 0.0
-    }
-
     let last_value = Belt.Array.getExn(data, Belt.Array.length(data) - 1)->Belt.Array.getExn(1)
     let idx = Belt.Array.getExn(data, Belt.Array.length(data) - 1)->Belt.Array.getExn(0)
     let commit = Belt.Map.Int.getExn(xTicks, idx->Belt.Float.toInt)
 
-    let delta = {
-      let n = if second_to_last_value == 0.0 {
-        0.0
-      } else {
-        let n = (second_to_last_value -. last_value) /. second_to_last_value *. 100.
-        last_value < second_to_last_value ? -.n : abs_float(n)
+    let (vsMasterAbs, vsMasterRel) = switch comparisonMetrics {
+    | Some(comparisonMetrics) =>
+      switch Belt.Map.String.get(comparisonMetrics.metrics, metricName) {
+      | Some(masterValue) => (
+          Js.Float.toFixedWithPrecision(~digits=2)(masterValue),
+          calcDeltaStr(last_value, masterValue),
+        )
+      | None => ("NA", "NA")
       }
-      if n > 0.0 {
-        "+" ++ n->Js.Float.toFixedWithPrecision(~digits=2) ++ "%"
-      } else {
-        n->Js.Float.toFixedWithPrecision(~digits=2) ++ "%"
-      }
+    | _ => ("NA", "NA")
     }
+
     <Table.Row key=metricName>
       <Table.Col> {Rx.text(metricName)} </Table.Col>
       <Table.Col> <Link target="_blank" href={commitUrl(commit)} text=commit /> </Table.Col>
       <Table.Col> {Rx.text(last_value->Js.Float.toFixedWithPrecision(~digits=2))} </Table.Col>
-      <Table.Col sx=[Sx.text.right]> {Rx.text(delta)} </Table.Col>
+      <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterAbs)} </Table.Col>
+      <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterRel)} </Table.Col>
     </Table.Row>
   }
 }
 
 @react.component
-let make = (~data, ~testName, ~testSelection, ~synchronize=true) => {
+let make = (~data, ~testName, ~comparisonMetrics=?, ~testSelection, ~synchronize=true) => {
   let dataByMetrics = data->groupDataByMetric(testSelection)
   let graphRefs = ref(list{})
   let onGraphRender = graph => graphRefs := Belt.List.add(graphRefs.contents, graph)
@@ -132,12 +144,13 @@ let make = (~data, ~testName, ~testSelection, ~synchronize=true) => {
           <th> {React.string("Metric")} </th>
           <th> {React.string("Last Commit")} </th>
           <th> {React.string("Last Value")} </th>
+          <th> {React.string("Master Value")} </th>
           <th> {React.string("Delta")} </th>
         </tr>
       </thead>
       <tbody>
         {dataByMetrics
-        ->Belt.Map.String.mapWithKey(renderMetricOverviewRow(~xTicks))
+        ->Belt.Map.String.mapWithKey(renderMetricOverviewRow(~xTicks, ~comparisonMetrics?))
         ->Belt.Map.String.valuesToArray
         ->Rx.array}
       </tbody>
