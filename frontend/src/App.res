@@ -200,7 +200,7 @@ let make = () => {
   | Data(data)
   | PartialData(data, _) =>
     let benchmarks: array<GetBenchmarks.t_benchmarks> = data.benchmarks
-    let repos = collectRepos(data.benchmarks)->Belt.Array.concat(["mirage/second", "mirage/third"])
+    let repos = collectRepos(data.benchmarks)
 
     switch String.split_on_char('/', url.hash) {
     | list{""} =>
