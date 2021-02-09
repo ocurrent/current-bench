@@ -31,18 +31,15 @@ let collectPulls = (data: array<GetBenchmarks.t_benchmarks>): array<(int, option
   Belt.List.toArray(data)
 }
 
-let getTestMetrics = (item: GetBenchmarks.t_benchmarks): BenchmarkTest.testMetrics => {
-  {
-    BenchmarkTest.name: item.test_name,
-    metrics: item.metrics
-    ->Belt.Option.getExn
-    ->Js.Json.decodeObject
-    ->Belt.Option.getExn
-    ->jsDictToMap
-    ->Belt.Map.String.map(v => BenchmarkTest.decodeMetricValue(v)),
-    commit: item.commit,
-  }
-}
+let decodeRunAt = runAt => runAt->Js.Json.decodeString->Belt.Option.map(Js.Date.fromString)
+
+let decodeMetrics = metrics =>
+  metrics
+  ->Belt.Option.getExn
+  ->Js.Json.decodeObject
+  ->Belt.Option.getExn
+  ->jsDictToMap
+  ->Belt.Map.String.map(v => BenchmarkTest.decodeMetricValue(v))
 
 let getLatestMasterIndex = (~testName, benchmarks) => {
   BeltHelpers.Array.findIndexRev(benchmarks, (item: GetBenchmarks.t_benchmarks) => {
@@ -50,32 +47,21 @@ let getLatestMasterIndex = (~testName, benchmarks) => {
   })
 }
 
-module BenchmarkResults = {
+module BenchmarkView = {
   @react.component
-  let make = (~benchmarks: array<GetBenchmarks.t_benchmarks>, ~pullNumber=?, ~synchronize) => {
-    let data = Belt.Array.keep(benchmarks, (item: GetBenchmarks.t_benchmarks) => {
-      // pullNumber is assumed to be None only for master
-      item.pull_number == pullNumber
-    })
-    let data = data->Belt.Array.map(getTestMetrics)
-    let selectionByTestName =
-      data->Belt.Array.reduceWithIndex(Belt.Map.String.empty, BenchmarkTest.groupByTestName)
-
-    let comparisonMetricsByTestName = {
-      Belt.Map.String.mapWithKey(selectionByTestName, (testName, _) => {
-        // TODO: Use the index load the data from master and add an annotation.
-        switch getLatestMasterIndex(~testName, benchmarks) {
-        | Some(idx) => Some(benchmarks[idx]->getTestMetrics)
-        | None => None
-        }
-      })
-    }
-
+  let make = (
+    ~benchmarkDataByTestName: BenchmarkData.byTestName,
+    ~comparisonBenchmarkDataByTestName=Belt.Map.String.empty,
+  ) => {
     let graphs = {
-      selectionByTestName
-      ->Belt.Map.String.mapWithKey((testName, testSelection) => {
-        let comparisonMetrics = Belt.Map.String.getExn(comparisonMetricsByTestName, testName)
-        <BenchmarkTest ?comparisonMetrics synchronize key={testName} data testName testSelection />
+      benchmarkDataByTestName
+      ->Belt.Map.String.mapWithKey((testName, dataByMetricName) => {
+        let comparison = Belt.Map.String.getWithDefault(
+          comparisonBenchmarkDataByTestName,
+          testName,
+          Belt.Map.String.empty,
+        )
+        <BenchmarkTest key={testName} testName dataByMetricName comparison />
       })
       ->Belt.Map.String.valuesToArray
     }
@@ -133,13 +119,34 @@ let make = () => {
     let benchmarks: array<GetBenchmarks.t_benchmarks> = data.benchmarks
     let pulls = collectPulls(benchmarks)
 
+    let benchmarkData = benchmarks->Belt.Array.reduce(BenchmarkData.empty, (acc, item) => {
+      item.metrics
+      ->decodeMetrics
+      ->Belt.Map.String.reduce(acc, (acc, metricName, value) => {
+        BenchmarkData.add(
+          acc,
+          ~pullNumber=item.pull_number,
+          ~testName=item.test_name,
+          ~metricName,
+          ~runAt=item.run_at->decodeRunAt->Belt.Option.getExn,
+          ~commit=item.commit,
+          ~value,
+        )
+      })
+    })
+
     let (main, mainTitle) = {
       switch String.split_on_char('/', url.hash) {
-      | list{""} => (<BenchmarkResults synchronize benchmarks />, "master")
+      | list{""} =>
+        let benchmarkDataByTestName = BenchmarkData.forPullNumber(benchmarkData, None)
+        (<BenchmarkView benchmarkDataByTestName />, "master")
       | list{"", "pull", pullNumberStr} =>
         switch Belt.Int.fromString(pullNumberStr) {
-        | Some(pullNumber) => (
-            <BenchmarkResults synchronize pullNumber benchmarks />,
+        | Some(pullNumber) =>
+          let benchmarkDataByTestName = BenchmarkData.forPullNumber(benchmarkData, Some(pullNumber))
+          let comparisonBenchmarkDataByTestName = BenchmarkData.forPullNumber(benchmarkData, None)
+          (
+            <BenchmarkView benchmarkDataByTestName comparisonBenchmarkDataByTestName />,
             "#" ++ pullNumberStr,
           )
         | None => (<h1> {Rx.string("Invalid pull number: " ++ pullNumberStr)} </h1>, "Not found")
