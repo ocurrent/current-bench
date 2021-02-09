@@ -42,4 +42,7 @@ module Array = {
     ignore(Js.Array.push(item, arr))
     arr
   }
+
+  let last = arr => Belt.Array.get(arr, Belt.Array.length(arr) - 1)
+  let lastExn = arr => Belt.Array.getExn(arr, Belt.Array.length(arr) - 1)
 }
