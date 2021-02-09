@@ -206,6 +206,7 @@ let make = () => {
     | list{""} =>
       switch Belt.Array.get(repos, 0) {
       | Some(firstRepo) => {
+          // If no repository is selected, this redirects to the first one.
           ReasonReact.Router.replace("#/" ++ firstRepo)
           React.null
         }
