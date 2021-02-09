@@ -37,6 +37,14 @@ code {
   text-align: center;
 }
 
+.dygraph-annotation {
+  background: #fff;
+  padding: 2px;
+  margin-top: -2px;
+  border: 1px solid rgb(15, 111, 222);
+  border-radius: 3px;
+}
+
 .dygraph-axis-label {
   /* position: absolute; */
   /* font-size: 14px; */
@@ -47,12 +55,12 @@ code {
 }
 
 .dygraph-axis-label-x {
+  font-family: SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace!important;
   transform: rotate(-90deg) translate(-20px, 0);
   text-align: right;
-  font-weight: 600;
   font-size: 11px;
   cursor: pointer;
-  margin-right: 20px;
+  margin-top: 10px;
 }
 
 .dygraph-axis-label-x:hover {

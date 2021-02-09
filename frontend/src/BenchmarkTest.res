@@ -191,7 +191,7 @@ let make = (
         {
           "series": "value",
           "x": lastComparisonX,
-          "icon": "icon.svg",
+          "icon": "branch.svg",
           "width": 21,
           "height": 21,
         },
