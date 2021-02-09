@@ -37,4 +37,9 @@ module Array = {
       }
     loop(len - 1, None)
   }
+
+  let push = (arr, item) => {
+    ignore(Js.Array.push(item, arr))
+    arr
+  }
 }
