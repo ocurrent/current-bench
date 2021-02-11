@@ -46,16 +46,17 @@ let make = (
   ~selectedPull=?,
 ) => {
   <Column spacing=Sx.xl2 sx=Styles.sidebarSx>
-    <select
+    <Components.Select
       name="repositories"
       value={selectedRepoId}
+      placeholder="Select a repository"
       onChange={e => ReactEvent.Form.target(e)["value"]->onSelectRepoId}>
       {repo_ids
       ->Belt.Array.mapWithIndex((i, repo_id) =>
         <option key={string_of_int(i)} value={repo_id}> {Rx.string(repo_id)} </option>
       )
       ->Rx.array}
-    </select>
+    </Components.Select>
     <PullsMenu repo_id=selectedRepoId pulls ?selectedPull />
   </Column>
 }
