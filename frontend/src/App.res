@@ -20,7 +20,7 @@ query ($startDate: timestamp!, $endDate: timestamp!) {
 
 module PullCompare = Belt.Id.MakeComparable({
   type t = (int, option<string>)
-  let cmp = compare
+  let cmp = (a, b) => -compare(a, b)
 })
 
 let collectBenchmarksForRepo = (~repo_id, data: array<GetBenchmarks.t_benchmarks>): array<
