@@ -247,7 +247,7 @@ let make = () => {
                 <div> {"This pull request does not exist!"->Rx.string} </div>
               }
             }
-          | _ =>
+          | list{} =>
             let benchmarksForRepo = collectBenchmarksForRepo(~repo_id=selectedRepoId, benchmarks)
             let benchmarksForMaster = Belt.Array.keep(benchmarksForRepo, (
               item: GetBenchmarks.t_benchmarks,
@@ -266,6 +266,7 @@ let make = () => {
               synchronize
               onSynchronizeToggle
             />
+          | _ => <div> {("Unknown route: " ++ url.hash)->Rx.string} </div>
           }
         }
       }
