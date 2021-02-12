@@ -7,10 +7,10 @@ type testMetrics = {
   metrics: Belt.Map.String.t<float>,
 }
 
-let commitUrl = commit => `https://github.com/mirage/index/commit/${commit}`
-let goToCommitLink = commit => {
+let commitUrl = (repo_id, commit) => `https://github.com/${repo_id}/commit/${commit}`
+let goToCommitLink = (repo_id, commit) => {
   let openUrl: string => unit = %raw(`function (url) { window.open(url, "_blank") }`)
-  openUrl(commitUrl(commit))
+  openUrl(commitUrl(repo_id, commit))
 }
 
 let groupByTestName = (acc, item: testMetrics, idx) => {
@@ -84,6 +84,7 @@ let calcDeltaStr = (a, b) => {
 let renderMetricOverviewRow = (
   ~comparisonMetrics: option<testMetrics>=?,
   ~xTicks,
+  ~repo_id,
   metricName,
   data,
 ) => {
@@ -108,7 +109,9 @@ let renderMetricOverviewRow = (
 
     <Table.Row key=metricName>
       <Table.Col> {Rx.text(metricName)} </Table.Col>
-      <Table.Col> <Link target="_blank" href={commitUrl(commit)} text=commit /> </Table.Col>
+      <Table.Col>
+        <Link target="_blank" href={commitUrl(repo_id, commit)} text=commit />
+      </Table.Col>
       <Table.Col> {Rx.text(last_value->Js.Float.toFixedWithPrecision(~digits=2))} </Table.Col>
       <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterAbs)} </Table.Col>
       <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterRel)} </Table.Col>
@@ -117,7 +120,14 @@ let renderMetricOverviewRow = (
 }
 
 @react.component
-let make = (~data, ~testName, ~comparisonMetrics=?, ~testSelection, ~synchronize=true) => {
+let make = (
+  ~data,
+  ~repo_id,
+  ~testName,
+  ~comparisonMetrics=?,
+  ~testSelection,
+  ~synchronize=true,
+) => {
   let dataByMetrics = data->groupDataByMetric(testSelection)
   let graphRefs = ref(list{})
   let onGraphRender = graph => graphRefs := Belt.List.add(graphRefs.contents, graph)
@@ -150,27 +160,30 @@ let make = (~data, ~testName, ~comparisonMetrics=?, ~testSelection, ~synchronize
       </thead>
       <tbody>
         {dataByMetrics
-        ->Belt.Map.String.mapWithKey(renderMetricOverviewRow(~xTicks, ~comparisonMetrics?))
+        ->Belt.Map.String.mapWithKey(
+          renderMetricOverviewRow(~xTicks, ~repo_id, ~comparisonMetrics?),
+        )
         ->Belt.Map.String.valuesToArray
         ->Rx.array}
       </tbody>
     </Table>
   }
 
-  let metric_graphs = dataByMetrics
-  ->Belt.Map.String.mapWithKey((metricName, data) => {
-    <LineGraph
-      onXLabelClick=goToCommitLink
-      onRender=onGraphRender
-      key=metricName
-      title=metricName
-      xTicks
-      data={data->Belt.Array.sliceToEnd(-20)}
-      labels=["idx", "value"]
-    />
-  })
-  ->Belt.Map.String.valuesToArray
-  ->Rx.array
+  let metric_graphs =
+    dataByMetrics
+    ->Belt.Map.String.mapWithKey((metricName, data) => {
+      <LineGraph
+        onXLabelClick={commit => goToCommitLink(repo_id, commit)}
+        onRender=onGraphRender
+        key=metricName
+        title=metricName
+        xTicks
+        data={data->Belt.Array.sliceToEnd(-20)}
+        labels=["idx", "value"]
+      />
+    })
+    ->Belt.Map.String.valuesToArray
+    ->Rx.array
 
   <details className={Sx.make([Sx.w.full])} open_=true>
     <summary className={Sx.make([Sx.pointer])}>

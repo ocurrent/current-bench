@@ -32,9 +32,8 @@ let make = (~sx as uSx=[], ~startDate=?, ~endDate=?, ~onSelect=?) => {
     )
   }
   let elementRef = React.useRef(Js.Nullable.null)
-  let dates = #dates
 
-  React.useEffect1(() => {
+  React.useEffect0(() => {
     let options = {
       "element": elementRef.current |> Js.Nullable.toOption |> Belt.Option.getExn,
       "startDate": startDate |> Js.Null.fromOption,
@@ -47,7 +46,7 @@ let make = (~sx as uSx=[], ~startDate=?, ~endDate=?, ~onSelect=?) => {
     let _self = init(options)
 
     None
-  }, [dates])
+  })
 
   let sx = Array.append(uSx, containerSx)
   <Row sx alignX=#center alignY=#center>
