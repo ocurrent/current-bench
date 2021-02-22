@@ -17,7 +17,7 @@ external init: options => t = "default"
 
 let containerSx = [Sx.rounded.sm, Sx.border.xs, Sx.border.color(Sx.gray300)]
 
-let elementSx = [Sx.border.none, Sx.text.semibold, Sx.text.sm, Sx.py.lg, Sx.px.xs]
+let elementSx = [Sx.border.none, Sx.text.semibold, Sx.text.sm, Sx.py.lg, Sx.px.xs, Sx.pointer]
 
 @react.component
 let make = (~sx as uSx=[], ~startDate=?, ~endDate=?, ~onSelect=?) => {
