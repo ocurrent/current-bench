@@ -172,21 +172,17 @@ module Flex = {
     ~alignX=#left,
     ~alignY=#top,
     ~sx as uSx=[],
-    ~txt=?,
     ~wrap=false,
     ~reverse=false,
-    ~icon=?,
     ~children=?,
   ) => {
     let sx = Array.append(
       sx,
-      [alignX_rule(alignX), alignY_rule(alignY), wrap_rule(~wrap, ~reverse)],
+      [Row.alignX_rule(alignX), Row.alignY_rule(alignY), wrap_rule(~wrap, ~reverse)],
     )
     let sx = Array.append(sx, uSx)
-    let txt = Rx.opt(txt |> Option.map(Rx.string))
-    let icon = Rx.opt(icon)
-    let children = Rx.opt(children)
-    <div className={Sx.make(sx)}> icon txt children </div>
+    let children = Rx.option(children)
+    <div className={Sx.make(sx)}> children </div>
   }
 }
 
@@ -197,9 +193,9 @@ module Block = {
   let make = (~sx as uSx=[], ~txt=?, ~icon=?, ~children=?) => {
     let sx = Array.append(sx, uSx)
 
-    let txt = Rx.opt(txt |> Option.map(Rx.string))
-    let icon = Rx.opt(icon)
-    let children = Rx.opt(children)
+    let txt = Rx.option(txt |> Option.map(Rx.string))
+    let icon = Rx.option(icon)
+    let children = Rx.option(children)
     <div className={Sx.make(sx)}> icon txt children </div>
   }
 }
@@ -218,7 +214,7 @@ module Label = {
       <div className={Sx.make([Sx.text.bold, Sx.text.upper, Sx.text.sm])}>
         {React.string(text)}
       </div>
-      {Rx.maybe(children, identity)}
+      {Rx.onSome(children, identity)}
     </label>
   }
 }
@@ -227,12 +223,11 @@ module Button = {
   let sx_base = fill => {
     open Sx
     [
-      pointer,
       d.block,
       bg.color(fill ? primary : white),
       on(fill, text.color(white)),
-      rounded.md,
       text.bold,
+      rounded.sm,
       hover([bg.color(primary), text.color(white)]),
       active([bg.color(black), border.color(black), text.color(white)]),
     ]
@@ -240,12 +235,12 @@ module Button = {
 
   let sx_small = {
     open Sx
-    [text.sm, py.md, px.lg]
+    [text.sm, py.md, px.md]
   }
 
   let sx_medium = {
     open Sx
-    [py.lg, px.xl]
+    [text.md, py.lg, px.lg]
   }
 
   let sx_border = {
@@ -260,7 +255,6 @@ module Button = {
       d.flex,
       flex.row,
       items.center,
-      Sx.selector("svg", [Sx.mr.md]),
       active([bg.color(black), border.color(black), text.color(white)]),
     ]
   }
@@ -498,11 +492,16 @@ module Select = {
         ?id
         ?defaultValue
         ?onChange
-        ?value
+        value=?{switch (value, placeholder) {
+        | (Some(value), _) => Some(value)
+        | (None, Some(_)) => Some("")
+        | _ => None
+        }}
         ?name
         className={Sx.make(sx_select)}>
         {switch placeholder {
-        | Some(placeholder) => <option value="" disabled=true> {React.string(placeholder)} </option>
+        | Some(placeholder) =>
+          <option value="" disabled=true hidden=true> {React.string(placeholder)} </option>
         | None => React.null
         }}
         children
@@ -894,7 +893,13 @@ module Slider = {
 module Link = {
   let sx_base = {
     open Sx
-    [pointer, bg.none, text.color(black), hover([text.color(primary)])]
+    [
+      pointer,
+      unsafe("textDecoration", "inherit"),
+      bg.none,
+      text.color(black),
+      hover([text.color(primary)]),
+    ]
   }
 
   let sx_medium = {
@@ -923,7 +928,6 @@ module Link = {
     | None => ([], React.null)
     }
     let sx = Array.concat(list{
-      uSx,
       sx_base,
       sx_size,
       sx_icon,
@@ -933,6 +937,7 @@ module Link = {
       } else {
         []
       },
+      uSx,
     })
     <a className={Sx.make(sx)} ?href ?target> icon_svg text </a>
   }
@@ -1119,7 +1124,7 @@ module Modal = {
     <div className={Sx.make(overlaySx)}>
       <div className={Sx.make(Array.append(contentSx, uSx))}>
         <Block sx=[Sx.p.xl2]>
-          {Rx.maybe(title, text => <Heading sx=[Sx.mt.zero] text level=#h2 />)} children
+          {Rx.onSome(title, text => <Heading sx=[Sx.mt.zero] text level=#h2 />)} children
         </Block>
       </div>
     </div>
