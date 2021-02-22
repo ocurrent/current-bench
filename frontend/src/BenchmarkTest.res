@@ -192,6 +192,7 @@ let make = (
           "series": "value",
           "x": lastComparisonX,
           "icon": "branch.svg",
+          "text": "First PR commit",
           "width": 21,
           "height": 21,
         },
