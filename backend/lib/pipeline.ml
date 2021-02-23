@@ -53,13 +53,13 @@ let dockerfile ~base =
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 1) ()
 
 (* $server/$repo_owner/$repo_name/pull/$pull_number *)
-let make_commit_status_url pull_number =
+let make_commit_status_url owner repository pull_number =
   let uri_end =
     match pull_number with
     | None -> ""
-    | Some number -> "/pull/" ^ string_of_int number
+    | Some number -> owner ^ "/" ^ repository ^ "/pull/" ^ string_of_int number
   in
-  Uri.of_string ("http://autumn.ocamllabs.io/#" ^ uri_end)
+  Uri.of_string ("http://autumn.ocamllabs.io/" ^ uri_end)
 
 let github_status_of_state url = function
   | Ok _ -> Github.Api.Status.v ~url `Success ~description:"Passed"
@@ -127,7 +127,7 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
   match head with
   | `Local _ -> Current.ignore_value result
   | `Github head ->
-      let status_url = make_commit_status_url pull_number in
+      let status_url = make_commit_status_url owner repository pull_number in
       result
       >>| github_status_of_state status_url
       |> Github.Api.Commit.set_status (Current.return head) "ocaml-benchmarks"
