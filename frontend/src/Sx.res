@@ -536,11 +536,18 @@ module Make = (
     sixth: t,
   }
 
-  let _wh = (wh): size => {
+  let _wh = (wh, wOrH): size => {
     zero: [wh(#zero)],
     auto: [wh(#auto)],
     full: [wh(#percent(100.0))],
-    screen: [wh(#vw(100.0))],
+    screen: [
+      wh(
+        switch wOrH {
+        | #w => #vw(100.0)
+        | #h => #vh(100.0)
+        },
+      ),
+    ],
     xs: [wh(#px(theme.space.xs))],
     sm: [wh(#px(theme.space.sm))],
     md: [wh(#px(theme.space.md))],
@@ -560,8 +567,8 @@ module Make = (
     sixth: [wh(#percent(16.666667))],
   }
 
-  let w = _wh(Css.width)
-  let h = _wh(Css.height)
+  let w = _wh(Css.width, #w)
+  let h = _wh(Css.height, #h)
 
   let _minMaxWh = (wh): sizeMinMax => {
     zero: [wh(#zero)],
@@ -836,6 +843,7 @@ module Make = (
   let relative = [Css.position(#relative)]
   let absolute = [Css.position(#absolute)]
   let fixed = [Css.position(#fixed)]
+  let sticky = [Css.position(#sticky)]
 
   let box = [Css.boxSizing(#borderBox), Css.display(#block), Css.width(#percent(100.0))]
 

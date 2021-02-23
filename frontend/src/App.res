@@ -4,59 +4,54 @@ open! Prelude
 open JsHelpers
 open Components
 
-module GetBenchmarks = %graphql(`
-query ($startDate: timestamp!, $endDate: timestamp!) {
-  benchmarks(where: {_and: [{run_at: {_gte: $startDate}}, {run_at: {_lt: $endDate}}]}) {
-      repo_id
-      test_name
-      metrics
-      commit
-      branch
-      pull_number
-      run_at
-    }
+module GetAllRepos = %graphql(`
+query {
+  allRepoIds: benchmarks(distinct_on: [repo_id]) {
+    repo_id
   }
+}
 `)
 
-module PullCompare = Belt.Id.MakeComparable({
-  type t = (int, option<string>)
-  let cmp = (a, b) => -compare(a, b)
-})
+module BenchmarkMetrics = %graphql(`
+fragment BenchmarkMetrics on benchmarks {
+  run_at
+  commit
+  test_name
+  metrics
+}
+`)
 
-let collectBenchmarksForRepo = (~repo_id, data: array<GetBenchmarks.t_benchmarks>): array<
-  GetBenchmarks.t_benchmarks,
-> => {
-  data->Belt.Array.keep(item => item.repo_id == repo_id)
+module GetBenchmarks = %graphql(`
+query ($repoId: String!, $pullNumber: Int, $isMaster: Boolean!, $startDate: timestamp!, $endDate: timestamp!, $comparisonLimit: Int!) {
+  benchmarks: benchmarks(where: {_and: [{pull_number: {_eq: $pullNumber}}, {pull_number: {_is_null: $isMaster}}, {repo_id: {_eq: $repoId}}, {run_at: {_gte: $startDate}}, {run_at: {_lt: $endDate}}]}) {
+    ...BenchmarkMetrics
+  }
+
+  comparisonBenchmarks: benchmarks(where: {_and: [{pull_number: {_is_null: true}}, {repo_id: {_eq: $repoId}}, {run_at: {_gte: $startDate}}, {run_at: {_lt: $endDate}}]}, limit: $comparisonLimit) {
+    ...BenchmarkMetrics
+  }
+}
+`)
+
+let makeGetBenchmarksVariables = (
+  ~repoId,
+  ~pullNumber=?,
+  ~startDate,
+  ~endDate,
+): GetBenchmarks.t_variables => {
+  let isMaster = Belt.Option.isNone(pullNumber)
+  let comparisonLimit = isMaster ? 0 : 10
+  {
+    repoId: repoId,
+    pullNumber: pullNumber,
+    isMaster: isMaster,
+    startDate: startDate,
+    endDate: endDate,
+    comparisonLimit: comparisonLimit,
+  }
 }
 
-let collectPullsForRepo = (~repo_id, benchmarks: array<GetBenchmarks.t_benchmarks>): array<(
-  int,
-  option<string>,
-)> => {
-  benchmarks
-  ->collectBenchmarksForRepo(~repo_id)
-  ->Belt.Array.keepMap((item: GetBenchmarks.t_benchmarks) =>
-    Belt.Option.flatMap(item.pull_number, pull_number => Some(pull_number, item.branch))
-  )
-  ->Belt.Set.fromArray(~id=module(PullCompare))
-  ->Belt.Set.toArray
-}
-
-let collectRepoIds = (benchmarks: array<GetBenchmarks.t_benchmarks>): array<string> => {
-  benchmarks
-  ->Belt.Array.map(item => item.repo_id)
-  ->Belt.Set.String.fromArray
-  ->Belt.Set.String.toArray
-}
-
-let collectBenchmarksForPull = (~repo_id, ~pull, benchmarks) =>
-  benchmarks
-  ->collectBenchmarksForRepo(~repo_id)
-  ->Belt.Array.keep((item: GetBenchmarks.t_benchmarks) => {
-    item.pull_number == Some(pull)
-  })
-
-let getTestMetrics = (item: GetBenchmarks.t_benchmarks): BenchmarkTest.testMetrics => {
+let getTestMetrics = (item: BenchmarkMetrics.t): BenchmarkTest.testMetrics => {
   {
     BenchmarkTest.name: item.test_name,
     metrics: item.metrics
@@ -69,43 +64,73 @@ let getTestMetrics = (item: GetBenchmarks.t_benchmarks): BenchmarkTest.testMetri
   }
 }
 
-let getLatestMasterIndex = (~testName, benchmarks) => {
-  BeltHelpers.Array.findIndexRev(benchmarks, (item: GetBenchmarks.t_benchmarks) => {
-    item.pull_number == None && item.test_name == testName
-  })
-}
+module BenchmarkView = {
+  let decodeRunAt = runAt => runAt->Js.Json.decodeString->Belt.Option.map(Js.Date.fromString)
 
-module BenchmarkResults = {
+  let decodeMetrics = metrics =>
+    metrics
+    ->Belt.Option.getExn
+    ->Js.Json.decodeObject
+    ->Belt.Option.getExn
+    ->jsDictToMap
+    ->Belt.Map.String.map(v => BenchmarkTest.decodeMetricValue(v))
+
+  let makeBenchmarkData = (benchmarks: array<BenchmarkMetrics.t>) => {
+    benchmarks->Belt.Array.reduce(BenchmarkData.empty, (acc, item) => {
+      item.metrics
+      ->decodeMetrics
+      ->Belt.Map.String.reduce(acc, (acc, metricName, value) => {
+        BenchmarkData.add(
+          acc,
+          ~testName=item.test_name,
+          ~metricName,
+          ~runAt=item.run_at->decodeRunAt->Belt.Option.getExn,
+          ~commit=item.commit,
+          ~value,
+        )
+      })
+    })
+  }
+
   @react.component
-  let make = (~benchmarks: array<GetBenchmarks.t_benchmarks>, ~synchronize, ~repo_id) => {
-    let data = benchmarks->Belt.Array.map(getTestMetrics)
-    let selectionByTestName =
-      data->Belt.Array.reduceWithIndex(Belt.Map.String.empty, BenchmarkTest.groupByTestName)
-
-    let comparisonMetricsByTestName = {
-      Belt.Map.String.mapWithKey(selectionByTestName, (testName, _) => {
-        // TODO: Use the index load the data from master and add an annotation.
-        switch getLatestMasterIndex(~testName, benchmarks) {
-        | Some(idx) => Some(benchmarks[idx]->getTestMetrics)
-        | None => None
-        }
-      })
+  let make = (~repoId, ~pullNumber=?, ~startDate, ~endDate) => {
+    let ({ReasonUrql.Hooks.response: response}, _) = {
+      let startDate = Js.Date.toISOString(startDate)->Js.Json.string
+      let endDate = Js.Date.toISOString(endDate)->Js.Json.string
+      ReasonUrql.Hooks.useQuery(
+        ~query=module(GetBenchmarks),
+        makeGetBenchmarksVariables(~repoId, ~pullNumber?, ~startDate, ~endDate),
+      )
     }
 
-    let graphs = {
-      selectionByTestName
-      ->Belt.Map.String.mapWithKey((testName, testSelection) => {
-        let comparisonMetrics = Belt.Map.String.getExn(comparisonMetricsByTestName, testName)
-        <BenchmarkTest
-          ?comparisonMetrics synchronize key={testName} data testName testSelection repo_id
-        />
-      })
-      ->Belt.Map.String.valuesToArray
-    }
+    switch response {
+    | Empty => <div> {"Something went wrong!"->Rx.text} </div>
+    | Error({networkError: Some(_)}) => <div> {"Network Error"->Rx.text} </div>
+    | Error({networkError: None}) => <div> {"Unknown Error"->Rx.text} </div>
+    | Fetching => Rx.text("Loading...")
+    | Data(data)
+    | PartialData(data, _) =>
+      Js.log(data)
+      let benchmarkDataByTestName = data.benchmarks->makeBenchmarkData
+      let comparisonBenchmarkDataByTestName = data.comparisonBenchmarks->makeBenchmarkData
 
-    <Column spacing=Sx.xl3>
-      {graphs->Rx.array(~empty=<Message text="No data for selected interval." />)}
-    </Column>
+      let graphs = {
+        benchmarkDataByTestName
+        ->Belt.Map.String.mapWithKey((testName, dataByMetricName) => {
+          let comparison = Belt.Map.String.getWithDefault(
+            comparisonBenchmarkDataByTestName,
+            testName,
+            Belt.Map.String.empty,
+          )
+          <BenchmarkTest repoId pullNumber key={testName} testName dataByMetricName comparison />
+        })
+        ->Belt.Map.String.valuesToArray
+      }
+
+      <Column spacing=Sx.xl3>
+        {graphs->Rx.array(~empty=<Message text="No data for selected interval." />)}
+      </Column>
+    }
   }
 }
 
@@ -119,158 +144,80 @@ let getDefaultDateRange = {
   }
 }
 
-module Content = {
+module RepoView = {
   @react.component
-  let make = (
-    ~pulls,
-    ~selectedRepoId,
-    ~repo_ids,
-    ~benchmarks,
-    ~startDate,
-    ~endDate,
-    ~onSelectDateRange,
-    ~synchronize,
-    ~onSynchronizeToggle,
-    ~selectedPull=?,
-  ) => {
-    <div className={Sx.make([Sx.container, Sx.d.flex, Sx.flex.wrap])}>
-      <Sidebar
-        pulls
-        selectedRepoId
-        ?selectedPull
-        repo_ids
-        onSelectRepoId={selectedRepId => ReasonReact.Router.push("#/" ++ selectedRepoId)}
-        synchronize
-        onSynchronizeToggle
-      />
-      <div className={Sx.make(Styles.topbarSx)}>
-        <Row alignY=#center spacing=#between>
-          <Link href={"https://github.com/" ++ selectedRepoId} sx=[Sx.mr.xl] icon=Icon.github />
-          <Text sx=[Sx.text.bold]>
-            {Rx.text(
-              Belt.Option.mapWithDefault(selectedPull, "master", pull =>
-                "#" ++ string_of_int(pull)
-              ),
-            )}
-          </Text>
-          <Litepicker startDate endDate sx=[Sx.w.xl5] onSelect={onSelectDateRange} />
+  let make = (~repoId=?, ~pullNumber=?) => {
+    let ({ReasonUrql.Hooks.response: response}, _) = {
+      ReasonUrql.Hooks.useQuery(~query=module(GetAllRepos), ())
+    }
+
+    let ((startDate, endDate), setDateRange) = React.useState(getDefaultDateRange)
+    let onSelectDateRange = (startDate, endDate) => setDateRange(_ => (startDate, endDate))
+
+    switch response {
+    | Empty => <div> {"Something went wrong!"->Rx.text} </div>
+    | Error({networkError: Some(_)}) => <div> {"Network Error"->Rx.text} </div>
+    | Error({networkError: None}) => <div> {"Unknown Error"->Rx.text} </div>
+    | Fetching => Rx.text("Loading...")
+    | Data(data)
+    | PartialData(data, _) =>
+      let repoIds = data.allRepoIds->Belt.Array.map(obj => obj.repo_id)
+
+      let breadcrumbs =
+        <Row sx=[Sx.w.auto, Sx.text.noUnderline] alignY=#center>
+          <Text weight=#semibold> {Rx.text("/")} </Text>
+          {repoId->Rx.onSome(repoId => {
+            let href = AppRouter.Repo({repoId: repoId})->AppRouter.path
+            <Link href text="master" />
+          })}
+          {repoId->Rx.onSome(repoId => {
+            pullNumber->Rx.onSome(pullNumber => {
+              let href =
+                AppRouter.RepoPull({repoId: repoId, pullNumber: pullNumber})->AppRouter.path
+              <>
+                <Text weight=#semibold> {Rx.text("/")} </Text>
+                <Link href icon=Icon.branch text={string_of_int(pullNumber)} />
+              </>
+            })
+          })}
         </Row>
+      let githubLink =
+        repoId->Rx.onSome(repoId =>
+          <Link href={"https://github.com/" ++ repoId} sx=[Sx.ml.auto, Sx.mr.xl] icon=Icon.github />
+        )
+
+      <div className={Sx.make([Sx.container, Sx.d.flex])}>
+        <Sidebar
+          selectedRepoId=?repoId
+          selectedPull=?pullNumber
+          repoIds
+          onSelectRepoId={repoId => AppRouter.Repo({repoId: repoId})->AppRouter.go}
+        />
+        <Column sx=[Sx.w.full, Sx.minW.zero]>
+          <Topbar>
+            {breadcrumbs}
+            {githubLink}
+            <Litepicker startDate endDate sx=[Sx.w.xl5] onSelect={onSelectDateRange} />
+          </Topbar>
+          <Block sx=[Sx.px.xl2, Sx.py.xl2, Sx.w.full, Sx.minW.zero]>
+            {switch repoId {
+            | Some(repoId) => <BenchmarkView repoId ?pullNumber startDate endDate />
+            | None => Rx.text("No repository selected.")
+            }}
+          </Block>
+        </Column>
       </div>
-      <div className={Sx.make(Styles.mainSx)}>
-        <BenchmarkResults synchronize benchmarks repo_id=selectedRepoId />
-      </div>
-    </div>
+    }
   }
 }
-
 @react.component
 let make = () => {
-  let url = ReasonReact.Router.useUrl()
+  let route = AppRouter.useRoute()
 
-  let ((startDate, endDate), setDateRange) = React.useState(getDefaultDateRange)
-
-  let onSelectDateRange = (d1, d2) => setDateRange(_ => (d1, d2))
-
-  // Fetch benchmarks data
-  let ({ReasonUrql.Hooks.response: response}, _) = {
-    let startDate = Js.Date.toISOString(startDate)->Js.Json.string
-    let endDate = Js.Date.toISOString(endDate)->Js.Json.string
-    ReasonUrql.Hooks.useQuery(
-      ~query=module(GetBenchmarks),
-      {
-        startDate: startDate,
-        endDate: endDate,
-      },
-    )
-  }
-
-  let (synchronize, setSynchronize) = React.useState(() => false)
-  let onSynchronizeToggle = () => {
-    setSynchronize(v => !v)
-  }
-
-  switch response {
-  | Error(e) =>
-    switch e.networkError {
-    | Some(_e) => <div> {"Network Error"->React.string} </div>
-    | None => <div> {"Unknown Error"->React.string} </div>
-    }
-  | Empty => <div> {"Something went wrong!"->React.string} </div>
-  | Fetching => Rx.string("Loading...")
-  | Data(data)
-  | PartialData(data, _) =>
-    let benchmarks: array<GetBenchmarks.t_benchmarks> = data.benchmarks
-    let repo_ids = collectRepoIds(data.benchmarks)
-
-    switch String.split_on_char('/', url.hash) {
-    | list{""} =>
-      switch Belt.Array.get(repo_ids, 0) {
-      | Some(firstRepo) => {
-          // If no repository is selected, this redirects to the first one.
-          ReasonReact.Router.replace("#/" ++ firstRepo)
-          React.null
-        }
-      | None => <div> {"No data were found..."->Rx.string} </div>
-      }
-    | list{"", orgName, repoName, ...rest} => {
-        let selectedRepoId =
-          repo_ids->Belt.Array.getBy(repo_id => repo_id == orgName ++ "/" ++ repoName)
-        switch selectedRepoId {
-        | None => <div> {"This repo does not exist!"->Rx.string} </div>
-        | Some(selectedRepoId) =>
-          let pulls = collectPullsForRepo(~repo_id=selectedRepoId, benchmarks)
-          switch rest {
-          | list{"pull", pullNumberStr} =>
-            switch Belt.Int.fromString(pullNumberStr) {
-            | None =>
-              <div> {("Pull request must be an integer. Got: " ++ pullNumberStr)->Rx.string} </div>
-            | Some(selectedPull) =>
-              if pulls->Belt.Array.some(((pullNr, _)) => pullNr == selectedPull) {
-                let benchmarksForPull = collectBenchmarksForPull(
-                  ~repo_id=selectedRepoId,
-                  ~pull=selectedPull,
-                  benchmarks,
-                )
-                <Content
-                  pulls
-                  selectedRepoId
-                  repo_ids
-                  benchmarks=benchmarksForPull
-                  selectedPull
-                  startDate
-                  endDate
-                  onSelectDateRange
-                  synchronize
-                  onSynchronizeToggle
-                />
-              } else {
-                <div> {"This pull request does not exist!"->Rx.string} </div>
-              }
-            }
-          | list{} =>
-            let benchmarksForRepo = collectBenchmarksForRepo(~repo_id=selectedRepoId, benchmarks)
-            let benchmarksForMaster = Belt.Array.keep(benchmarksForRepo, (
-              item: GetBenchmarks.t_benchmarks,
-            ) => {
-              // pullNumber is assumed to be None only for master
-              Belt.Option.isNone(item.pull_number)
-            })
-            <Content
-              pulls
-              selectedRepoId
-              repo_ids
-              benchmarks=benchmarksForMaster
-              startDate
-              endDate
-              onSelectDateRange
-              synchronize
-              onSynchronizeToggle
-            />
-          | _ => <div> {("Unknown route: " ++ url.hash)->Rx.string} </div>
-          }
-        }
-      }
-    | _ => <div> {("Unknown route: " ++ url.hash)->Rx.string} </div>
-    }
+  switch route {
+  | Error({reason}) => Rx.text("Router error: " ++ reason)
+  | Ok(Main) => <RepoView />
+  | Ok(Repo({repoId})) => <RepoView repoId />
+  | Ok(RepoPull({repoId, pullNumber})) => <RepoView repoId pullNumber />
   }
 }

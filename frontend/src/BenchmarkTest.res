@@ -7,10 +7,10 @@ type testMetrics = {
   metrics: Belt.Map.String.t<float>,
 }
 
-let commitUrl = (repo_id, commit) => `https://github.com/${repo_id}/commit/${commit}`
-let goToCommitLink = (repo_id, commit) => {
+let commitUrl = commit => `https://github.com/mirage/index/commit/${commit}`
+let goToCommitLink = commit => {
   let openUrl: string => unit = %raw(`function (url) { window.open(url, "_blank") }`)
-  openUrl(commitUrl(repo_id, commit))
+  openUrl(commitUrl(commit))
 }
 
 let groupByTestName = (acc, item: testMetrics, idx) => {
@@ -55,7 +55,9 @@ let groupDataByMetric = (items: array<testMetrics>, selection: Belt.Set.Int.t): 
   open Belt
 
   let addMetricValue = (selectionIdx, acc, metricName, metricValue) => {
-    let row = [selectionIdx->float_of_int, metricValue]
+    let x = selectionIdx->float_of_int
+    let y = metricValue
+    let row = [x, y]
     BeltHelpers.MapString.addToArray(acc, metricName, row)
   }
 
@@ -82,36 +84,29 @@ let calcDeltaStr = (a, b) => {
 }
 
 let renderMetricOverviewRow = (
-  ~comparisonMetrics: option<testMetrics>=?,
-  ~xTicks,
-  ~repo_id,
+  ~comparison as (comparisonTimeseries, _comparisonMetadata)=([], []),
   metricName,
-  data,
+  (timeseries, metadata),
 ) => {
-  if Belt.Array.length(data) == 0 {
+  if Belt.Array.length(timeseries) == 0 {
     React.null
   } else {
-    let last_value = Belt.Array.getExn(data, Belt.Array.length(data) - 1)->Belt.Array.getExn(1)
-    let idx = Belt.Array.getExn(data, Belt.Array.length(data) - 1)->Belt.Array.getExn(0)
-    let commit = Belt.Map.Int.getExn(xTicks, idx->Belt.Float.toInt)
+    let last_value = BeltHelpers.Array.lastExn(timeseries)[1]
+    let commit = BeltHelpers.Array.lastExn(metadata)["commit"]->DataHelpers.trimCommit
 
-    let (vsMasterAbs, vsMasterRel) = switch comparisonMetrics {
-    | Some(comparisonMetrics) =>
-      switch Belt.Map.String.get(comparisonMetrics.metrics, metricName) {
-      | Some(masterValue) => (
-          Js.Float.toFixedWithPrecision(~digits=2)(masterValue),
-          calcDeltaStr(last_value, masterValue),
-        )
-      | None => ("NA", "NA")
-      }
+    let (vsMasterAbs, vsMasterRel) = switch BeltHelpers.Array.last(comparisonTimeseries) {
+    | Some(lastComparisionRow) =>
+      let lastComparisonY = lastComparisionRow[1]
+      (
+        Js.Float.toFixedWithPrecision(~digits=2)(lastComparisonY),
+        calcDeltaStr(last_value, lastComparisonY),
+      )
     | _ => ("NA", "NA")
     }
 
     <Table.Row key=metricName>
       <Table.Col> {Rx.text(metricName)} </Table.Col>
-      <Table.Col>
-        <Link target="_blank" href={commitUrl(repo_id, commit)} text=commit />
-      </Table.Col>
+      <Table.Col> <Link target="_blank" href={commitUrl(commit)} text=commit /> </Table.Col>
       <Table.Col> {Rx.text(last_value->Js.Float.toFixedWithPrecision(~digits=2))} </Table.Col>
       <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterAbs)} </Table.Col>
       <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterRel)} </Table.Col>
@@ -121,24 +116,15 @@ let renderMetricOverviewRow = (
 
 @react.component
 let make = (
-  ~data,
-  ~repo_id,
+  ~repoId,
+  ~pullNumber,
   ~testName,
-  ~comparisonMetrics=?,
-  ~testSelection,
-  ~synchronize=true,
+  ~synchronize=false,
+  ~comparison=Belt.Map.String.empty,
+  ~dataByMetricName,
 ) => {
-  let dataByMetrics = data->groupDataByMetric(testSelection)
   let graphRefs = ref(list{})
   let onGraphRender = graph => graphRefs := Belt.List.add(graphRefs.contents, graph)
-
-  // Compute xTicks, i.e., commits.
-  let xTicks = testSelection->Belt.Set.Int.reduce(Belt.Map.Int.empty, (acc, idx) => {
-    let item: testMetrics = Belt.Array.getExn(data, idx)
-    let tick = item.commit
-    let tick = String.length(tick) > 7 ? String.sub(tick, 0, 7) : tick
-    Belt.Map.Int.set(acc, idx, tick)
-  })
 
   React.useEffect1(() => {
     if synchronize {
@@ -159,35 +145,90 @@ let make = (
         </tr>
       </thead>
       <tbody>
-        {dataByMetrics
-        ->Belt.Map.String.mapWithKey(
-          renderMetricOverviewRow(~xTicks, ~repo_id, ~comparisonMetrics?),
-        )
+        {dataByMetricName
+        ->Belt.Map.String.mapWithKey(metricName => {
+          let (comparisonTimeseries, comparisonMetadata) = Belt.Map.String.getWithDefault(
+            comparison,
+            metricName,
+            ([], []),
+          )
+          renderMetricOverviewRow(
+            ~comparison=(comparisonTimeseries, comparisonMetadata),
+            metricName,
+          )
+        })
         ->Belt.Map.String.valuesToArray
         ->Rx.array}
       </tbody>
     </Table>
   }
 
-  let metric_graphs =
-    dataByMetrics
-    ->Belt.Map.String.mapWithKey((metricName, data) => {
-      <LineGraph
-        onXLabelClick={commit => goToCommitLink(repo_id, commit)}
-        onRender=onGraphRender
-        key=metricName
-        title=metricName
-        xTicks
-        data={data->Belt.Array.sliceToEnd(-20)}
-        labels=["idx", "value"]
-      />
+  let metric_graphs = dataByMetricName
+  ->Belt.Map.String.mapWithKey((metricName, (timeseries, metadata)) => {
+    let (comparisonTimeseries, comparisonMetadata) = Belt.Map.String.getWithDefault(
+      comparison,
+      metricName,
+      ([], []),
+    )
+
+    let timeseries = Belt.Array.concat(comparisonTimeseries, timeseries)
+    let metadata = Belt.Array.concat(comparisonMetadata, metadata)
+
+    let xTicks = Belt.Array.reduceWithIndex(timeseries, Belt.Map.Int.empty, (acc, row, index) => {
+      // Use indexed instead of dates. This allows us to map to commits.
+      Belt.Array.set(row, 0, float_of_int(index))->ignore
+      let tick = switch Belt.Array.get(metadata, index) {
+      | Some(xMetadata) =>
+        let xValue = xMetadata["commit"]
+        DataHelpers.trimCommit(xValue)
+      | None => "Unknown"
+      }
+
+      Belt.Map.Int.set(acc, index, tick)
     })
-    ->Belt.Map.String.valuesToArray
-    ->Rx.array
+
+    let annotations = if Belt.Array.length(comparisonTimeseries) > 0 {
+      let lastComparisonX = Belt.Array.length(comparisonTimeseries) - 1
+      Some([
+        {
+          "series": "value",
+          "x": lastComparisonX,
+          "icon": "/branch.svg",
+          "text": "Open PR on GitHub",
+          "width": 21,
+          "height": 21,
+          "clickHandler": (_annotation, _point, _dygraph, _event) => {
+            switch pullNumber {
+            | Some(pullNumber) =>
+              DomHelpers.window->DomHelpers.windowOpen(
+                "https://github.com/" ++ repoId ++ "/pull/" ++ string_of_int(pullNumber),
+              )
+            | None => ()
+            }
+          },
+        },
+      ])
+    } else {
+      None
+    }
+
+    <LineGraph
+      onXLabelClick=goToCommitLink
+      onRender=onGraphRender
+      key=metricName
+      title=metricName
+      xTicks
+      data={timeseries->Belt.Array.sliceToEnd(-20)}
+      ?annotations
+      labels=["idx", "value"]
+    />
+  })
+  ->Belt.Map.String.valuesToArray
+  ->Rx.array
 
   <details className={Sx.make([Sx.w.full])} open_=true>
     <summary className={Sx.make([Sx.pointer])}>
-      <Text sx=[Sx.text.xl3, Sx.text.bold]> {Rx.text(testName)} </Text>
+      <Text sx=[Sx.text.xl2, Sx.text.bold]> {Rx.text(testName)} </Text>
     </summary>
     <Column sx=[Sx.mt.xl]> metric_table <Flex wrap=true> metric_graphs </Flex> </Column>
   </details>

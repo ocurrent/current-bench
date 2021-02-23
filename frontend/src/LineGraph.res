@@ -98,7 +98,7 @@ let defaultOptions = (
       },
     },
     "rollPeriod": 1,
-    "xRangePad": 28.5,
+    "xRangePad": 0,
     "drawAxesAtZero": true,
     "highlightCircleSize": 5,
     "legendFormatter": Js.Null.fromOption(legendFormatter),
