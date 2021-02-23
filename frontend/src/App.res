@@ -27,7 +27,7 @@ query ($repoId: String!, $pullNumber: Int, $isMaster: Boolean!, $startDate: time
     ...BenchmarkMetrics
   }
 
-  comparisonBenchmarks: benchmarks(where: {_and: [{pull_number: {_is_null: true}}, {repo_id: {_eq: $repoId}}, {run_at: {_gte: $startDate}}, {run_at: {_lt: $endDate}}]}, limit: $comparisonLimit) {
+  comparisonBenchmarks: benchmarks(where: {_and: [{pull_number: {_is_null: true}}, {repo_id: {_eq: $repoId}}, {run_at: {_gte: $startDate}}, {run_at: {_lt: $endDate}}]}, limit: $comparisonLimit, order_by: [{run_at: desc}]) {
     ...BenchmarkMetrics
   }
 }
@@ -40,7 +40,7 @@ let makeGetBenchmarksVariables = (
   ~endDate,
 ): GetBenchmarks.t_variables => {
   let isMaster = Belt.Option.isNone(pullNumber)
-  let comparisonLimit = isMaster ? 0 : 10
+  let comparisonLimit = isMaster ? 0 : 50
   {
     repoId: repoId,
     pullNumber: pullNumber,
@@ -112,7 +112,10 @@ module BenchmarkView = {
     | PartialData(data, _) =>
       Js.log(data)
       let benchmarkDataByTestName = data.benchmarks->makeBenchmarkData
-      let comparisonBenchmarkDataByTestName = data.comparisonBenchmarks->makeBenchmarkData
+      let comparisonBenchmarkDataByTestName = {
+        data.comparisonBenchmarks->Belt.Array.reverseInPlace
+        data.comparisonBenchmarks->makeBenchmarkData
+      }
 
       let graphs = {
         benchmarkDataByTestName
