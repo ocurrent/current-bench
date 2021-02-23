@@ -45,4 +45,8 @@ module Array = {
 
   let last = arr => Belt.Array.get(arr, Belt.Array.length(arr) - 1)
   let lastExn = arr => Belt.Array.getExn(arr, Belt.Array.length(arr) - 1)
+
+  let contains = (arr, target) => {
+    Belt.Array.getBy(arr, x => x == target)->Belt.Option.isSome
+  }
 }
