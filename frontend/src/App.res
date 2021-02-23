@@ -12,20 +12,23 @@ query {
 }
 `)
 
+module BenchmarkMetrics = %graphql(`
+fragment BenchmarkMetrics on benchmarks {
+  run_at
+  commit
+  test_name
+  metrics
+}
+`)
+
 module GetBenchmarks = %graphql(`
 query ($repoId: String!, $pullNumber: Int, $isMaster: Boolean!, $startDate: timestamp!, $endDate: timestamp!, $comparisonLimit: Int!) {
   benchmarks: benchmarks(where: {_and: [{pull_number: {_eq: $pullNumber}}, {pull_number: {_is_null: $isMaster}}, {repo_id: {_eq: $repoId}}, {run_at: {_gte: $startDate}}, {run_at: {_lt: $endDate}}]}) {
-    run_at
-    commit
-    test_name
-    metrics
+    ...BenchmarkMetrics
   }
 
   comparisonBenchmarks: benchmarks(where: {_and: [{pull_number: {_is_null: true}}, {repo_id: {_eq: $repoId}}, {run_at: {_gte: $startDate}}, {run_at: {_lt: $endDate}}]}, limit: $comparisonLimit) {
-    run_at
-    commit
-    test_name
-    metrics
+    ...BenchmarkMetrics
   }
 }
 `)
@@ -35,9 +38,9 @@ let makeGetBenchmarksVariables = (
   ~pullNumber=?,
   ~startDate,
   ~endDate,
-  ~comparisonLimit,
 ): GetBenchmarks.t_variables => {
   let isMaster = Belt.Option.isNone(pullNumber)
+  let comparisonLimit = isMaster ? 0 : 10
   {
     repoId: repoId,
     pullNumber: pullNumber,
@@ -48,7 +51,7 @@ let makeGetBenchmarksVariables = (
   }
 }
 
-let getTestMetrics = (item: GetBenchmarks.t_benchmarks): BenchmarkTest.testMetrics => {
+let getTestMetrics = (item: BenchmarkMetrics.t): BenchmarkTest.testMetrics => {
   {
     BenchmarkTest.name: item.test_name,
     metrics: item.metrics
@@ -72,11 +75,7 @@ module BenchmarkView = {
     ->jsDictToMap
     ->Belt.Map.String.map(v => BenchmarkTest.decodeMetricValue(v))
 
-  let isMainBranch = pullNumber => {
-    Belt.Option.isNone(pullNumber)
-  }
-
-  let makeBenchmarkData = (benchmarks: array<GetBenchmarks.t_benchmarks>) => {
+  let makeBenchmarkData = (benchmarks: array<BenchmarkMetrics.t>) => {
     benchmarks->Belt.Array.reduce(BenchmarkData.empty, (acc, item) => {
       item.metrics
       ->decodeMetrics
@@ -93,22 +92,14 @@ module BenchmarkView = {
     })
   }
 
-  // Urql uses records to represent query results.
-  // Records have nominal types which makes two records with the same fields incompatible.
-  // This function assumes that the main benchmarks and the comparison benchmarks have the same structural type.
-  let unsafeCastComparisonBenchmarks = (
-    comparison: array<GetBenchmarks.t_comparisonBenchmarks>,
-  ): array<GetBenchmarks.t_benchmarks> => Belt.Array.map(comparison, Obj.magic)
-
   @react.component
   let make = (~repoId, ~pullNumber=?, ~startDate, ~endDate) => {
     let ({ReasonUrql.Hooks.response: response}, _) = {
       let startDate = Js.Date.toISOString(startDate)->Js.Json.string
       let endDate = Js.Date.toISOString(endDate)->Js.Json.string
-      let comparisonLimit = isMainBranch(pullNumber) ? 0 : 10
       ReasonUrql.Hooks.useQuery(
         ~query=module(GetBenchmarks),
-        makeGetBenchmarksVariables(~repoId, ~pullNumber?, ~startDate, ~endDate, ~comparisonLimit),
+        makeGetBenchmarksVariables(~repoId, ~pullNumber?, ~startDate, ~endDate),
       )
     }
 
@@ -121,8 +112,7 @@ module BenchmarkView = {
     | PartialData(data, _) =>
       Js.log(data)
       let benchmarkDataByTestName = data.benchmarks->makeBenchmarkData
-      let comparisonBenchmarkDataByTestName =
-        data.comparisonBenchmarks->unsafeCastComparisonBenchmarks->makeBenchmarkData
+      let comparisonBenchmarkDataByTestName = data.comparisonBenchmarks->makeBenchmarkData
 
       let graphs = {
         benchmarkDataByTestName
