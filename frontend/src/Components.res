@@ -918,7 +918,7 @@ module Link = {
   }
 
   @react.component
-  let make = (~text=?, ~active=false, ~target=?, ~sx as uSx=[], ~icon=?, ~href=?) => {
+  let make = (~text=?, ~active=false, ~target=?, ~sx as uSx=[], ~icon=?, ~href) => {
     let (text, sx_icon_hover, sx_size) = switch text {
     | Some(text) => (<span> {React.string(text)} </span>, [], sx_medium)
     | None => (React.null, sx_icon_hover, [])
@@ -939,7 +939,24 @@ module Link = {
       },
       uSx,
     })
-    <a className={Sx.make(sx)} ?href ?target> icon_svg text </a>
+    <a
+      className={Sx.make(sx)}
+      href
+      ?target
+      onClick={event =>
+        // https://github.com/MinimaHQ/safe-routing-blog-app-example/blob/master/02-multiple-types/src/Router.re
+        if (
+          !(event->ReactEvent.Mouse.defaultPrevented) &&
+          (event->ReactEvent.Mouse.button == 0 &&
+          (!(event->ReactEvent.Mouse.altKey) &&
+          (!(event->ReactEvent.Mouse.ctrlKey) &&
+          (!(event->ReactEvent.Mouse.metaKey) && !(event->ReactEvent.Mouse.shiftKey)))))
+        ) {
+          event->ReactEvent.Mouse.preventDefault
+          href->ReasonReactRouter.push
+        }}>
+      icon_svg text
+    </a>
   }
 }
 
