@@ -144,6 +144,42 @@ let getDefaultDateRange = {
   }
 }
 
+module Welcome = {
+  @react.component
+  let make = () => {
+    <Column alignX=#center sx=[Sx.mt.xl]>
+      <Heading level=#h1 align=#center text=`hello world 👋` />
+      <Text align=#center color=Sx.gray900>
+        {Rx.text("Measure and track benchmark results for your OCaml projects.")}
+        <br />
+        {Rx.text("Learn more at ")}
+        <a target="_blank" href="https://github.com/ocurrent/current-bench">
+          {Rx.text("https://github.com/ocurrent/current-bench")}
+        </a>
+        {Rx.text(".")}
+      </Text>
+    </Column>
+  }
+}
+
+module ErrorView = {
+  @react.component
+  let make = (~msg) => {
+    <Column alignX=#center sx=[Sx.mt.xl]>
+      <Heading level=#h1 align=#center text=`Application error` />
+      <Text align=#center color=Sx.gray900>
+        {Rx.text(msg)}
+        <br />
+        {Rx.text("Learn more at ")}
+        <a target="_blank" href="https://github.com/ocurrent/current-bench">
+          {Rx.text("https://github.com/ocurrent/current-bench")}
+        </a>
+        {Rx.text(".")}
+      </Text>
+    </Column>
+  }
+}
+
 module RepoView = {
   @react.component
   let make = (~repoId=?, ~pullNumber=?) => {
@@ -163,49 +199,68 @@ module RepoView = {
     | PartialData(data, _) =>
       let repoIds = data.allRepoIds->Belt.Array.map(obj => obj.repo_id)
 
-      let breadcrumbs =
-        <Row sx=[Sx.w.auto, Sx.text.noUnderline] alignY=#center>
-          <Text weight=#semibold> {Rx.text("/")} </Text>
-          {repoId->Rx.onSome(repoId => {
-            let href = AppRouter.Repo({repoId: repoId})->AppRouter.path
-            <Link href text="master" />
-          })}
-          {repoId->Rx.onSome(repoId => {
-            pullNumber->Rx.onSome(pullNumber => {
-              let href =
-                AppRouter.RepoPull({repoId: repoId, pullNumber: pullNumber})->AppRouter.path
-              <>
-                <Text weight=#semibold> {Rx.text("/")} </Text>
-                <Link href icon=Icon.branch text={string_of_int(pullNumber)} />
-              </>
-            })
-          })}
-        </Row>
-      let githubLink =
-        repoId->Rx.onSome(repoId =>
-          <Link href={"https://github.com/" ++ repoId} sx=[Sx.ml.auto, Sx.mr.xl] icon=Icon.github />
-        )
-
-      <div className={Sx.make([Sx.container, Sx.d.flex])}>
+      let sidebar =
         <Sidebar
           selectedRepoId=?repoId
           selectedPull=?pullNumber
           repoIds
           onSelectRepoId={repoId => AppRouter.Repo({repoId: repoId})->AppRouter.go}
         />
-        <Column sx=[Sx.w.full, Sx.minW.zero]>
-          <Topbar>
-            {breadcrumbs}
-            {githubLink}
-            <Litepicker startDate endDate sx=[Sx.w.xl5] onSelect={onSelectDateRange} />
-          </Topbar>
-          <Block sx=[Sx.px.xl2, Sx.py.xl2, Sx.w.full, Sx.minW.zero]>
-            {switch repoId {
-            | Some(repoId) => <BenchmarkView repoId ?pullNumber startDate endDate />
-            | None => Rx.text("No repository selected.")
-            }}
-          </Block>
-        </Column>
+
+      <div className={Sx.make([Sx.container, Sx.d.flex])}>
+        {switch repoId {
+        | None => <>
+            {sidebar}
+            <Column sx=[Sx.w.full, Sx.minW.zero]>
+              <Topbar>
+                <Litepicker
+                  startDate=?None
+                  endDate=?None
+                  sx=[Sx.w.xl5, Sx.ml.auto]
+                  onSelect={onSelectDateRange}
+                />
+              </Topbar>
+              <Welcome />
+            </Column>
+          </>
+        | Some(repoId) when !(repoIds->BeltHelpers.Array.contains(repoId)) =>
+          <ErrorView msg={"No such repository: " ++ repoId} />
+        | Some(repoId) =>
+          let breadcrumbs =
+            <Row sx=[Sx.w.auto, Sx.text.noUnderline] alignY=#center>
+              <Text weight=#semibold> {Rx.text("/")} </Text>
+              {
+                let href = AppRouter.Repo({repoId: repoId})->AppRouter.path
+                <Link href text="master" />
+              }
+              {pullNumber->Rx.onSome(pullNumber => {
+                let href =
+                  AppRouter.RepoPull({repoId: repoId, pullNumber: pullNumber})->AppRouter.path
+                <>
+                  <Text weight=#semibold> {Rx.text("/")} </Text>
+                  <Link href icon=Icon.branch text={string_of_int(pullNumber)} />
+                </>
+              })}
+            </Row>
+          let githubLink =
+            <Link
+              href={"https://github.com/" ++ repoId} sx=[Sx.ml.auto, Sx.mr.xl] icon=Icon.github
+            />
+
+          <>
+            {sidebar}
+            <Column sx=[Sx.w.full, Sx.minW.zero]>
+              <Topbar>
+                {breadcrumbs}
+                {githubLink}
+                <Litepicker startDate endDate sx=[Sx.w.xl5] onSelect={onSelectDateRange} />
+              </Topbar>
+              <Block sx=[Sx.px.xl2, Sx.py.xl2, Sx.w.full, Sx.minW.zero]>
+                <BenchmarkView repoId ?pullNumber startDate endDate />
+              </Block>
+            </Column>
+          </>
+        }}
       </div>
     }
   }
@@ -215,7 +270,7 @@ let make = () => {
   let route = AppRouter.useRoute()
 
   switch route {
-  | Error({reason}) => Rx.text("Router error: " ++ reason)
+  | Error({reason}) => <ErrorView msg={reason} />
   | Ok(Main) => <RepoView />
   | Ok(Repo({repoId})) => <RepoView repoId />
   | Ok(RepoPull({repoId, pullNumber})) => <RepoView repoId pullNumber />

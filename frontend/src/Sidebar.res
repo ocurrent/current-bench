@@ -78,8 +78,12 @@ let make = (~repoIds, ~selectedRepoId=?, ~onSelectRepoId, ~selectedPull=?) => {
       Sx.py.lg,
     ]>
     <Row spacing=Sx.lg alignY=#center>
-      <Icon sx=[Sx.unsafe("width", "36px"), Sx.mt.md] svg=Icon.ocaml />
-      <Heading level=#h3 sx=[Sx.ml.lg, Sx.mt.lg] text="Benchmarks" />
+      <Link
+        href="/"
+        icon={<Icon sx=[Sx.unsafe("width", "36px"), Sx.mr.lg] svg=Icon.ocaml />}
+        sx=[Sx.text.bold, Sx.text.xl, Sx.hover([Sx.text.color(Sx.gray900)])]
+        text="Benchmarks"
+      />
     </Row>
     <Column>
       <Text sx=[Sx.mb.md] color=Sx.gray700 weight=#bold uppercase=true size=#sm>

@@ -714,33 +714,33 @@ module Make = (
   }
 
   let shadow = {
-    none: [Css.unsafe("box-shadow", "none")],
-    xs: [Css.unsafe("box-shadow", "0 0 0 1px rgba(0, 0, 0, 0.05)")],
-    sm: [Css.unsafe("box-shadow", "0 1px 2px 0 rgba(0, 0, 0, 0.05)")],
+    none: [Css.unsafe("boxShadow", "none")],
+    xs: [Css.unsafe("boxShadow", "0 0 0 1px rgba(0, 0, 0, 0.05)")],
+    sm: [Css.unsafe("boxShadow", "0 1px 2px 0 rgba(0, 0, 0, 0.05)")],
     md: [
-      Css.unsafe("box-shadow", "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)"),
+      Css.unsafe("boxShadow", "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)"),
     ],
     lg: [
       Css.unsafe(
-        "box-shadow",
+        "boxShadow",
         "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
       ),
     ],
     xl: [
       Css.unsafe(
-        "box-shadow",
+        "boxShadow",
         "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
       ),
     ],
     xl2: [
       Css.unsafe(
-        "box-shadow",
+        "boxShadow",
         "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
       ),
     ],
-    xl3: [Css.unsafe("box-shadow", "0 25px 50px -10px rgba(0, 0, 0, 0.25)")],
-    inner: [Css.unsafe("box-shadow", "inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)")],
-    outline: [Css.unsafe("box-shadow", "0 0 0 3px rgba(66, 153, 225, 0.5)")],
+    xl3: [Css.unsafe("boxShadow", "0 25px 50px -10px rgba(0, 0, 0, 0.25)")],
+    inner: [Css.unsafe("boxShadow", "inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)")],
+    outline: [Css.unsafe("boxShadow", "0 0 0 3px rgba(66, 153, 225, 0.5)")],
   }
 
   // Box Alignment
