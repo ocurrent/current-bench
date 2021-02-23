@@ -112,10 +112,8 @@ module BenchmarkView = {
     | PartialData(data, _) =>
       Js.log(data)
       let benchmarkDataByTestName = data.benchmarks->makeBenchmarkData
-      let comparisonBenchmarkDataByTestName = {
-        data.comparisonBenchmarks->Belt.Array.reverseInPlace
-        data.comparisonBenchmarks->makeBenchmarkData
-      }
+      let comparisonBenchmarkDataByTestName =
+        data.comparisonBenchmarks->Belt.Array.reverse->makeBenchmarkData
 
       let graphs = {
         benchmarkDataByTestName
