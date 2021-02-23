@@ -17,7 +17,7 @@ let route = (url: ReasonReactRouter.url) =>
     | Some(pullNumber) => Ok(RepoPull({repoId: orgName ++ "/" ++ repoName, pullNumber: pullNumber}))
     | None => Error({path: url.path, reason: "Invalid pull number: " ++ pullNumberStr})
     }
-  | _ => Error({path: url.path, reason: "Unknown route"})
+  | _ => Error({path: url.path, reason: "Unknown route: /" ++ String.concat("/", url.path)})
   }
 
 let path = route =>
