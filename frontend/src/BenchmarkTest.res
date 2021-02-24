@@ -111,7 +111,7 @@ let renderMetricOverviewRow = (
 
     <Table.Row key=metricName>
       <Table.Col>
-        <Link href={"#line-graph-" ++ testName ++ "-" ++ metricName} text=metricName />
+        <a href={"#line-graph-" ++ testName ++ "-" ++ metricName}> {Rx.text(metricName)} </a>
       </Table.Col>
       <Table.Col sx=[Sx.text.right]>
         {Rx.text(last_value->Js.Float.toFixedWithPrecision(~digits=2))}
