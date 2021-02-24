@@ -796,8 +796,8 @@ module Make = (
   }
 
   let items = {
-    start: [Css.alignItems(#start)],
-    end: [Css.alignItems(#end_)],
+    start: [Css.alignItems(#flexStart)],
+    end: [Css.alignItems(#flexEnd)],
     center: [Css.alignItems(#center)],
     baseline: [Css.alignItems(#baseline)],
     stretch: [Css.alignItems(#stretch)],
@@ -812,8 +812,8 @@ module Make = (
   }
 
   let self: alignSelf = {
-    start: [Css.alignSelf(#start)],
-    end: [Css.alignSelf(#end_)],
+    start: [Css.alignSelf(#flexStart)],
+    end: [Css.alignSelf(#flexEnd)],
     center: [Css.alignSelf(#center)],
     auto: [Css.alignSelf(#auto)],
     stretch: [Css.alignSelf(#stretch)],
