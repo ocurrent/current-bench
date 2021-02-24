@@ -188,11 +188,11 @@ let make = (
     })
 
     let annotations = if Belt.Array.length(comparisonTimeseries) > 0 {
-      let lastComparisonX = Belt.Array.length(comparisonTimeseries) - 1
+      let firstPullX = Belt.Array.length(comparisonTimeseries)
       Some([
         {
           "series": "value",
-          "x": lastComparisonX,
+          "x": firstPullX,
           "icon": "/branch.svg",
           "text": "Open PR on GitHub",
           "width": 21,
