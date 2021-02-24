@@ -104,8 +104,6 @@ module Column = {
 }
 
 module Row = {
-  type align = [#left | #center | #right]
-
   let alignX_rule = alignX =>
     switch alignX {
     | #left => Sx.justify.start
@@ -1035,7 +1033,7 @@ module Text = {
     | #right => Array.append([Sx.text.right], sx)
     | #center => Array.append([Sx.text.center], sx)
     }
-    <span className={Sx.make(sx)}> children </span>
+    <span className={Sx.make(sx)}> {React.string(children)} </span>
   }
 }
 
@@ -1170,11 +1168,9 @@ module Showcase = {
       </Column>
       <Heading level=#h1 text="Text" />
       <Column spacing=Sx.xl>
-        <Text> {Rx.string("A simple text component")} </Text>
+        <Text> "A simple text component" </Text>
         <Text>
-          {Rx.string(
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-          )}
+          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
         </Text>
         <Message sx=[Sx.text.xl] text="Colorless green ideas sleep furiously." />
       </Column>
@@ -1220,7 +1216,6 @@ module Showcase = {
           </Select>
         </Field>
         <Field label="Textarea"> <Textarea placeholder="Textarea" /> </Field>
-        <LineGraph data labels=["date", "value"] />
       </Column>
     </Column>
   }
