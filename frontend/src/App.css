@@ -13,6 +13,24 @@ code {
     monospace;
 }
 
+*:target + * {
+  animation: highlight 2s ease;
+}
+@keyframes highlight {
+  0% {
+    border-color: #ffdb4d;
+  }
+}
+
+
+summary::marker,
+summary::-webkit-details-marker {
+  opacity: 0.8;
+  cursor: pointer;
+  display: inline-block;
+  margin-right: 0.3m;
+}
+
 
 
 /* Dygraph styles */
