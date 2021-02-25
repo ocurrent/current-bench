@@ -4,10 +4,12 @@ FROM node:lts AS builder
 # set working directory
 WORKDIR /app
 
+COPY package.json yarn.lock /app/
+RUN yarn install
+
 # add app
 COPY . /app/
 
-RUN yarn install
 RUN yarn build:re
 RUN yarn vite build
 
