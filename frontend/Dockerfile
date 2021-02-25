@@ -10,8 +10,8 @@ RUN yarn install
 # add app
 COPY . /app/
 
-RUN yarn build:re
-RUN yarn vite build
+RUN yarn build
+RUN yarn bundle
 
 # build nginx image with static files built previously
 FROM nginx:stable-alpine

@@ -1,11 +1,11 @@
 {
   "scripts": {
-    "start": "vite",
-    "build": "vite build",
+    "serve": "vite",
+    "bundle": "vite build",
     "preview": "vite preview",
-    "watch:re": "bsb -make-world -w",
-    "build:re": "bsb -make-world",
-    "clean:re": "bsb -clean-world"
+    "watch": "bsb -make-world -w",
+    "build": "bsb -make-world",
+    "clean": "bsb -clean-world"
   },
   "devDependencies": {
     "@reasonml-community/graphql-ppx": "^1.0.2",
