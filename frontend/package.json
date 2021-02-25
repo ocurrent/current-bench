@@ -15,7 +15,7 @@
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "reason-react": "^0.9.1",
-    "vite": "^2.0.2"
+    "vite": "^2.0.3"
   },
   "dependencies": {
     "@glennsl/bs-json": "^5.0.2",
