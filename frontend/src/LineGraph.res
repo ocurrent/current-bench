@@ -1,4 +1,7 @@
 type graph
+type annotation
+type point
+type event
 
 @new @module("dygraphs")
 external init: ('element, array<array<float>>, 'options) => graph = "default"
@@ -161,16 +164,22 @@ let graphSx = [Sx.absolute, Sx.t.xl3, Sx.b.zero, Sx.l.zero, Sx.r.zero]
 let containerSx = [Sx.mt.xl2, Sx.relative, Sx.unsafe("width", "480px"), Sx.h.xl5]
 
 @react.component
-let make = (
+let make = React.memo((
   ~sx as uSx=[],
   ~title=?,
-  ~xTicks=?,
-  ~yLabel=?,
-  ~labels=?,
-  ~xLabelFormatter=?,
-  ~onRender: option<graph => unit>=?,
+  ~xTicks: option<Belt.Map.Int.t<string>>=?,
+  ~yLabel: option<string>=?,
+  ~labels: option<array<string>>=?,
   ~onXLabelClick=?,
-  ~annotations=[],
+  ~annotations: array<{
+    "clickHandler": (annotation, point, graph, event) => unit,
+    "height": int,
+    "icon": string,
+    "series": string,
+    "text": string,
+    "width": int,
+    "x": int,
+  }>=[],
   ~data,
 ) => {
   let graphDivRef = React.useRef(Js.Nullable.null)
@@ -180,7 +189,6 @@ let make = (
       ~yLabel?,
       ~labels?,
       ~xTicks?,
-      ~xLabelFormatter,
       ~legendFormatter=Legend.format(~xTicks?),
       (),
     )
@@ -190,11 +198,6 @@ let make = (
     | Some(ref) => {
         let graph = init(ref, data, options)
         graphRef.current = Some(graph)
-
-        switch onRender {
-        | Some(f) => f(graph)
-        | None => ()
-        }
 
         if Array.length(annotations) > 0 {
           graph->ready(() => {
@@ -234,7 +237,6 @@ let make = (
           ~labels?,
           ~xTicks?,
           ~data,
-          ~xLabelFormatter,
           ~legendFormatter=Legend.format(~xTicks?),
           (),
         )
@@ -263,14 +265,4 @@ let make = (
   <div className={Sx.make(sx)}>
     title <div className={Sx.make(graphSx)} ref={ReactDOMRe.Ref.domRef(graphDivRef)} />
   </div>
-}
-
-let synchronize = graphs =>
-  _synchronize(
-    global,
-    graphs,
-    {
-      "zoom": true,
-      "selection": true,
-    },
-  )
+})
