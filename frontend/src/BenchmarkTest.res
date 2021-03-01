@@ -202,32 +202,24 @@ let make = (
       } else {
         []
       }
-      (metricName, xTicks, timeseries->Belt.Array.sliceToEnd(-20), annotations)
+      <LineGraph
+        key=metricName
+        title=metricName
+        xTicks
+        data={timeseries->Belt.Array.sliceToEnd(-20)}
+        annotations
+        labels=["idx", "value"]
+        onXLabelClick=goToCommitLink
+      />
     })
     ->Belt.Map.String.valuesToArray
+    ->Rx.array
   }, [dataByMetricName])
 
   <details className={Sx.make([Sx.w.full])} open_=true>
     <summary className={Sx.make([Sx.pointer])}>
       <Text sx=[Sx.text.xl2, Sx.text.bold]> {Rx.text(testName)} </Text>
     </summary>
-    <Column sx=[Sx.mt.xl]>
-      metric_table
-      <Flex wrap=true>
-        {graph_metrics
-        ->Belt.Array.map(((metricName, xTicks, data, annotations)) =>
-          <LineGraph
-            key=metricName
-            title=metricName
-            xTicks
-            data
-            annotations
-            labels=["idx", "value"]
-            onXLabelClick=goToCommitLink
-          />
-        )
-        ->Rx.array}
-      </Flex>
-    </Column>
+    <Column sx=[Sx.mt.xl]> metric_table <Flex wrap=true> {graph_metrics} </Flex> </Column>
   </details>
 }
