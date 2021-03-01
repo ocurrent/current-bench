@@ -3,18 +3,10 @@
   "reason": {
     "react-jsx": 3
   },
-  "bsc-flags": [
-    "-bs-super-errors"
-  ],
+  "bsc-flags": ["-bs-super-errors"],
   "sources": [
     {
-      "dir": "src",
-      "subdirs": [
-        {
-          "dir": "__tests__",
-          "type": "dev"
-        }
-      ]
+      "dir": "src"
     }
   ],
   "package-specs": [
@@ -35,12 +27,6 @@
     "bs-fetch",
     "@glennsl/bs-json"
   ],
-  "bs-dev-dependencies": [
-    "@glennsl/bs-jest",
-    "bs-react-testing-library"
-  ],
-  "ppx-flags": [
-    "@reasonml-community/graphql-ppx/ppx"
-  ],
+  "ppx-flags": ["@reasonml-community/graphql-ppx/ppx"],
   "refmt": 3
 }

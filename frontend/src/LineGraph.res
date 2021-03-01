@@ -23,7 +23,6 @@ type global
 @module("dygraphs")
 external global: global = "default"
 
-%%raw(`import 'dygraphs/src/extras/synchronizer.js'`)
 
 @send
 external _synchronize: (global, array<graph>, 'options) => unit = "synchronize"

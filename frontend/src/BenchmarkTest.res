@@ -7,6 +7,8 @@ type testMetrics = {
   metrics: Belt.Map.String.t<float>,
 }
 
+@module("../icons/branch.svg") external branchIcon: string = "default"
+
 let commitUrl = commit => `https://github.com/mirage/index/commit/${commit}`
 let goToCommitLink = commit => {
   let openUrl: string => unit = %raw(`function (url) { window.open(url, "_blank") }`)
@@ -182,7 +184,7 @@ let make = (
           {
             "series": "value",
             "x": firstPullX,
-            "icon": "/branch.svg",
+            "icon": branchIcon,
             "text": "Open PR on GitHub",
             "width": 21,
             "height": 21,

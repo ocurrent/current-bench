@@ -10,7 +10,8 @@ RUN yarn install
 # add app
 COPY . /app/
 
-RUN yarn --verbose build
+RUN yarn build
+RUN yarn bundle
 
 # build nginx image with static files built previously
 FROM nginx:stable-alpine
@@ -20,7 +21,7 @@ COPY ./nginx.conf /etc/nginx/nginx.conf
 ## Remove default nginx index page
 RUN rm -rf /usr/share/nginx/html/*
 
-COPY --from=builder /app/build /usr/share/nginx/html
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 ENTRYPOINT ["nginx", "-g", "daemon off;"]
 
