@@ -1,4 +1,7 @@
 type graph
+type annotation
+type point
+type event
 
 @new @module("dygraphs")
 external init: ('element, array<array<float>>, 'options) => graph = "default"
@@ -9,6 +12,12 @@ external ready: (graph, unit => unit) => unit = "ready"
 @send
 external setAnnotations: (graph, array<{.."series": string, "x": 'floatOrDate}>) => unit =
   "setAnnotations"
+
+@send
+external destroy: graph => unit = "destroy"
+
+@send
+external updateOptions: (graph, 'options) => unit = "updateOptions"
 
 type global
 @module("dygraphs")
@@ -69,6 +78,7 @@ let defaultOptions = (
   ~yLabel=?,
   ~labels=?,
   ~onClick=?,
+  ~data=[],
   ~xLabelFormatter=?,
   (),
 ) => {
@@ -76,6 +86,7 @@ let defaultOptions = (
     xTicks->Belt.Option.map(convertTicks)->Belt.Option.map((x, ()) => x)->Js.Null.fromOption
   }
   {
+    "file": data,
     "axes": {
       "x": {
         "drawGrid": false,
@@ -152,49 +163,96 @@ let graphSx = [Sx.absolute, Sx.t.xl3, Sx.b.zero, Sx.l.zero, Sx.r.zero]
 let containerSx = [Sx.mt.xl2, Sx.relative, Sx.unsafe("width", "480px"), Sx.h.xl5]
 
 @react.component
-let make = (
+let make = React.memo((
   ~sx as uSx=[],
   ~title=?,
-  ~xTicks=?,
-  ~yLabel=?,
-  ~labels=?,
-  ~xLabelFormatter=?,
-  ~onRender: option<graph => unit>=?,
+  ~xTicks: option<Belt.Map.Int.t<string>>=?,
+  ~yLabel: option<string>=?,
+  ~labels: option<array<string>>=?,
   ~onXLabelClick=?,
-  ~annotations=[],
+  ~annotations: array<{
+    "clickHandler": (annotation, point, graph, event) => unit,
+    "height": int,
+    "icon": string,
+    "series": string,
+    "text": string,
+    "width": int,
+    "x": int,
+  }>=[],
   ~data,
 ) => {
-  let graphRef = React.useRef(Js.Nullable.null)
+  let graphDivRef = React.useRef(Js.Nullable.null)
+  let graphRef = React.useRef(None)
   React.useEffect1(() => {
     let options = defaultOptions(
       ~yLabel?,
       ~labels?,
       ~xTicks?,
-      ~xLabelFormatter?,
       ~legendFormatter=Legend.format(~xTicks?),
       (),
     )
-    let graph = init(graphRef.current, data, options)
-    switch onRender {
-    | Some(f) => f(graph)
+
+    switch Js.Nullable.toOption(graphDivRef.current) {
     | None => ()
+    | Some(ref) => {
+        let graph = init(ref, data, options)
+        graphRef.current = Some(graph)
+
+        if Array.length(annotations) > 0 {
+          graph->ready(() => {
+            graph->setAnnotations(annotations)
+          })
+        }
+
+        switch onXLabelClick {
+        | Some(handler) =>
+          getElementsByClassName("dygraph-axis-label-x")->Belt.Array.forEach(elem =>
+            getElementHTMLonClick(elem, handler)
+          )
+        | None => ()
+        }
+      }
     }
-    if Array.length(annotations) > 0 {
-      graph->ready(() => {
+
+    Some(
+      _ => {
+        switch graphRef.current {
+        | Some(graph) => {
+            graph->destroy
+            graphRef.current = None
+          }
+        | None => ()
+        }
+      },
+    )
+  }, [])
+
+  React.useLayoutEffect2(() => {
+    switch graphRef.current {
+    | None => ()
+    | Some(graph) => {
+        let options = defaultOptions(
+          ~yLabel?,
+          ~labels?,
+          ~xTicks?,
+          ~data,
+          ~legendFormatter=Legend.format(~xTicks?),
+          (),
+        )
+        graph->updateOptions(options)
         graph->setAnnotations(annotations)
-      })
-    }
 
-    switch onXLabelClick {
-    | Some(handler) =>
-      getElementsByClassName("dygraph-axis-label-x")->Belt.Array.forEach(elem =>
-        getElementHTMLonClick(elem, handler)
-      )
-    | None => ()
+        switch onXLabelClick {
+        | Some(handler) =>
+          getElementsByClassName("dygraph-axis-label-x")->Belt.Array.forEach(elem =>
+            getElementHTMLonClick(elem, handler)
+          )
+        | None => ()
+        }
+      }
     }
-
     None
-  }, [data])
+  }, (data, annotations))
 
   let title = switch title {
   | Some(title) => <h3 className={Sx.make([Sx.text.center])}> {React.string(title)} </h3>
@@ -204,16 +262,6 @@ let make = (
   let sx = Array.append(uSx, containerSx)
 
   <div className={Sx.make(sx)}>
-    title <div className={Sx.make(graphSx)} ref={ReactDOMRe.Ref.domRef(graphRef)} />
+    title <div className={Sx.make(graphSx)} ref={ReactDOMRe.Ref.domRef(graphDivRef)} />
   </div>
-}
-
-let synchronize = graphs =>
-  _synchronize(
-    global,
-    graphs,
-    {
-      "zoom": true,
-      "selection": true,
-    },
-  )
+})

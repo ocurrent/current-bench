@@ -121,20 +121,9 @@ let make = (
   ~repoId,
   ~pullNumber,
   ~testName,
-  ~synchronize=false,
   ~comparison=Belt.Map.String.empty,
   ~dataByMetricName,
 ) => {
-  let graphRefs = ref(list{})
-  let onGraphRender = graph => graphRefs := Belt.List.add(graphRefs.contents, graph)
-
-  React.useEffect1(() => {
-    if synchronize {
-      LineGraph.synchronize(graphRefs.contents->Belt.List.toArray)
-    }
-    None
-  }, [synchronize])
-
   let metric_table = {
     <Table>
       <thead>
@@ -165,73 +154,72 @@ let make = (
     </Table>
   }
 
-  let metric_graphs = dataByMetricName
-  ->Belt.Map.String.mapWithKey((metricName, (timeseries, metadata)) => {
-    let (comparisonTimeseries, comparisonMetadata) = Belt.Map.String.getWithDefault(
-      comparison,
-      metricName,
-      ([], []),
-    )
+  let graph_metrics = React.useMemo1(() => {
+    dataByMetricName
+    ->Belt.Map.String.mapWithKey((metricName, (timeseries, metadata)) => {
+      let (comparisonTimeseries, comparisonMetadata) = Belt.Map.String.getWithDefault(
+        comparison,
+        metricName,
+        ([], []),
+      )
 
-    let timeseries = Belt.Array.concat(comparisonTimeseries, timeseries)
-    let metadata = Belt.Array.concat(comparisonMetadata, metadata)
+      let timeseries = Belt.Array.concat(comparisonTimeseries, timeseries)
+      let metadata = Belt.Array.concat(comparisonMetadata, metadata)
 
-    let xTicks = Belt.Array.reduceWithIndex(timeseries, Belt.Map.Int.empty, (acc, row, index) => {
-      // Use indexed instead of dates. This allows us to map to commits.
-      Belt.Array.set(row, 0, float_of_int(index))->ignore
-      let tick = switch Belt.Array.get(metadata, index) {
-      | Some(xMetadata) =>
-        let xValue = xMetadata["commit"]
-        DataHelpers.trimCommit(xValue)
-      | None => "Unknown"
-      }
+      let xTicks = Belt.Array.reduceWithIndex(timeseries, Belt.Map.Int.empty, (acc, row, index) => {
+        // Use indexed instead of dates. This allows us to map to commits.
+        Belt.Array.set(row, 0, float_of_int(index))->ignore
+        let tick = switch Belt.Array.get(metadata, index) {
+        | Some(xMetadata) =>
+          let xValue = xMetadata["commit"]
+          DataHelpers.trimCommit(xValue)
+        | None => "Unknown"
+        }
+        Belt.Map.Int.set(acc, index, tick)
+      })
 
-      Belt.Map.Int.set(acc, index, tick)
-    })
-
-    let annotations = if Belt.Array.length(comparisonTimeseries) > 0 {
-      let firstPullX = Belt.Array.length(comparisonTimeseries)
-      Some([
-        {
-          "series": "value",
-          "x": firstPullX,
-          "icon": branchIcon,
-          "text": "Open PR on GitHub",
-          "width": 21,
-          "height": 21,
-          "clickHandler": (_annotation, _point, _dygraph, _event) => {
-            switch pullNumber {
-            | Some(pullNumber) =>
-              DomHelpers.window->DomHelpers.windowOpen(
-                "https://github.com/" ++ repoId ++ "/pull/" ++ string_of_int(pullNumber),
-              )
-            | None => ()
-            }
+      let annotations = if Belt.Array.length(comparisonTimeseries) > 0 {
+        let firstPullX = Belt.Array.length(comparisonTimeseries)
+        [
+          {
+            "series": "value",
+            "x": firstPullX,
+            "icon": branchIcon,
+            "text": "Open PR on GitHub",
+            "width": 21,
+            "height": 21,
+            "clickHandler": (_annotation, _point, _dygraph, _event) => {
+              switch pullNumber {
+              | Some(pullNumber) =>
+                DomHelpers.window->DomHelpers.windowOpen(
+                  "https://github.com/" ++ repoId ++ "/pull/" ++ string_of_int(pullNumber),
+                )
+              | None => ()
+              }
+            },
           },
-        },
-      ])
-    } else {
-      None
-    }
-
-    <LineGraph
-      onXLabelClick=goToCommitLink
-      onRender=onGraphRender
-      key=metricName
-      title=metricName
-      xTicks
-      data={timeseries->Belt.Array.sliceToEnd(-20)}
-      ?annotations
-      labels=["idx", "value"]
-    />
-  })
-  ->Belt.Map.String.valuesToArray
-  ->Rx.array
+        ]
+      } else {
+        []
+      }
+      <LineGraph
+        key=metricName
+        title=metricName
+        xTicks
+        data={timeseries->Belt.Array.sliceToEnd(-20)}
+        annotations
+        labels=["idx", "value"]
+        onXLabelClick=goToCommitLink
+      />
+    })
+    ->Belt.Map.String.valuesToArray
+    ->Rx.array
+  }, [dataByMetricName])
 
   <details className={Sx.make([Sx.w.full])} open_=true>
     <summary className={Sx.make([Sx.pointer])}>
       <Text sx=[Sx.text.xl2, Sx.text.bold]> {Rx.text(testName)} </Text>
     </summary>
-    <Column sx=[Sx.mt.xl]> metric_table <Flex wrap=true> metric_graphs </Flex> </Column>
+    <Column sx=[Sx.mt.xl]> metric_table <Flex wrap=true> {graph_metrics} </Flex> </Column>
   </details>
 }
