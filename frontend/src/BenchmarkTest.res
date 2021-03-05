@@ -9,10 +9,10 @@ type testMetrics = {
 
 @module("../icons/branch.svg") external branchIcon: string = "default"
 
-let commitUrl = commit => `https://github.com/mirage/index/commit/${commit}`
-let goToCommitLink = commit => {
+let commitUrl = (~repoId, commit) => `https://github.com/${repoId}/commit/${commit}`
+let goToCommitLink = (~repoId, commit) => {
   let openUrl: string => unit = %raw(`function (url) { window.open(url, "_blank") }`)
-  openUrl(commitUrl(commit))
+  openUrl(commitUrl(~repoId, commit))
 }
 
 let groupByTestName = (acc, item: testMetrics, idx) => {
@@ -86,6 +86,7 @@ let calcDeltaStr = (a, b) => {
 }
 
 let renderMetricOverviewRow = (
+  ~repoId,
   ~comparison as (comparisonTimeseries, _comparisonMetadata)=([], []),
   metricName,
   (timeseries, metadata),
@@ -94,7 +95,7 @@ let renderMetricOverviewRow = (
     React.null
   } else {
     let last_value = BeltHelpers.Array.lastExn(timeseries)[1]
-    let commit = BeltHelpers.Array.lastExn(metadata)["commit"]->DataHelpers.trimCommit
+    let commit = BeltHelpers.Array.lastExn(metadata)["commit"]
 
     let (vsMasterAbs, vsMasterRel) = switch BeltHelpers.Array.last(comparisonTimeseries) {
     | Some(lastComparisionRow) =>
@@ -108,7 +109,7 @@ let renderMetricOverviewRow = (
 
     <Table.Row key=metricName>
       <Table.Col> {Rx.text(metricName)} </Table.Col>
-      <Table.Col> <Link target="_blank" href={commitUrl(commit)} text=commit /> </Table.Col>
+      <Table.Col> <Link target="_blank" href={commitUrl(~repoId, commit)} text={commit->DataHelpers.trimCommit} /> </Table.Col>
       <Table.Col> {Rx.text(last_value->Js.Float.toFixedWithPrecision(~digits=2))} </Table.Col>
       <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterAbs)} </Table.Col>
       <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterRel)} </Table.Col>
@@ -144,6 +145,7 @@ let make = (
             ([], []),
           )
           renderMetricOverviewRow(
+            ~repoId,
             ~comparison=(comparisonTimeseries, comparisonMetadata),
             metricName,
           )
@@ -209,7 +211,7 @@ let make = (
         data={timeseries->Belt.Array.sliceToEnd(-20)}
         annotations
         labels=["idx", "value"]
-        onXLabelClick=goToCommitLink
+        onXLabelClick=goToCommitLink(~repoId)
       />
     })
     ->Belt.Map.String.valuesToArray
