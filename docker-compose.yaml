@@ -1,5 +1,22 @@
 version: '3.6'
 services:
+  pipeline:
+    build: ./backend
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - ./github-token.txt:/var/run/current-bench-pipeline-github-token.txt
+    ports: ["8081:8081"]
+    command:
+    - 'github'
+    - 'rizo/current-bench-test'
+    - '--github-token-file=/var/run/current-bench-pipeline-github-token.txt'
+    - '--port=8081'
+    - '--verbose'
+    - '--conn-info="host=localhost user=docker port=5432 dbname=docker password=docker"'
+    - '--docker-cpu=3'
+    restart: always
+    depends_on:
+    - "postgres"
   postgres:
     build: ./backend/postgres
     environment:
@@ -22,11 +39,13 @@ services:
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
       HASURA_GRAPHQL_ADMIN_SECRET: ${GRAPHQL_KEY}
-  frontend:
-    build: ./frontend
-    ports:
-    - "80:80"
-    restart: always
+  # frontend:
+  #   build: ./frontend
+  #   ports:
+  #   - "80:80"
+  #   restart: always
+  #   depends_on:
+  #   - "graphql-engine"
        
 volumes:
   db_data:
