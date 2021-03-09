@@ -4,15 +4,16 @@ services:
     build: ./backend
     volumes:
     - /var/run/docker.sock:/var/run/docker.sock
-    - ./github-token.txt:/var/run/current-bench-pipeline-github-token.txt
+    - ./github-token.txt:/app/github-token.txt
+    - ./backend/aslr_seccomp.json:/app/aslr_seccomp.json
     ports: ["8081:8081"]
     command:
     - 'github'
     - 'rizo/current-bench-test'
-    - '--github-token-file=/var/run/current-bench-pipeline-github-token.txt'
+    - '--github-token-file=/app/github-token.txt'
     - '--port=8081'
     - '--verbose'
-    - '--conn-info="host=localhost user=docker port=5432 dbname=docker password=docker"'
+    - '--conn-info="host=postgres user=docker port=5432 dbname=docker password=docker"'
     - '--docker-cpu=3'
     restart: always
     depends_on:
