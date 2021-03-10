@@ -84,17 +84,14 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
       @ docker_cpuset_mems
     in
     let run_at = Ptime_clock.now () in
-    let+ output =
-      Docker.pread ~run_args image
-        ~args:
-          [
-            "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "make"; "bench";
-          ]
+    let pread_cmd = Docker.pread ~run_args image ~args:[ "make"; "bench" ] in
+    let+ output = pread_cmd
     and+ commit =
       match head with
       | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
       | `Local commit -> commit >>| Git.Commit.hash
-    in
+    and+ build_job_id = Current_util.get_job_id image
+    and+ run_job_id = Current_util.get_job_id pread_cmd in
     let duration = Ptime.diff (Ptime_clock.now ()) run_at in
     let () =
       let db = new Postgresql.connection ~conninfo () in
@@ -109,7 +106,7 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
              |> Yojson.Safe.Util.to_list
              |> List.map
                   (Benchmark.make ~duration ~run_at ~repo_id ~benchmark_name
-                     ~commit ?pull_number ?branch)
+                     ~commit ?pull_number ?build_job_id ?run_job_id ?branch)
              |> List.iter (Models.Benchmark.Db.insert db));
       db#finish
     in
@@ -136,7 +133,7 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
 let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
     ~(source : Source.t) () =
   let dockerfile =
-    let+ base = Docker.pull ~schedule:weekly "ocurrent/opam" in
+    let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
     `Contents (dockerfile ~base)
   in
   let docker_cpuset_cpus =
@@ -206,7 +203,7 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
             | _ ->
                 Logs.warn (fun log ->
                     log "Could not extract branch name from: %s" git_ref);
-                None )
+                None)
       in
       pipeline ?branch ~head:head_commit ~repository:"local" ~owner:"local"
         ~slack_path:None ()
@@ -238,6 +235,8 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
 
 let v ~current_config ~docker_config ~server:mode ~(source : Source.t) conninfo
     () =
+  Unix.sleepf 10.0;
+  Db_util.check_connection ~conninfo;
   let pipeline = process_pipeline ~docker_config ~conninfo ~source in
   let engine = Current.Engine.create ~config:current_config pipeline in
   let routes =

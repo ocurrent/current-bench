@@ -9,6 +9,8 @@ module Benchmark : sig
     benchmark_name:string option ->
     ?branch:string ->
     ?pull_number:int ->
+    ?build_job_id:string ->
+    ?run_job_id:string ->
     Yojson.Safe.t ->
     t
 
@@ -23,6 +25,10 @@ module Benchmark : sig
   val branch : t -> string option
 
   val pull_number : t -> int option
+
+  val build_job_id : t -> string option
+
+  val run_job_id : t -> string option
 
   val test_name : t -> string
 

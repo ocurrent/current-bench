@@ -22,12 +22,5 @@ build:
 	dune build --profile=release bin/main.exe
 
 .PHONY: docker-build
-docker-build: _build/_docker/current-bench-pipeline
-_build/_docker/current-bench-pipeline:
-	export DOCKER_BUILDKIT=1 \
-	docker build --target=export --output="type=local,dest=$$PWD/_build/_docker" -f build.docker .
-
-PREFIX ?= /usr/local/bin
-.PHONY: docker-install
-docker-install: _build/_docker/current-bench-pipeline
-	cp _build/_docker/current-bench-pipeline ${PREFIX}/current-bench-pipeline
+docker-build:
+	docker build -t current-bench-pipeline .
