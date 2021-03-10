@@ -12,7 +12,7 @@ module Source = struct
     in
     let github_token_path =
       Arg.required
-      @@ Arg.opt Arg.(some path) None
+      @@ Arg.opt Arg.(some file) None
       @@ Arg.info ~doc:"A file containing the GitHub OAuth token." ~docv:"PATH"
            [ "github-token-file" ]
     in
@@ -25,6 +25,7 @@ module Source = struct
     in
     Term.(
       const (fun repo token slack_path ->
+          let token = Fpath.v token in
           Pipeline.Source.github ~repo ~token ~slack_path)
       $ repo
       $ github_token_path
