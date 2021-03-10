@@ -1,0 +1,46 @@
+version: '3.8'
+services:
+  pipeline:
+    build: ../pipeline
+    volumes:
+    - ..:/app/src
+    - /var/run/docker.sock:/var/run/docker.sock
+    ports: ["8081:8081"]
+    command:
+    - "current-bench-pipeline"
+    - "local"
+    - "/app/src"
+    - "--verbosity=debug"
+    - "--port=8081"
+    - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU}"
+    - "--conn-info=host=db user=docker port=5432 dbname=docker password=${OCAML_BENCH_DB_PASSWORD}"
+    restart: always
+    depends_on:
+    - "db"
+  db:
+    build: ../pipeline/postgres
+    environment:
+    - POSTGRES_DB=docker
+    - POSTGRES_USER=docker
+    - POSTGRES_PASSWORD=${OCAML_BENCH_DB_PASSWORD}
+    restart: always
+    ports: ["5432:5432"]
+  graphql-engine:
+    image: hasura/graphql-engine:v1.2.2
+    ports:
+    - "8080:8080"
+    depends_on:
+    - "db"
+    restart: always
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://docker:docker@db:5432/docker
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      HASURA_GRAPHQL_ADMIN_SECRET: ${OCAML_BENCH_GRAPHQL_KEY}
+  frontend:
+    build: ../frontend
+    ports:
+    - "80:80"
+    restart: always
+    depends_on:
+    - "graphql-engine"
