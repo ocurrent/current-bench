@@ -38,7 +38,25 @@ let reporter =
 let init ?style_renderer ?level () =
   Fmt_tty.setup_std_outputs ?style_renderer ();
   Logs.set_level level;
-  Logs.set_reporter reporter
+  Logs.set_reporter reporter;
+  let () =
+    let srcs = Logs.Src.list () in
+    (* Set specially noisy sources to warning. This allows the app to run in debug. *)
+    List.iter
+      (fun src ->
+        let name = Logs.Src.name src in
+        if
+          name = "handshake"
+          || name = "tls.tracing"
+          || name = "x509"
+          || name = "cohttp.lwt.io"
+          || name = "x509.private_key"
+          || name = "mirage-crypto-rng.lwt"
+          || name = "mirage-crypto-rng.unix"
+        then Logs.Src.set_level src (Some Logs.Warning))
+      srcs
+  in
+  Logs.info (fun log -> log "Logging ready.")
 
 let run x =
   match Lwt_main.run x with
