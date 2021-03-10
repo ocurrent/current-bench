@@ -74,7 +74,7 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
         Git.fetch (Current.map Github.Api.Commit.id (Current.return api_commit))
     | `Local commit -> commit
   in
-  let image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
+  let current_image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
   let s =
     let run_args =
       [ "--security-opt"; "seccomp=./aslr_seccomp.json" ]
@@ -83,19 +83,22 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
       @ docker_cpuset_mems
     in
     let run_at = Ptime_clock.now () in
-    let pread_cmd = Docker.pread ~run_args image ~args:[ "make"; "bench" ] in
-    let+ output = pread_cmd
-    and+ commit =
+    let current_output =
+      Docker.pread ~run_args current_image ~args:[ "make"; "bench" ]
+    in
+    let+ commit =
       match head with
       | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
       | `Local commit -> commit >>| Git.Commit.hash
-    and+ build_job_id = Current_util.get_job_id image
-    and+ run_job_id = Current_util.get_job_id pread_cmd in
+    and+ build_job_id = Current_util.get_job_id current_image
+    and+ run_job_id = Current_util.get_job_id current_output
+    and+ output = current_output in
     let duration = Ptime.diff (Ptime_clock.now ()) run_at in
+    Logs.debug (fun log -> log "Benchmark output:\n%s" output);
     let () =
       let db = new Postgresql.connection ~conninfo () in
       output
-      |> Json_utils.parse_many
+      |> Json_util.parse_many
       |> List.iter (fun output_json ->
              let benchmark_name =
                Yojson.Safe.Util.(member "name" output_json)
