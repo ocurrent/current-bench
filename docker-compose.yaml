@@ -3,22 +3,29 @@ services:
   pipeline:
     build: ./backend
     volumes:
+    # TODO MOUNT var etc folder for ocurrent
+    # - some-volume:/app/var
     - /var/run/docker.sock:/var/run/docker.sock
     - ./github-token.txt:/app/github-token.txt
-    - ./backend/aslr_seccomp.json:/app/aslr_seccomp.json
     ports: ["8081:8081"]
+    # FIXME: stop using the testing repo.
     command:
-    - 'github'
-    - 'rizo/current-bench-test'
-    - '--github-token-file=/app/github-token.txt'
-    - '--port=8081'
-    - '--verbose'
-    - '--conn-info="host=postgres user=docker port=5432 dbname=docker password=docker"'
-    - '--docker-cpu=3'
+    - "wait-for"
+    - "db:5432"
+    - "--timeout=60"
+    - "--"
+    - "current-bench-pipeline"
+    - "github"
+    - "rizo/current-bench-test"
+    - "--github-token-file=/app/github-token.txt"
+    - "--port=8081"
+    - "--verbosity=debug"
+    - "--conn-info=host=db user=docker port=5432 dbname=docker password=docker"
+    - "--docker-cpu=1"
     restart: always
     depends_on:
-    - "postgres"
-  postgres:
+    - "db"
+  db:
     build: ./backend/postgres
     environment:
     - POSTGRES_DB=docker
@@ -33,20 +40,20 @@ services:
     ports:
     - "8080:8080"
     depends_on:
-    - "postgres"
+    - "db"
     restart: always
     environment:
-      HASURA_GRAPHQL_DATABASE_URL: postgres://docker:docker@postgres:5432/docker
-      HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
+      HASURA_GRAPHQL_DATABASE_URL: postgres://docker:docker@db:5432/docker
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
       HASURA_GRAPHQL_ADMIN_SECRET: ${GRAPHQL_KEY}
-  # frontend:
-  #   build: ./frontend
-  #   ports:
-  #   - "80:80"
-  #   restart: always
-  #   depends_on:
-  #   - "graphql-engine"
+  frontend:
+    build: ./frontend
+    ports:
+    - "80:80"
+    restart: always
+    depends_on:
+    - "graphql-engine"
        
 volumes:
   db_data:
