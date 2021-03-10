@@ -4,7 +4,6 @@ module Github = Current_github
 module Docker = Current_docker.Default
 module Slack = Current_slack
 module Logging = Logging
-module Json_utils = Utils.Json_utils
 module Benchmark = Models.Benchmark
 
 let ( >>| ) x f = Current.map f x
@@ -34,7 +33,7 @@ end
 let pool = Current.Pool.create ~label:"docker" 1
 
 let read_channel_uri p =
-  Utils.read_fpath p |> String.trim |> Uri.of_string |> Current_slack.channel
+  Util.read_fpath p |> String.trim |> Uri.of_string |> Current_slack.channel
 
 (* Generate a Dockerfile for building all the opam packages in the build context. *)
 let dockerfile ~base =
@@ -171,10 +170,7 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
       in
       let* refs =
         let api =
-          token
-          |> Utils.read_fpath
-          |> String.trim
-          |> Current_github.Api.of_oauth
+          token |> Util.read_fpath |> String.trim |> Current_github.Api.of_oauth
         in
         let repo = Current.return (api, repo) in
         Current.component "Get PRs"

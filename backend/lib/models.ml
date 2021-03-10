@@ -1,5 +1,3 @@
-open Utils
-
 module Benchmark = struct
   type t = {
     run_at : Ptime.t;
@@ -74,19 +72,19 @@ module Benchmark = struct
 
   module Db = struct
     let insert_query self =
-      let run_at = Sql_utils.time self.run_at in
-      let duration = Sql_utils.span self.duration in
+      let run_at = Sql_util.time self.run_at in
+      let duration = Sql_util.span self.duration in
       let repository =
-        Sql_utils.string (fst self.repo_id ^ "/" ^ snd self.repo_id)
+        Sql_util.string (fst self.repo_id ^ "/" ^ snd self.repo_id)
       in
-      let commit = Sql_utils.string self.commit in
-      let branch = Sql_utils.(option string) self.branch in
-      let pull_number = Sql_utils.(option int) self.pull_number in
-      let build_job_id = Sql_utils.(option string) self.build_job_id in
-      let run_job_id = Sql_utils.(option string) self.run_job_id in
-      let benchmark_name = Sql_utils.(option string) self.benchmark_name in
-      let test_name = Sql_utils.(string) self.test_name in
-      let metrics = Sql_utils.json self.metrics in
+      let commit = Sql_util.string self.commit in
+      let branch = Sql_util.(option string) self.branch in
+      let pull_number = Sql_util.(option int) self.pull_number in
+      let build_job_id = Sql_util.(option string) self.build_job_id in
+      let run_job_id = Sql_util.(option string) self.run_job_id in
+      let benchmark_name = Sql_util.(option string) self.benchmark_name in
+      let test_name = Sql_util.(string) self.test_name in
+      let metrics = Sql_util.json self.metrics in
       Fmt.str
         {|
 INSERT INTO
@@ -100,7 +98,11 @@ VALUES
     let insert (db : Postgresql.connection) self =
       let query = insert_query self in
       try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
-      | Postgresql.Error e -> prerr_endline (Postgresql.string_of_error e)
-      | e -> prerr_endline (Printexc.to_string e)
+      | Postgresql.Error err ->
+          Logs.err (fun log ->
+              log "Could not insert results:\n%s"
+                (Postgresql.string_of_error err))
+      | exn ->
+          Logs.err (fun log -> log "Could not insert results:\n%a" Fmt.exn exn)
   end
 end
