@@ -28,7 +28,7 @@ depends: [
   "ocaml" {>= "4.08"}
   "postgresql"
   "rresult"
-  "omigrate" {dev}
+  "omigrate"
 ]
 build: [
   ["dune" "subst"] {pinned}
