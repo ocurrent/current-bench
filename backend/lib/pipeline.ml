@@ -55,7 +55,7 @@ let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 1) ()
 let make_commit_status_url owner repository pull_number =
   let uri_end =
     match pull_number with
-    | None -> ""
+    | None -> owner ^ "/" ^ repository
     | Some number -> owner ^ "/" ^ repository ^ "/pull/" ^ string_of_int number
   in
   Uri.of_string ("http://autumn.ocamllabs.io/" ^ uri_end)
