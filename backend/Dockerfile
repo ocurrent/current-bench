@@ -1,4 +1,4 @@
-FROM ocaml/opam AS build
+FROM ocaml/opam:debian-ocaml-4.12 AS build
 
 RUN sudo apt-get update && \
     sudo apt-get install -qq -yy \
@@ -23,7 +23,6 @@ COPY --chown=opam . .
 # Build the project.
 RUN opam exec -- dune build --profile=release bin/main.exe
 
-
 FROM debian:stable-slim
 
 RUN apt-get update \
@@ -32,13 +31,15 @@ RUN apt-get update \
         ca-certificates \
         apt-transport-https \
         curl \
+        netcat \
+        postgresql-client \
         gnupg \
         lsb-release \
         git \
         libpq-dev \
         libsqlite3-dev \
     && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
-    && echo "deb [arch=arm64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
         > /etc/apt/sources.list.d/docker.list \
     && apt-get update \
     && apt-get install docker-ce-cli \
@@ -47,5 +48,8 @@ RUN apt-get update \
 WORKDIR /app
 ENV PATH="/app/bin:${PATH}"
 
+COPY ./aslr_seccomp.json /app/aslr_seccomp.json
+COPY ./db/migrations /app/db/migrations
+COPY --from=build /home/opam/.opam/4.12/bin/omigrate /app/bin/omigrate
+COPY ./scripts/wait-for /app/bin/wait-for
 COPY --from=build /mnt/project/_build/default/bin/main.exe /app/bin/current-bench-pipeline
-ENTRYPOINT ["/app/bin/current-bench-pipeline"]
