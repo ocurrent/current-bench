@@ -109,7 +109,11 @@ let renderMetricOverviewRow = (
 
     <Table.Row key=metricName>
       <Table.Col> {Rx.text(metricName)} </Table.Col>
-      <Table.Col> <Link target="_blank" href={commitUrl(~repoId, commit)} text={commit->DataHelpers.trimCommit} /> </Table.Col>
+      <Table.Col>
+        <Link
+          target="_blank" href={commitUrl(~repoId, commit)} text={commit->DataHelpers.trimCommit}
+        />
+      </Table.Col>
       <Table.Col> {Rx.text(last_value->Js.Float.toFixedWithPrecision(~digits=2))} </Table.Col>
       <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterAbs)} </Table.Col>
       <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterRel)} </Table.Col>
@@ -211,7 +215,7 @@ let make = (
         data={timeseries->Belt.Array.sliceToEnd(-20)}
         annotations
         labels=["idx", "value"]
-        onXLabelClick=goToCommitLink(~repoId)
+        onXLabelClick={goToCommitLink(~repoId)}
       />
     })
     ->Belt.Map.String.valuesToArray
