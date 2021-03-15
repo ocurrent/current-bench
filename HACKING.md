@@ -128,3 +128,21 @@ $ $EDITOR Makefile
 $ git commit -am "Modified the benchmarks"
 ```
 
+The `pipeline` logs should show something like:
+
+```
+pipeline_1    |    current.git [INFO] Detected change in "master"
+pipeline_1    |        current [INFO] Created new log file at
+pipeline_1    |                       /app/var/job/2021-03-15/161926-docker-build-e82ec6.log
+pipeline_1    |        current [INFO] Exec: "cp" "-a" "--" "/app/local-test-repo/.git" 
+pipeline_1    |                             "/tmp/git-checkout3219a5b2"
+pipeline_1    |        current [INFO] Exec: "git" "-C" "/tmp/git-checkout3219a5b2" "reset" 
+pipeline_1    |                             "--hard" "706782c82741a89b8d9c982860787ec10b1b95f7"
+pipeline_1    |        current [INFO] Exec: "git" "-C" "/tmp/git-checkout3219a5b2" "submodule" 
+pipeline_1    |                             "update" "--init" "--recursive"
+pipeline_1    |        current [INFO] Exec: "docker" "build" "--iidfile" "/tmp/git-checkout3219a5b2/docker-iid" 
+pipeline_1    |                             "--" "/tmp/git-checkout3219a5b2"
+...
+```
+
+> **WARNING**: When committing changes to the local test repo, make sure you are doing so in the main top-level git repository.
