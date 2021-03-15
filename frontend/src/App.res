@@ -114,7 +114,7 @@ module Benchmark = {
       ->Belt.Map.String.valuesToArray
     }, [benchmarkDataByTestName])
 
-    <Column spacing=Sx.xl3>
+    <Column spacing=Sx.xl>
       {graphsData
       ->Belt.Array.map(((dataByMetricName, comparison, testName)) =>
         <BenchmarkTest repoId pullNumber key={testName} testName dataByMetricName comparison />
@@ -163,7 +163,7 @@ module Welcome = {
   let make = () => {
     <Column alignX=#center sx=[Sx.mt.xl]>
       <Heading level=#h1 align=#center text=`hello world 👋` />
-      <Text align=#center color=Sx.gray900>
+      <center>
         {Rx.text("Measure and track benchmark results for your OCaml projects.")}
         <br />
         {Rx.text("Learn more at ")}
@@ -171,7 +171,7 @@ module Welcome = {
           {Rx.text("https://github.com/ocurrent/current-bench")}
         </a>
         {Rx.text(".")}
-      </Text>
+      </center>
     </Column>
   }
 }
@@ -181,7 +181,7 @@ module ErrorView = {
   let make = (~msg) => {
     <Column alignX=#center sx=[Sx.mt.xl]>
       <Heading level=#h1 align=#center text=`Application error` />
-      <Text align=#center color=Sx.gray900>
+      <Row alignX=#center sx=[Sx.text.color(Sx.gray900)]>
         {Rx.text(msg)}
         <br />
         {Rx.text("Learn more at ")}
@@ -189,7 +189,7 @@ module ErrorView = {
           {Rx.text("https://github.com/ocurrent/current-bench")}
         </a>
         {Rx.text(".")}
-      </Text>
+      </Row>
     </Column>
   }
 }
@@ -242,7 +242,7 @@ module RepoView = {
         | Some(repoId) =>
           let breadcrumbs =
             <Row sx=[Sx.w.auto, Sx.text.noUnderline] alignY=#center>
-              <Text weight=#semibold> {Rx.text("/")} </Text>
+              <Text weight=#semibold> "/" </Text>
               {
                 let href = AppRouter.Repo({repoId: repoId})->AppRouter.path
                 <Link href text="master" />
@@ -251,7 +251,7 @@ module RepoView = {
                 let href =
                   AppRouter.RepoPull({repoId: repoId, pullNumber: pullNumber})->AppRouter.path
                 <>
-                  <Text weight=#semibold> {Rx.text("/")} </Text>
+                  <Text weight=#semibold> "/" </Text>
                   <Link href icon=Icon.branch text={string_of_int(pullNumber)} />
                 </>
               })}

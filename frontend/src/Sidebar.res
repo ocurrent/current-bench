@@ -87,7 +87,7 @@ let make = (~repoIds, ~selectedRepoId=?, ~onSelectRepoId, ~selectedPull=?) => {
     </Row>
     <Column>
       <Text sx=[Sx.mb.md] color=Sx.gray700 weight=#bold uppercase=true size=#sm>
-        {Rx.text("Repositories")}
+        "Repositories"
       </Text>
       <Select
         name="repositories"
@@ -102,9 +102,7 @@ let make = (~repoIds, ~selectedRepoId=?, ~onSelectRepoId, ~selectedPull=?) => {
       </Select>
     </Column>
     <Column>
-      <Text color=Sx.gray700 weight=#bold uppercase=true size=#sm>
-        {Rx.text("Pull Requests")}
-      </Text>
+      <Text color=Sx.gray700 weight=#bold uppercase=true size=#sm> "Pull Requests" </Text>
       {switch selectedRepoId {
       | Some(repoId) => <PullsMenu repoId ?selectedPull />
       | None => Rx.text("None")

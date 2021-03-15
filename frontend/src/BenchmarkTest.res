@@ -71,53 +71,72 @@ let groupDataByMetric = (items: array<testMetrics>, selection: Belt.Set.Int.t): 
   selection->Set.Int.reduce(Map.String.empty, groupByMetric)
 }
 
-let calcDeltaStr = (a, b) => {
+let calcDelta = (a, b) => {
   let n = if b == 0.0 {
     0.0
   } else {
     let n = (b -. a) /. b *. 100.
     a < b ? -.n : abs_float(n)
   }
+  n
+}
+
+let deltaToString = n =>
   if n > 0.0 {
     "+" ++ n->Js.Float.toFixedWithPrecision(~digits=2) ++ "%"
   } else {
     n->Js.Float.toFixedWithPrecision(~digits=2) ++ "%"
   }
-}
 
 let renderMetricOverviewRow = (
   ~repoId,
   ~comparison as (comparisonTimeseries, _comparisonMetadata)=([], []),
-  metricName,
+  ~testName,
+  ~metricName,
   (timeseries, metadata),
 ) => {
   if Belt.Array.length(timeseries) == 0 {
     React.null
   } else {
     let last_value = BeltHelpers.Array.lastExn(timeseries)[1]
-    let commit = BeltHelpers.Array.lastExn(metadata)["commit"]
-
     let (vsMasterAbs, vsMasterRel) = switch BeltHelpers.Array.last(comparisonTimeseries) {
     | Some(lastComparisionRow) =>
       let lastComparisonY = lastComparisionRow[1]
       (
         Js.Float.toFixedWithPrecision(~digits=2)(lastComparisonY),
-        calcDeltaStr(last_value, lastComparisonY),
+        calcDelta(last_value, lastComparisonY)->deltaToString,
       )
     | _ => ("NA", "NA")
     }
 
     <Table.Row key=metricName>
-      <Table.Col> {Rx.text(metricName)} </Table.Col>
       <Table.Col>
-        <Link
-          target="_blank" href={commitUrl(~repoId, commit)} text={commit->DataHelpers.trimCommit}
-        />
+        <a href={"#line-graph-" ++ testName ++ "-" ++ metricName}> {Rx.text(metricName)} </a>
       </Table.Col>
-      <Table.Col> {Rx.text(last_value->Js.Float.toFixedWithPrecision(~digits=2))} </Table.Col>
+      <Table.Col sx=[Sx.text.right]>
+        {Rx.text(last_value->Js.Float.toFixedWithPrecision(~digits=2))}
+      </Table.Col>
       <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterAbs)} </Table.Col>
       <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterRel)} </Table.Col>
     </Table.Row>
+  }
+}
+
+let getMetricDelta = (
+  ~comparison as (comparisonTimeseries, _comparisonMetadata)=([], []),
+  (timeseries, _metadata),
+) => {
+  if Belt.Array.length(timeseries) == 0 {
+    None
+  } else {
+    let last_value = BeltHelpers.Array.lastExn(timeseries)[1]
+
+    switch BeltHelpers.Array.last(comparisonTimeseries) {
+    | Some(lastComparisionRow) =>
+      let lastComparisonY = lastComparisionRow[1]
+      Some(calcDelta(last_value, lastComparisonY))
+    | _ => None
+    }
   }
 }
 
@@ -130,13 +149,12 @@ let make = (
   ~dataByMetricName,
 ) => {
   let metric_table = {
-    <Table>
+    <Table sx=[Sx.mb.xl2]>
       <thead>
         <tr className={Sx.make([Sx.h.xl2])}>
           <th> {React.string("Metric")} </th>
-          <th> {React.string("Last Commit")} </th>
-          <th> {React.string("Last Value")} </th>
-          <th> {React.string("Master Value")} </th>
+          <th> {React.string("Last PR value")} </th>
+          <th> {React.string("Last master value")} </th>
           <th> {React.string("Delta")} </th>
         </tr>
       </thead>
@@ -151,7 +169,8 @@ let make = (
           renderMetricOverviewRow(
             ~repoId,
             ~comparison=(comparisonTimeseries, comparisonMetadata),
-            metricName,
+            ~testName,
+            ~metricName,
           )
         })
         ->Belt.Map.String.valuesToArray
@@ -160,7 +179,7 @@ let make = (
     </Table>
   }
 
-  let graph_metrics = React.useMemo1(() => {
+  let metric_graphs = React.useMemo1(() => {
     dataByMetricName
     ->Belt.Map.String.mapWithKey((metricName, (timeseries, metadata)) => {
       let (comparisonTimeseries, comparisonMetadata) = Belt.Map.String.getWithDefault(
@@ -208,24 +227,46 @@ let make = (
       } else {
         []
       }
-      <LineGraph
-        key=metricName
-        title=metricName
-        xTicks
-        data={timeseries->Belt.Array.sliceToEnd(-20)}
-        annotations
-        labels=["idx", "value"]
-        onXLabelClick={goToCommitLink(~repoId)}
-      />
+      let delta = getMetricDelta(
+        ~comparison=(comparisonTimeseries, comparisonMetadata),
+        (timeseries, metadata),
+      )
+      let delta = Belt.Option.map(delta, delta =>
+        delta == 0.0 ? "Same as master" : deltaToString(delta) ++ " vs master"
+      )
+
+      <div key=metricName>
+        {Topbar.anchor(~id="line-graph-" ++ testName ++ "-" ++ metricName)}
+        <LineGraph
+          onXLabelClick={goToCommitLink(~repoId)}
+          title=metricName
+          subTitle=?delta
+          xTicks
+          data={timeseries->Belt.Array.sliceToEnd(-20)}
+          annotations
+          labels=["idx", "value"]
+        />
+      </div>
     })
     ->Belt.Map.String.valuesToArray
     ->Rx.array
   }, [dataByMetricName])
 
   <details className={Sx.make([Sx.w.full])} open_=true>
-    <summary className={Sx.make([Sx.pointer])}>
-      <Text sx=[Sx.text.xl2, Sx.text.bold]> {Rx.text(testName)} </Text>
+    <summary
+      className={Sx.make([
+        Sx.mb.xl,
+        Sx.px.lg,
+        Sx.py.md,
+        Sx.pointer,
+        Sx.rounded.sm,
+        Sx.border.xs,
+        Sx.border.color(Sx.gray400),
+        Sx.bg.color(Sx.gray200),
+      ])}>
+      <Text sx=[Sx.w.auto, Sx.text.md, Sx.text.bold, Sx.text.color(Sx.gray900)]> testName </Text>
     </summary>
-    <Column sx=[Sx.mt.xl]> metric_table <Flex wrap=true> {graph_metrics} </Flex> </Column>
+    {Belt.Map.String.isEmpty(comparison) ? Rx.null : metric_table}
+    <Flex wrap=true> metric_graphs </Flex>
   </details>
 }

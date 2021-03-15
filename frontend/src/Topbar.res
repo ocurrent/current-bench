@@ -19,3 +19,7 @@ let make = (~children) => {
     <Row alignY=#center spacing=#between> {children} </Row>
   </Flex>
 }
+
+let anchor = (~id) => {
+  <a className={Sx.make([Sx.d.block, Sx.relative, Sx.unsafe("top", "-64px"), Sx.invisible])} id />
+}

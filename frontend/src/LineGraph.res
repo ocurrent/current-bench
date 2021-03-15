@@ -113,7 +113,7 @@ let defaultOptions = (
     "legendFormatter": Js.Null.fromOption(legendFormatter),
     "legend": "follow",
     "showRoller": false,
-    "strokeWidth": 2,
+    "strokeWidth": 1,
     "fillGraph": true,
     "pointClickCallback": Js.Null.fromOption(onClick),
     "colors": ["#0F6FDE"],
@@ -157,14 +157,32 @@ Sx.global(".dygraph-axis-label-y", [Sx.pr.sm])
 
 Sx.global(".dygraph-axis-label", [Sx.text.xs, Sx.z.high, Sx.overflow.hidden, Sx.opacity75])
 
-let graphSx = [Sx.absolute, Sx.t.xl3, Sx.b.zero, Sx.l.zero, Sx.r.zero]
+let graphSx = [
+  Sx.unsafe("width", "400px"),
+  Sx.unsafe("height", "190px"),
+  Sx.unsafe("marginBottom", "40px"),
+]
 
-let containerSx = [Sx.mt.xl2, Sx.relative, Sx.unsafe("width", "480px"), Sx.h.xl5]
+let containerSx = [
+  Sx.minW.xl5,
+  Sx.unsafe("width", "432px"),
+  Sx.overflow.scroll,
+  Sx.relative,
+  Sx.mb.xl2,
+  Sx.mr.xl2,
+  Sx.border.xs,
+  Sx.border.color(Sx.gray300),
+  Sx.rounded.md,
+  Sx.p.xl,
+]
+
+open Components
 
 @react.component
 let make = React.memo((
   ~sx as uSx=[],
   ~title=?,
+  ~subTitle=?,
   ~xTicks: option<Belt.Map.Int.t<string>>=?,
   ~yLabel: option<string>=?,
   ~labels: option<array<string>>=?,
@@ -182,15 +200,6 @@ let make = React.memo((
 ) => {
   let graphDivRef = React.useRef(Js.Nullable.null)
   let graphRef = React.useRef(None)
-
-  // Dygraph does not display the last tick, so a dummy value
-  // is added a the end of the data to overcome this.
-  // See: https://github.com/danvk/dygraphs/issues/506
-  let lastRow = data->BeltHelpers.Array.last
-  let data = switch lastRow {
-  | Some(lastRow) => BeltHelpers.Array.push(data, [lastRow[0] +. 1.0, Obj.magic(Js.Nullable.null)])
-  | None => data
-  }
 
   React.useEffect1(() => {
     let options = defaultOptions(
@@ -263,14 +272,32 @@ let make = React.memo((
     None
   }, (data, annotations))
 
-  let title = switch title {
-  | Some(title) => <h3 className={Sx.make([Sx.text.center])}> {React.string(title)} </h3>
+  // TODO check if empty
+  let lastValue = data->BeltHelpers.Array.lastExn->Belt.Array.getExn(1)
+
+  let left = switch title {
+  | Some(title) =>
+    <Column spacing=Sx.lg sx=[Sx.w.auto]>
+      <Text sx=[Sx.leadingNone, Sx.text.bold, Sx.text.xl]> title </Text>
+      {Rx.onSome(subTitle, subTitle =>
+        <Text sx=[Sx.leadingNone, Sx.text.sm, Sx.text.color(Sx.gray600)]> subTitle </Text>
+      )}
+    </Column>
   | None => React.null
   }
 
+  let right =
+    <Row alignX=#right spacing=Sx.md sx=[Sx.w.auto]>
+      <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray900)]>
+        {Js.Float.toFixedWithPrecision(~digits=2, lastValue)}
+      </Text>
+      <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray500)]> {""} </Text> // TODO: unit needs to be added to the metrics
+    </Row>
+
   let sx = Array.append(uSx, containerSx)
 
-  <div className={Sx.make(sx)}>
-    title <div className={Sx.make(graphSx)} ref={ReactDOMRe.Ref.domRef(graphDivRef)} />
-  </div>
+  <Column sx spacing=Sx.xl>
+    <Row spacing=#between alignY=#top> {left} {right} </Row>
+    <div className={Sx.make(graphSx)} ref={ReactDOMRe.Ref.domRef(graphDivRef)} />
+  </Column>
 })
