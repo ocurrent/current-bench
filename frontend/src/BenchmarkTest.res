@@ -227,7 +227,6 @@ let make = (
       } else {
         []
       }
-
       let delta = getMetricDelta(
         ~comparison=(comparisonTimeseries, comparisonMetadata),
         (timeseries, metadata),
