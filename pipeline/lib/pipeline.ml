@@ -234,7 +234,6 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
 
 let v ~current_config ~docker_config ~server:mode ~(source : Source.t) conninfo
     () =
-  Unix.sleepf 10.0;
   Db_util.check_connection ~conninfo;
   let pipeline = process_pipeline ~docker_config ~conninfo ~source in
   let engine = Current.Engine.create ~config:current_config pipeline in

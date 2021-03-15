@@ -25,4 +25,5 @@ start-development: ./local-test-repo/.git
 		--file=./environments/development.docker-compose.yaml \
 		--env-file=development.env \
 		up \
-		--remove-orphans
+		--remove-orphans \
+		--build
