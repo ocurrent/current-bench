@@ -201,15 +201,6 @@ let make = React.memo((
   let graphDivRef = React.useRef(Js.Nullable.null)
   let graphRef = React.useRef(None)
 
-  // Dygraph does not display the last tick, so a dummy value
-  // is added a the end of the data to overcome this.
-  // See: https://github.com/danvk/dygraphs/issues/506
-  let lastRow = data->BeltHelpers.Array.last
-  let data = switch lastRow {
-  | Some(lastRow) => BeltHelpers.Array.push(data, [lastRow[0] +. 1.0, Obj.magic(Js.Nullable.null)])
-  | None => data
-  }
-
   React.useEffect1(() => {
     let options = defaultOptions(
       ~yLabel?,
