@@ -94,6 +94,7 @@ let defaultOptions = (
         "axisLineWidth": 1.5,
         "axisLabelFormatter": Js.Null.fromOption(xLabelFormatter),
         "ticker": ticker,
+        "axisLabelWidth": 50,
       },
       "y": {
         "drawAxis": true,
