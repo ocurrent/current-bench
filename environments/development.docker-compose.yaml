@@ -1,22 +1,5 @@
 version: '3.8'
 services:
-  pipeline:
-    build: ../pipeline
-    volumes:
-    - ..:/app/src
-    - /var/run/docker.sock:/var/run/docker.sock
-    ports: ["8081:8081"]
-    command:
-    - "current-bench-pipeline"
-    - "local"
-    - "/app/src"
-    - "--verbosity=debug"
-    - "--port=8081"
-    - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU}"
-    - "--conn-info=host=db user=docker port=5432 dbname=docker password=${OCAML_BENCH_DB_PASSWORD}"
-    restart: always
-    depends_on:
-    - "db"
   db:
     build: ../pipeline/postgres
     environment:
@@ -26,7 +9,7 @@ services:
     restart: always
     ports: ["5432:5432"]
   graphql-engine:
-    image: hasura/graphql-engine:v1.2.2
+    image: hasura/graphql-engine:v1.3.3
     ports:
     - "8080:8080"
     depends_on:
@@ -40,7 +23,44 @@ services:
   frontend:
     build: ../frontend
     ports:
-    - "80:80"
+    - "80:8082"
     restart: always
     depends_on:
     - "graphql-engine"
+  pipeline:
+    build:
+      context: ../pipeline
+      args:
+        TARGET_ARCH: ${OCAML_BENCH_TARGET_ARCH}
+    volumes:
+    # Mount the source code of the test project to allow local testing.
+    - ../local-test-repo:/app/local-test-repo
+    - /var/run/docker.sock:/var/run/docker.sock
+    ports: ["8081:8081"]
+    command:
+    - "current-bench-pipeline"
+    - "local"
+    - "/app/local-test-repo"
+    - "--verbose"
+    - "--port=8081"
+    - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU}"
+    - "--conn-info=host=db user=docker port=5432 dbname=docker password=${OCAML_BENCH_DB_PASSWORD}"
+    restart: always
+    depends_on:
+    - "db"
+  # Apply database migrations. To be used only in development!
+  db-migrate:
+    image: current-bench_pipeline:latest
+    command:
+    - "wait-for"
+    - "db:5432"
+    - "-t"
+    - "15"
+    - "--"
+    - "omigrate"
+    - "setup"
+    - "--verbose"
+    - "--source=/app/db/migrations"
+    - "--database=postgresql://docker:${OCAML_BENCH_DB_PASSWORD}@db:5432/docker"
+    depends_on:
+    - "db"

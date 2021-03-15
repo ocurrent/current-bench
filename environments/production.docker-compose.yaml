@@ -1,24 +1,5 @@
 version: '3.6'
 services:
-  pipeline:
-    build: ./backend
-    volumes:
-    - pipeline_var:/app/var
-    - /var/run/docker.sock:/var/run/docker.sock
-    ports: ["8081:8081"]
-    command:
-    - "current-bench-pipeline"
-    - "github_app"
-    - "--verbosity=debug"
-    - "--port=8081"
-    - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU}"
-    - "--conn-info=host=db user=docker port=5432 dbname=docker password=${OCAML_BENCH_DB_PASSWORD}"
-    - "--github-app-id=${OCAML_BENCH_GITHUB_APP_ID}"
-    - "--github-account-allowlist=${OCAML_BENCH_GITHUB_ACCOUNT_ALLOW_LIST}"
-    - "--github-private-key-file=${OCAML_BENCH_GITHUB_PRIVATE_KEY_FILE}"
-    restart: always
-    depends_on:
-    - "db"
   db:
     build: ./backend/postgres
     environment:
@@ -30,7 +11,7 @@ services:
     - db_data:/var/lib/postgresql/data
     ports: ["5432:5432"]
   graphql-engine:
-    image: hasura/graphql-engine:v1.2.2
+    image: hasura/graphql-engine:v1.3.3
     ports:
     - "8080:8080"
     depends_on:
@@ -48,6 +29,28 @@ services:
     restart: always
     depends_on:
     - "graphql-engine"
+  pipeline:
+    build:
+      context: ../pipeline
+      args:
+        TARGET_ARCH: ${OCAML_BENCH_TARGET_ARCH}
+    volumes:
+    - pipeline_var:/app/var
+    - /var/run/docker.sock:/var/run/docker.sock
+    ports: ["8081:8081"]
+    command:
+    - "current-bench-pipeline"
+    - "github_app"
+    - "--verbosity=debug"
+    - "--port=8081"
+    - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU}"
+    - "--conn-info=host=db user=docker port=5432 dbname=docker password=${OCAML_BENCH_DB_PASSWORD}"
+    - "--github-app-id=${OCAML_BENCH_GITHUB_APP_ID}"
+    - "--github-account-allowlist=${OCAML_BENCH_GITHUB_ACCOUNT_ALLOW_LIST}"
+    - "--github-private-key-file=${OCAML_BENCH_GITHUB_PRIVATE_KEY_FILE}"
+    restart: always
+    depends_on:
+    - "db"
        
 volumes:
   db_data:
