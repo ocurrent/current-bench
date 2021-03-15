@@ -23,7 +23,7 @@ services:
   frontend:
     build: ../frontend
     ports:
-    - "80:8082"
+    - "8082:80"
     restart: always
     depends_on:
     - "graphql-engine"
