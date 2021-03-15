@@ -69,7 +69,7 @@ This will start multiple services:
 | Application UI | <http://localhost:8082> |
 | Pipeline UI | <http://localhost:8081> |
 | Hasura GraphQL engine | <http://localhost:8080> |
-| PostgreSQL database | `postgres://docker:docker@db:5432/docker` |
+| PostgreSQL database | `postgres://docker:docker@localhost:5432/docker` |
 
 For mode details and setup instructions for the `pipeline` and the `frontend` services see the `README` files in their directories.
 
@@ -77,8 +77,6 @@ For mode details and setup instructions for the `pipeline` and the `frontend` se
 ## Inspecting the benchmark results in the database
 
 The raw benchmark results (as produced by user projects) are stored in the PostgreSQL database.
-
-The schema for the 
 
 Make sure that your development environment is running (see the previous section) and connect to the database and select the data:
 
