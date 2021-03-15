@@ -1,3 +1,4 @@
+
 .PHONY: start-production
 start-production:
 	docker-compose \
@@ -14,8 +15,11 @@ stop-production:
 		--file=./environments/production.docker-compose.yaml \
 		down
 
+./local-test-repo/.git:
+	cd ./local-test-repo/ && git init && git add . && git commit -m "Initial commit."
+
 .PHONY: start-development
-start-development:
+start-development: ./local-test-repo/.git
 	docker-compose \
 		--project-name="current-bench" \
 		--file=./environments/development.docker-compose.yaml \
