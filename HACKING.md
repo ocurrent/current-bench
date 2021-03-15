@@ -4,11 +4,10 @@ This document contains instructions for working on the OCaml Benchmarks project.
 
 ## Development environment
 
-OCaml Benchmarks uses a dedicated docker environment for deveploment purposes. No other dependencies apart from docker are needed to run the project locally.
+OCaml Benchmarks uses a dedicated docker environment for development purposes. No other dependencies apart from docker are needed to run the project locally.
 
-The following files are needed to start the development environment:
+The following files define the development environment:
 
-* `./Makefile`
 * `./environments/development.env`
 * `./environments/development.docker-compose.yaml`
 
@@ -21,7 +20,7 @@ Create a file with variables for the development environment:
 $ cp ./environments/development.env.template ./environments/development.env
 ```
 
-Edit the `./environments/development.env` file and adjust the configurations variables to your liking. The fowlloing variables are provided:
+Edit the `./environments/development.env` file and adjust the configurations variables to your liking. The following variables are provided:
 
 | Variable                  | Default value |
 |---------------------------|---------------|
@@ -29,6 +28,7 @@ Edit the `./environments/development.env` file and adjust the configurations var
 | `OCAML_BENCH_DB_PASSWORD` | `docker`      |
 | `OCAML_BENCH_GRAPHQL_KEY` | `secret`      |
 | `OCAML_BENCH_TARGET_ARCH` | `amd64`       |
+
 
 > To run the project on the Apple MacBookPro with an M1 CPU, set the `OCAML_BENCH_TARGET_ARCH` variable to `arm64`.
 
@@ -100,7 +100,7 @@ docker=# select count(*) from benchmarks;
 
 ## Working with database migrations
 
-In the development mode the database migrations located at `./pipeline/db/migrations` are applied automatically when starting the deveploment environment with docker-compose. If for some reason you need to run the migrations manually, for example when changing the database schema, you can `docker exec` into the `pipeline` container.
+In the development mode the database migrations located at `./pipeline/db/migrations` are applied automatically when starting the development environment with docker-compose. If for some reason you need to run the migrations manually, for example when changing the database schema, you can `docker exec` into the `pipeline` container.
 
 Exec into the `pipeline` container and run the migrations:
 
@@ -110,5 +110,21 @@ omigrate: [INFO] Version 20210013150054 has already been applied
 omigrate: [INFO] Version 20210101173805 has already been applied
 omigrate: [INFO] Version 20210202135643 has already been applied
 ...
+```
+
+## Testing benchmarks locally
+
+Testing the OCaml Benchmarks project can be tricky because it operates as GitHub App in production. For local testing convenience the development environment includes a "shadow" git repository that can be used to trigger benchmark jobs.
+
+The repository content is located at `./local-test-repo` and it is initialized automatically when starting the development environment. Note that for the purposes of the parent repository `./local-test-repo` is not a git repository (or git submodule) because `./local-test-repo/.git` is in the `.gitignore`. This is intentional and allows to test the pipeline with an actual git repository during development.
+
+You can make changes to the `Makefile` in `./local-test-repo`, add new test cases, etc. When new changes are committed, the running pipeline will automatically detect this and start a new build and run jobs.
+
+> Make sure that the development environment is running before changing the test repo.
+
+```
+$ cd `./local-test-repo`
+$ $EDITOR Makefile
+$ git commit -am "Modified the benchmarks"
 ```
 
