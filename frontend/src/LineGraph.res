@@ -23,7 +23,6 @@ type global
 @module("dygraphs")
 external global: global = "default"
 
-
 @send
 external _synchronize: (global, array<graph>, 'options) => unit = "synchronize"
 
@@ -95,7 +94,6 @@ let defaultOptions = (
         "axisLineWidth": 1.5,
         "axisLabelFormatter": Js.Null.fromOption(xLabelFormatter),
         "ticker": ticker,
-        "axisLabelWidth": 70,
       },
       "y": {
         "drawAxis": true,
