@@ -71,7 +71,9 @@ This will start multiple services:
 | Hasura GraphQL engine | <http://localhost:8080> |
 | PostgreSQL database | `postgres://docker:docker@localhost:5432/docker` |
 
-For mode details and setup instructions for the `pipeline` and the `frontend` services see the `README` files in their directories.
+For more details and setup instructions for the `pipeline` and the `frontend` services see the `README` files in their directories.
+
+For more details on Hasura see: <https://hasura.io/docs/1.0/graphql/manual/deployment/docker/index.html>.
 
 
 ## Inspecting the benchmark results in the database
