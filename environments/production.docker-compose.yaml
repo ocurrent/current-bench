@@ -5,7 +5,7 @@ services:
     environment:
     - POSTGRES_DB=docker
     - POSTGRES_USER=docker
-    - POSTGRES_PASSWORD=${OCAML_BENCH_DB_PASSWORD}
+    - POSTGRES_PASSWORD=${OCAML_BENCH_DB_PASSWORD?required}
     restart: always
     volumes:
     - db_data:/var/lib/postgresql/data
@@ -21,7 +21,7 @@ services:
       HASURA_GRAPHQL_DATABASE_URL: postgres://docker:docker@db:5432/docker
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
-      HASURA_GRAPHQL_ADMIN_SECRET: ${OCAML_BENCH_GRAPHQL_KEY}
+      HASURA_GRAPHQL_ADMIN_SECRET: ${OCAML_BENCH_GRAPHQL_KEY?required}
   frontend:
     build: ./frontend
     ports:
@@ -33,7 +33,7 @@ services:
     build:
       context: ../pipeline
       args:
-        TARGET_ARCH: ${OCAML_BENCH_TARGET_ARCH}
+        TARGET_ARCH: ${OCAML_BENCH_TARGET_ARCH?required}
     volumes:
     - pipeline_var:/app/var
     - /var/run/docker.sock:/var/run/docker.sock
@@ -44,10 +44,10 @@ services:
     - "--verbosity=debug"
     - "--port=8081"
     - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU}"
-    - "--conn-info=host=db user=docker port=5432 dbname=docker password=${OCAML_BENCH_DB_PASSWORD}"
+    - "--conn-info=host=db user=docker port=5432 dbname=docker password=${OCAML_BENCH_DB_PASSWORD?required}"
     - "--github-app-id=${OCAML_BENCH_GITHUB_APP_ID}"
-    - "--github-account-allowlist=${OCAML_BENCH_GITHUB_ACCOUNT_ALLOW_LIST}"
-    - "--github-private-key-file=${OCAML_BENCH_GITHUB_PRIVATE_KEY_FILE}"
+    - "--github-account-allowlist=${OCAML_BENCH_GITHUB_ACCOUNT_ALLOW_LIST?required}"
+    - "--github-private-key-file=${OCAML_BENCH_GITHUB_PRIVATE_KEY_FILE?required}"
     restart: always
     depends_on:
     - "db"
