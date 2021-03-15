@@ -2,8 +2,6 @@
 
 Prototype for running predictable, IO-bound benchmarks in an ocurrent pipeline. This is *work in progress*.
 
-![screenshot]()
-
 ## Enroll your project
 
 If you want to enroll your repository or setup this benchmark repository for your repository, we make the following assumptions.
@@ -11,7 +9,7 @@ If you want to enroll your repository or setup this benchmark repository for you
 1. There is a `make bench` target which can run the benchmarks.
 2. The benchmarks result is a JSON object with of the following format:
 
-```json
+```bash
 {
   "name": <optional-name-of-the-benchmark>,
   "config": <optional-config-object>,
@@ -39,7 +37,7 @@ The metadata about `repo`, `branch` and `commit` is added by the pipeline.
 Multiple concatenated JSON objects can be produced and will be interpreted as different benchmarks. The name of the benchmark is optional when there is only one output, but must be present if multiple result objects are produced.
 
 
-### Tunning the environment
+## Tunning the environment
 
 See general instructions in [ocaml-bench-scripts](https://github.com/ocaml-bench/ocaml_bench_scripts/) for configuring the benchmarking hardware. In particular, you need an isolated CPU to run the benchmarks on.
 
