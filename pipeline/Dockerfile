@@ -25,6 +25,8 @@ RUN opam exec -- dune build --profile=release bin/main.exe
 
 FROM debian:stable-slim
 
+ARG TARGET_ARCH=amd64
+
 RUN apt-get update \
     && apt-get install --no-install-recommends --assume-yes \
         netbase \
@@ -39,7 +41,7 @@ RUN apt-get update \
         libpq-dev \
         libsqlite3-dev \
     && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
+    && echo "deb [arch=${TARGET_ARCH} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
         > /etc/apt/sources.list.d/docker.list \
     && apt-get update \
     && apt-get install docker-ce-cli \

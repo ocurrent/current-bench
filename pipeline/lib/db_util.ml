@@ -1,5 +1,4 @@
 let check_connection ~conninfo =
-  print_endline conninfo;
   try
     let db = new Postgresql.connection ~conninfo () in
     let query = "SELECT 1" in
