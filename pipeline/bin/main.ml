@@ -21,11 +21,12 @@ module Source = struct
         "File containing the Slack endpoint URI to use for result \
          notifications."
       in
-      Arg.(value & opt (some path) None & info [ "s"; "slack" ] ~doc)
+      Arg.(value & opt (some file) None & info [ "s"; "slack" ] ~doc)
     in
     Term.(
       const (fun repo token slack_path ->
           let token = Fpath.v token in
+          let slack_path = Option.map Fpath.v slack_path in
           Pipeline.Source.github ~repo ~token ~slack_path)
       $ repo
       $ github_token_path
