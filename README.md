@@ -7,7 +7,7 @@ Prototype for running predictable, IO-bound benchmarks in an ocurrent pipeline. 
 If you want to enroll your repository or setup this benchmark repository for your repository, we make the following assumptions.
 
 1. There is a `make bench` target which can run the benchmarks.
-2. The benchmarks result is a JSON object with of the following format:
+2. The benchmarks result is a JSON object of the following format:
 
 ```bash
 {
@@ -67,5 +67,4 @@ NOTE: Although it should be possible to get good results on a NUMA enabled syste
 ## ASLR
 
 ASLR affects performance as the memory layout is changed each time the benchmark is loaded. The ocurrent pipeline disables ASLR inside the container automatically by wrapping the benchmark command in a call to `setarch [...] --addr-no-randomize`. This is normally blocked by the default Docker seccomp profile, so we have modified the profile to allow [`personality(2)`](http://man7.org/linux/man-pages/man2/personality.2.html) to be invoked with the `ADDR_NO_RANDOMIZE` flag.
-
 
