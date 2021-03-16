@@ -37,7 +37,7 @@ The metadata about `repo`, `branch` and `commit` is added by the pipeline.
 Multiple concatenated JSON objects can be produced and will be interpreted as different benchmarks. The name of the benchmark is optional when there is only one output, but must be present if multiple result objects are produced.
 
 
-## Tunning the environment
+## Tuning the environment
 
 See general instructions in [ocaml-bench-scripts](https://github.com/ocaml-bench/ocaml_bench_scripts/) for configuring the benchmarking hardware. In particular, you need an isolated CPU to run the benchmarks on.
 
