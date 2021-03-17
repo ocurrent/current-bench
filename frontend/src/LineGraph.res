@@ -210,7 +210,7 @@ let make = React.memo((
   // See: https://github.com/danvk/dygraphs/issues/506
   let lastRow = data->BeltHelpers.Array.last
   let data = switch lastRow {
-  | Some(lastRow) => BeltHelpers.Array.push(data, [lastRow[0] +. 1.0, Obj.magic(Js.Nullable.null)])
+  | Some(lastRow) => BeltHelpers.Array.push(data, [lastRow[0] +. 1.0, nan])
   | None => data
   }
 
@@ -288,7 +288,7 @@ let make = React.memo((
   let lastValue =
     data
     // take into account the dummy value added at the end of the data (to show the last tick)
-    ->Belt.Array.get(Belt.Array.length(data) - 2) 
+    ->Belt.Array.get(Belt.Array.length(data) - 2)
     ->Belt.Option.map(value => Belt.Array.getExn(value, 1))
 
   let left = switch title {
