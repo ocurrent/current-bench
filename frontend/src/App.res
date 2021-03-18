@@ -181,15 +181,12 @@ module ErrorView = {
   let make = (~msg) => {
     <Column alignX=#center sx=[Sx.mt.xl]>
       <Heading level=#h1 align=#center text=`Application error` />
-      <Row alignX=#center sx=[Sx.text.color(Sx.gray900)]>
-        {Rx.text(msg)}
-        <br />
-        {Rx.text("Learn more at ")}
-        <a target="_blank" href="https://github.com/ocurrent/current-bench">
-          {Rx.text("https://github.com/ocurrent/current-bench")}
-        </a>
-        {Rx.text(".")}
-      </Row>
+      <Row alignX=#center sx=[Sx.text.color(Sx.gray900)]> {Rx.text(msg)} </Row>
+      <br />
+      {Rx.text("Learn more at ")}
+      <a target="_blank" href="https://github.com/ocurrent/current-bench">
+        {Rx.text("https://github.com/ocurrent/current-bench")}
+      </a>
     </Column>
   }
 }
