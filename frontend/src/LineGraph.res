@@ -51,17 +51,21 @@ module Legend = {
   }
   let format = (~xTicks=?, data: many): string => {
     let xLabel = switch xTicks {
-    | Some(xTicks) => Belt.Map.Int.get(xTicks, data.x)->Belt.Option.getWithDefault(data.xHTML)
-    | None => data.xHTML
+    | Some(xTicks) => Belt.Map.Int.get(xTicks, data.x)
+    | None => Some(data.xHTML)
     }
-    let html = "<b>" ++ (xLabel ++ "</b>")
-    let legend = Array.map((unit: t) => {
-      "<div class='dygraph-legend-row'>" ++
-      (unit.dashHTML ++
-      ("<div>" ++ (" <b>" ++ (unit.yHTML ++ ("</b>" ++ ("</div>" ++ "</div>"))))))
-    }, data.series)
-    let legend = Array.fold_left((a, b) => a ++ b, "", legend)
-    html ++ legend
+    switch xLabel {
+    | Some(xLabel) =>
+      let html = "<b>" ++ (xLabel ++ "</b>")
+      let legend = Array.map((unit: t) => {
+        "<div class='dygraph-legend-row'>" ++
+        (unit.dashHTML ++
+        ("<div>" ++ (" <b>" ++ (unit.yHTML ++ ("</b>" ++ ("</div>" ++ "</div>"))))))
+      }, data.series)
+      let legend = Array.fold_left((a, b) => a ++ b, "", legend)
+      `<div class="dygraph-legend-formatter">${html}${legend}</div>`
+    | None => ""
+    }
   }
 }
 
@@ -124,10 +128,10 @@ let defaultOptions = (
   }
 }
 
+Sx.global(".dygraph-legend", [Sx.absolute])
 Sx.global(
-  ".dygraph-legend",
+  ".dygraph-legend-formatter",
   [
-    Sx.absolute,
     Sx.text.sm,
     Sx.z.high,
     Sx.bg.color(Sx.white),
@@ -201,6 +205,15 @@ let make = React.memo((
   let graphDivRef = React.useRef(Js.Nullable.null)
   let graphRef = React.useRef(None)
 
+  // Dygraph does not display the last tick, so a dummy value
+  // is added a the end of the data to overcome this.
+  // See: https://github.com/danvk/dygraphs/issues/506
+  let lastRow = data->BeltHelpers.Array.last
+  let data = switch lastRow {
+  | Some(lastRow) => BeltHelpers.Array.push(data, [lastRow[0] +. 1.0, nan])
+  | None => data
+  }
+
   React.useEffect1(() => {
     let options = defaultOptions(
       ~yLabel?,
@@ -272,8 +285,11 @@ let make = React.memo((
     None
   }, (data, annotations))
 
-  // TODO check if empty
-  let lastValue = data->BeltHelpers.Array.lastExn->Belt.Array.getExn(1)
+  let lastValue =
+    data
+    // take into account the dummy value added at the end of the data (to show the last tick)
+    ->Belt.Array.get(Belt.Array.length(data) - 2)
+    ->Belt.Option.map(value => Belt.Array.getExn(value, 1))
 
   let left = switch title {
   | Some(title) =>
@@ -289,7 +305,9 @@ let make = React.memo((
   let right =
     <Row alignX=#right spacing=Sx.md sx=[Sx.w.auto]>
       <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray900)]>
-        {Js.Float.toFixedWithPrecision(~digits=2, lastValue)}
+        {lastValue->Belt.Option.mapWithDefault("", value =>
+          Js.Float.toFixedWithPrecision(~digits=2, value)
+        )}
       </Text>
       <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray500)]> {""} </Text> // TODO: unit needs to be added to the metrics
     </Row>
