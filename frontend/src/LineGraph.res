@@ -170,7 +170,6 @@ let graphSx = [
 let containerSx = [
   Sx.minW.xl5,
   Sx.unsafe("width", "432px"),
-  Sx.overflow.scroll,
   Sx.relative,
   Sx.mb.xl2,
   Sx.mr.xl2,
