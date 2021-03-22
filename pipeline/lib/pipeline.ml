@@ -84,7 +84,7 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
     in
     let run_at = Ptime_clock.now () in
     let current_output =
-      Docker.pread ~run_args current_image ~args:[ "make"; "bench" ]
+      Docker.pread ~run_args current_image ~args:["/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "make"; "bench" ]
     in
     let+ commit =
       match head with
