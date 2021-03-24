@@ -23,11 +23,11 @@ module PullsMenu = {
   @react.component
   let make = (
     ~repoId,
-    ~data: array<SidebarMenuData.t_pullsMenuData>,
+    ~pullsMenuData: array<SidebarMenuData.t_pullsMenuData>,
     ~selectedPull=?,
     ~selectedBenchmarkName=?,
   ) => {
-    let pullNumbers = data->Belt.Array.keepMap(obj => obj.pull_number)
+    let pullNumbers = pullsMenuData->Belt.Array.keepMap(obj => obj.pull_number)
 
     pullNumbers
     ->Belt.Array.mapWithIndex((i, pullNumber) => {
@@ -53,11 +53,11 @@ module BenchmarksMenu = {
   @react.component
   let make = (
     ~repoId,
-    ~data: array<SidebarMenuData.t_benchmarksMenuData>,
+    ~benchmarksMenuData: array<SidebarMenuData.t_benchmarksMenuData>,
     ~selectedPull=?,
     ~selectedBenchmarkName=?,
   ) => {
-    data
+    benchmarksMenuData
     ->Belt.Array.mapWithIndex((i, {benchmark_name: benchmarkName}) => {
       let benchmarkRoute = switch selectedPull {
       | None =>
@@ -102,17 +102,15 @@ module SidebarMenu = {
     | Error({networkError: Some(_)}) => <div> {"Network Error"->Rx.text} </div>
     | Error({networkError: None}) => <div> {"Unknown Error"->Rx.text} </div>
     | Fetching => Rx.text("Loading...")
-    | Data(data)
-    | PartialData(data, _) => <>
+    | Data({benchmarksMenuData, pullsMenuData})
+    | PartialData({benchmarksMenuData, pullsMenuData}, _) => <>
         <Column>
           <Text color=Sx.gray700 weight=#bold uppercase=true size=#sm> "Benchmarks" </Text>
-          <BenchmarksMenu
-            repoId data=data.benchmarksMenuData ?selectedPull ?selectedBenchmarkName
-          />
+          <BenchmarksMenu repoId benchmarksMenuData ?selectedPull ?selectedBenchmarkName />
         </Column>
         <Column>
           <Text color=Sx.gray700 weight=#bold uppercase=true size=#sm> "Pull Requests" </Text>
-          <PullsMenu repoId data=data.pullsMenuData ?selectedPull ?selectedBenchmarkName />
+          <PullsMenu repoId pullsMenuData ?selectedPull ?selectedBenchmarkName />
         </Column>
       </>
     }
