@@ -161,23 +161,9 @@ Sx.global(".dygraph-axis-label-y", [Sx.pr.sm])
 
 Sx.global(".dygraph-axis-label", [Sx.text.xs, Sx.z.high, Sx.overflow.hidden, Sx.opacity75])
 
-let graphSx = [
-  Sx.unsafe("width", "400px"),
-  Sx.unsafe("height", "190px"),
-  Sx.unsafe("marginBottom", "40px"),
-]
+let graphSx = [Sx.unsafe("height", "190px"), Sx.unsafe("marginBottom", "40px")]
 
-let containerSx = [
-  Sx.minW.xl5,
-  Sx.unsafe("width", "432px"),
-  Sx.relative,
-  Sx.mb.xl2,
-  Sx.mr.xl2,
-  Sx.border.xs,
-  Sx.border.color(Sx.gray300),
-  Sx.rounded.md,
-  Sx.p.xl,
-]
+let containerSx = [Sx.w.full, Sx.border.xs, Sx.border.color(Sx.gray300), Sx.rounded.md, Sx.p.xl]
 
 open Components
 
@@ -313,8 +299,8 @@ let make = React.memo((
 
   let sx = Array.append(uSx, containerSx)
 
-  <Column sx spacing=Sx.xl>
-    <Row spacing=#between alignY=#top> {left} {right} </Row>
+  <div className={Sx.make(sx)}>
+    <Row spacing=#between alignY=#top sx={[Sx.mb.xl]}> {left} {right} </Row>
     <div className={Sx.make(graphSx)} ref={ReactDOMRe.Ref.domRef(graphDivRef)} />
-  </Column>
+  </div>
 })
