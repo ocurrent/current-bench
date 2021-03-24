@@ -22,12 +22,11 @@ fragment BenchmarkMetrics on benchmarks {
 `)
 
 module GetBenchmarks = %graphql(`
-query ($repoId: String!, $pullNumber: Int, $isMaster: Boolean!, $startDate: timestamp!, $endDate: timestamp!, $comparisonLimit: Int!) {
-  benchmarks: benchmarks(where: {_and: [{pull_number: {_eq: $pullNumber}}, {pull_number: {_is_null: $isMaster}}, {repo_id: {_eq: $repoId}}, {run_at: {_gte: $startDate}}, {run_at: {_lt: $endDate}}]}) {
+query ($repoId: String!, $pullNumber: Int, $isMaster: Boolean!, $benchmarkName: String, $isDefaultBenchmark: Boolean!, $startDate: timestamp!, $endDate: timestamp!, $comparisonLimit: Int!) {
+  benchmarks: benchmarks(where: {_and: [{pull_number: {_eq: $pullNumber}}, {pull_number: {_is_null: $isMaster}}, {repo_id: {_eq: $repoId}}, {benchmark_name: {_is_null: $isDefaultBenchmark, _eq: $benchmarkName}}, {run_at: {_gte: $startDate}}, {run_at: {_lt: $endDate}}]}) {
     ...BenchmarkMetrics
   }
-
-  comparisonBenchmarks: benchmarks(where: {_and: [{pull_number: {_is_null: true}}, {repo_id: {_eq: $repoId}}, {run_at: {_gte: $startDate}}, {run_at: {_lt: $endDate}}]}, limit: $comparisonLimit, order_by: [{run_at: desc}]) {
+  comparisonBenchmarks: benchmarks(where: {_and: [{pull_number: {_is_null: true}}, {repo_id: {_eq: $repoId}}, {benchmark_name: {_is_null: $isDefaultBenchmark, _eq: $benchmarkName}}, {run_at: {_gte: $startDate}}, {run_at: {_lt: $endDate}}]}, limit: $comparisonLimit, order_by: [{run_at: desc}]) {
     ...BenchmarkMetrics
   }
 }
@@ -36,15 +35,19 @@ query ($repoId: String!, $pullNumber: Int, $isMaster: Boolean!, $startDate: time
 let makeGetBenchmarksVariables = (
   ~repoId,
   ~pullNumber=?,
+  ~benchmarkName=?,
   ~startDate,
   ~endDate,
 ): GetBenchmarks.t_variables => {
   let isMaster = Belt.Option.isNone(pullNumber)
+  let isDefaultBenchmark = Belt.Option.isNone(benchmarkName)
   let comparisonLimit = isMaster ? 0 : 50
   {
     repoId: repoId,
     pullNumber: pullNumber,
     isMaster: isMaster,
+    isDefaultBenchmark: isDefaultBenchmark,
+    benchmarkName: benchmarkName,
     startDate: startDate,
     endDate: endDate,
     comparisonLimit: comparisonLimit,
@@ -126,13 +129,13 @@ module Benchmark = {
 
 module BenchmarkView = {
   @react.component
-  let make = (~repoId, ~pullNumber=?, ~startDate, ~endDate) => {
+  let make = (~repoId, ~pullNumber=?, ~benchmarkName=?, ~startDate, ~endDate) => {
     let ({ReasonUrql.Hooks.response: response}, _) = {
       let startDate = Js.Date.toISOString(startDate)->Js.Json.string
       let endDate = Js.Date.toISOString(endDate)->Js.Json.string
       ReasonUrql.Hooks.useQuery(
         ~query=module(GetBenchmarks),
-        makeGetBenchmarksVariables(~repoId, ~pullNumber?, ~startDate, ~endDate),
+        makeGetBenchmarksVariables(~repoId, ~pullNumber?, ~benchmarkName?, ~startDate, ~endDate),
       )
     }
 
@@ -193,7 +196,7 @@ module ErrorView = {
 
 module RepoView = {
   @react.component
-  let make = (~repoId=?, ~pullNumber=?) => {
+  let make = (~repoId=?, ~pullNumber=?, ~benchmarkName=?) => {
     let ({ReasonUrql.Hooks.response: response}, _) = {
       ReasonUrql.Hooks.useQuery(~query=module(GetAllRepos), ())
     }
@@ -214,8 +217,10 @@ module RepoView = {
         <Sidebar
           selectedRepoId=?repoId
           selectedPull=?pullNumber
+          selectedBenchmarkName=?benchmarkName
           repoIds
-          onSelectRepoId={repoId => AppRouter.Repo({repoId: repoId})->AppRouter.go}
+          onSelectRepoId={repoId =>
+            AppRouter.Repo({repoId: repoId, benchmarkName: None})->AppRouter.go}
         />
 
       <div className={Sx.make([Sx.container, Sx.d.flex])}>
@@ -241,15 +246,37 @@ module RepoView = {
             <Row sx=[Sx.w.auto, Sx.text.noUnderline] alignY=#center>
               <Text weight=#semibold> "/" </Text>
               {
-                let href = AppRouter.Repo({repoId: repoId})->AppRouter.path
+                let href = AppRouter.Repo({repoId: repoId, benchmarkName: None})->AppRouter.path
                 <Link href text="master" />
               }
               {pullNumber->Rx.onSome(pullNumber => {
-                let href =
-                  AppRouter.RepoPull({repoId: repoId, pullNumber: pullNumber})->AppRouter.path
+                let href = AppRouter.RepoPull({
+                  repoId: repoId,
+                  pullNumber: pullNumber,
+                  benchmarkName: None,
+                })->AppRouter.path
                 <>
                   <Text weight=#semibold> "/" </Text>
                   <Link href icon=Icon.branch text={string_of_int(pullNumber)} />
+                </>
+              })}
+              {benchmarkName->Rx.onSome(benchmarkName => {
+                let href = switch pullNumber {
+                | None =>
+                  AppRouter.Repo({
+                    repoId: repoId,
+                    benchmarkName: Some(benchmarkName),
+                  })
+                | Some(pullNumber) =>
+                  AppRouter.RepoPull({
+                    repoId: repoId,
+                    pullNumber: pullNumber,
+                    benchmarkName: Some(benchmarkName),
+                  })
+                }->AppRouter.path
+                <>
+                  <Text weight=#semibold> "/" </Text>
+                  <Link href text={benchmarkName} />
                 </>
               })}
             </Row>
@@ -267,7 +294,7 @@ module RepoView = {
                 <Litepicker startDate endDate sx=[Sx.w.xl5] onSelect={onSelectDateRange} />
               </Topbar>
               <Block sx=[Sx.px.xl2, Sx.py.xl2, Sx.w.full, Sx.minW.zero]>
-                <BenchmarkView repoId ?pullNumber startDate endDate />
+                <BenchmarkView repoId ?pullNumber ?benchmarkName startDate endDate />
               </Block>
             </Column>
           </>
@@ -283,7 +310,8 @@ let make = () => {
   switch route {
   | Error({reason}) => <ErrorView msg={reason} />
   | Ok(Main) => <RepoView />
-  | Ok(Repo({repoId})) => <RepoView repoId />
-  | Ok(RepoPull({repoId, pullNumber})) => <RepoView repoId pullNumber />
+  | Ok(Repo({repoId, benchmarkName})) => <RepoView repoId ?benchmarkName />
+  | Ok(RepoPull({repoId, pullNumber, benchmarkName})) =>
+    <RepoView repoId pullNumber ?benchmarkName />
   }
 }
