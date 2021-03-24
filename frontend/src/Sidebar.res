@@ -33,9 +33,7 @@ module PullsMenu = {
     ->Belt.Array.mapWithIndex((i, pullNumber) => {
       <Link
         sx=[Sx.pb.md]
-        active={selectedPull->Belt.Option.mapWithDefault(false, selectedPullNumber =>
-          selectedPullNumber == pullNumber
-        )}
+        active={selectedPull === Some(pullNumber)}
         key={string_of_int(i)}
         href={AppRouter.RepoPull({
           repoId: repoId,
