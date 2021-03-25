@@ -235,10 +235,7 @@ let make = (
         delta == 0.0 ? "Same as master" : deltaToString(delta) ++ " vs master"
       )
 
-      <div
-        key=metricName
-        // one: [Css.flex3(~grow=1.0, ~shrink=1.0, ~basis=#percent(0.0))],
-        className={Sx.make([Sx.unsafe("minWidth", "400px"), Sx.unsafe("flex", "1")])}>
+      <div key=metricName>
         {Topbar.anchor(~id="line-graph-" ++ testName ++ "-" ++ metricName)}
         <LineGraph
           onXLabelClick={goToCommitLink(~repoId)}
@@ -270,6 +267,13 @@ let make = (
       <Text sx=[Sx.w.auto, Sx.text.md, Sx.text.bold, Sx.text.color(Sx.gray900)]> testName </Text>
     </summary>
     {Belt.Map.String.isEmpty(comparison) ? Rx.null : metric_table}
-    <Flex wrap=true sx={[Sx.unsafe("gap", "24px")]}> metric_graphs </Flex>
+    <div
+      className={Sx.make([
+        Sx.unsafe("display", "grid"),
+        Sx.unsafe("gap", "32px"), // xl2
+        Sx.unsafe("gridTemplateColumns", "repeat(auto-fit, minmax(400px, 1fr))"),
+      ])}>
+      metric_graphs
+    </div>
   </details>
 }
