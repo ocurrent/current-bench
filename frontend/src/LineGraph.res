@@ -128,12 +128,11 @@ let defaultOptions = (
   }
 }
 
-Sx.global(".dygraph-legend", [Sx.absolute])
+Sx.global(".dygraph-legend", [Sx.absolute, Sx.z.high])
 Sx.global(
   ".dygraph-legend-formatter",
   [
     Sx.text.sm,
-    Sx.z.high,
     Sx.bg.color(Sx.white),
     Sx.rounded.sm,
     Sx.py.md,
