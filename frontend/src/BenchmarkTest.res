@@ -267,6 +267,13 @@ let make = (
       <Text sx=[Sx.w.auto, Sx.text.md, Sx.text.bold, Sx.text.color(Sx.gray900)]> testName </Text>
     </summary>
     {Belt.Map.String.isEmpty(comparison) ? Rx.null : metric_table}
-    <Flex wrap=true> metric_graphs </Flex>
+    <div
+      className={Sx.make([
+        Sx.unsafe("display", "grid"),
+        Sx.unsafe("gap", "32px"), // xl2
+        Sx.unsafe("gridTemplateColumns", "repeat(auto-fit, minmax(400px, 1fr))"),
+      ])}>
+      metric_graphs
+    </div>
   </details>
 }
