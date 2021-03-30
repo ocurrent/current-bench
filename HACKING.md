@@ -2,6 +2,11 @@
 
 This document contains instructions for working on the OCaml Benchmarks project.
 
+## Requirements
+
+- Docker compose 1.28+ is required.
+
+
 ## Development environment
 
 OCaml Benchmarks uses a dedicated docker environment for development purposes. No other dependencies apart from docker are needed to run the project locally.
