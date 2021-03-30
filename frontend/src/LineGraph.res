@@ -3,8 +3,46 @@ type annotation
 type point
 type event
 
+module DataRow = {
+  type value
+  type t = array<value>
+
+  let single = (x: float): value => Obj.magic([Obj.magic(nan), Obj.magic(x), Obj.magic(nan)])
+  let many = (xs: array<float>): value => {
+    let low = xs[0] -. 1.0
+    let mid = xs[0]
+    let high = xs[0] +. 1.0
+    Obj.magic([low, mid, high])
+  }
+
+  let with_index = (index: int, value): t => [Obj.magic(index), value]
+  let with_date = (date: Js.Date.t, value): t => [Obj.magic(date), value]
+
+  let set_index = (index: int, row: t): unit => {
+    let index: value = Obj.magic(index)
+    Belt.Array.set(row, 0, index)->ignore
+  }
+
+  let unsafe_get_index = (row): int => {
+    Obj.magic(row[0])
+  }
+
+  let nan = (~index): t => [Obj.magic(index), Obj.magic(nan)]
+
+  let toFloat = (row: t): float => {
+    let value = row[1]
+    if Js.Array.isArray(value) {
+      let value: array<float> = Obj.magic(value)
+      value[1]
+    } else {
+      let value: float = Obj.magic(value)
+      value
+    }
+  }
+}
+
 @new @module("dygraphs")
-external init: ('element, array<array<float>>, 'options) => graph = "default"
+external init: ('element, array<DataRow.t>, 'options) => graph = "default"
 
 @send
 external ready: (graph, unit => unit) => unit = "ready"
@@ -118,7 +156,8 @@ let defaultOptions = (
     "legend": "follow",
     "showRoller": false,
     "strokeWidth": 1,
-    "fillGraph": true,
+    "errorBars": true,
+    "fillGraph": false,
     "pointClickCallback": Js.Null.fromOption(onClick),
     "colors": ["#0F6FDE"],
     "animatedZooms": true,
@@ -190,12 +229,16 @@ let make = React.memo((
   let graphDivRef = React.useRef(Js.Nullable.null)
   let graphRef = React.useRef(None)
 
+  Js.log((title, data))
+
   // Dygraph does not display the last tick, so a dummy value
   // is added a the end of the data to overcome this.
   // See: https://github.com/danvk/dygraphs/issues/506
   let lastRow = data->BeltHelpers.Array.last
   let data = switch lastRow {
-  | Some(lastRow) => BeltHelpers.Array.push(data, [lastRow[0] +. 1.0, nan])
+  | Some(lastRow) =>
+    let lastIndex = DataRow.unsafe_get_index(lastRow)
+    BeltHelpers.Array.push(data, DataRow.nan(~index=lastIndex))
   | None => data
   }
 
