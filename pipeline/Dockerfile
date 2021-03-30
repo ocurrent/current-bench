@@ -19,6 +19,7 @@ WORKDIR /mnt/project
 COPY --chown=opam:opam pipeline.opam pipeline.opam
 RUN opam install -y --deps-only -t .
 COPY --chown=opam . .
+RUN sudo chown opam .
 
 # Build the project.
 RUN opam exec -- dune build --profile=release bin/main.exe

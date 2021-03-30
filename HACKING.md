@@ -2,6 +2,11 @@
 
 This document contains instructions for working on the OCaml Benchmarks project.
 
+## Requirements
+
+- Docker compose 1.28+ is required.
+
+
 ## Development environment
 
 OCaml Benchmarks uses a dedicated docker environment for development purposes. No other dependencies apart from docker are needed to run the project locally.
@@ -12,7 +17,7 @@ The following files define the development environment:
 * `./environments/development.docker-compose.yaml`
 
 
-### Configuring the environment
+### Configuring the development environment
 
 Create a file with variables for the development environment:
 
@@ -146,3 +151,57 @@ pipeline_1    |                             "--" "/tmp/git-checkout3219a5b2"
 ```
 
 > **WARNING**: When committing changes to the local test repo, make sure you are doing so in the main top-level git repository.
+
+
+## Production environment
+
+The production environment is very similar to the development one. The main difference in the configuration is the operational mode of the pipeline: with the development mode a local testing repository is used, while in production the pipeline starts using the `github_app` mode. This requires a few additional configuration options.
+
+The following files define the production environment:
+
+* `./environments/production.env`
+* `./environments/production.docker-compose.yaml`
+
+
+### Configuring the production environment
+
+Create a file with variables for the production environment:
+
+```
+$ cp ./environments/production.env.template ./environments/production.env
+```
+
+Edit the `./environments/production.env` file and adjust the configurations variables to your liking.
+
+
+#### Copy the production GitHub private key
+
+The GitHub private key needs to be copied into the docker volume used by the pipeline.
+
+Assuming that the private key is saved in `ocaml-bench-github-key` at the project's root folder:
+
+```
+$ docker run -it --rm -v $PWD/ocaml-bench-github-key:/mnt/ocaml-bench-github-key -v current-bench_pipeline_var:/mnt/pipeline_var alpine cp /mnt/ocaml-bench-github-key /mnt/pipeline_var/ocaml-bench-github-key
+```
+
+
+### Starting the production environment
+
+Make sure that the `./environments/production.env` exists and has the correct configuration.
+
+Start the docker-compose environment:
+
+```
+$ make start-production
+docker-compose \
+		--project-name="current-bench" \
+		--file=./environments/production.docker-compose.yaml \
+		--env-file=production.env \
+		up \
+		--detach
+Starting current-bench_db_1 ... done
+Starting current-bench_db-migrate_1 ... done
+Recreating current-bench_pipeline_1 ... done
+Attaching to current-bench_db_1, current-bench_db-migrate_1, current-bench_pipeline_1
+...
+```
