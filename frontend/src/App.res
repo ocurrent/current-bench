@@ -274,10 +274,7 @@ module RepoView = {
                     benchmarkName: Some(benchmarkName),
                   })
                 }->AppRouter.path
-                <>
-                  <Text weight=#semibold> "/" </Text>
-                  <Link href text={benchmarkName} />
-                </>
+                <> <Text weight=#semibold> "/" </Text> <Link href text={benchmarkName} /> </>
               })}
             </Row>
           let githubLink =
@@ -294,6 +291,7 @@ module RepoView = {
                 <Litepicker startDate endDate sx=[Sx.w.xl5] onSelect={onSelectDateRange} />
               </Topbar>
               <Block sx=[Sx.px.xl2, Sx.py.xl2, Sx.w.full, Sx.minW.zero]>
+                <CommitInfo repoId ?pullNumber />
                 <BenchmarkView repoId ?pullNumber ?benchmarkName startDate endDate />
               </Block>
             </Column>
