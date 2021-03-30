@@ -6,7 +6,8 @@ start-production:
 		--file=./environments/production.docker-compose.yaml \
 		--env-file=./environments/production.env \
 		up \
-		--detach
+		--detach \
+		--build
 
 .PHONY: stop-production
 stop-production:
