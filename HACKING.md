@@ -150,7 +150,7 @@ pipeline_1    |                             "--" "/tmp/git-checkout3219a5b2"
 
 ## Production environment
 
-The production environment is very similar to the development one. The main difference in the configuration is the operational mode of the pipeline: with the development mode a local testing repository is used, while in production a the pipeline starts using the `github_app` mode. This requires a few additional configuration options.
+The production environment is very similar to the development one. The main difference in the configuration is the operational mode of the pipeline: with the development mode a local testing repository is used, while in production the pipeline starts using the `github_app` mode. This requires a few additional configuration options.
 
 The following files define the production environment:
 
