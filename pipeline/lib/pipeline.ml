@@ -2,6 +2,7 @@ open Current.Syntax
 module Git = Current_git
 module Github = Current_github
 module Docker = Current_docker.Default
+module Docker_util = Current_util.Docker_util
 module Slack = Current_slack
 module Logging = Logging
 module Benchmark = Models.Benchmark
@@ -84,7 +85,11 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
     in
     let run_at = Ptime_clock.now () in
     let current_output =
-      Docker.pread ~run_args current_image ~args:["/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "make"; "bench" ]
+      Docker_util.pread_log ~run_args current_image
+        ~args:
+          [
+            "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "make"; "bench";
+          ]
     in
     let+ commit =
       match head with
