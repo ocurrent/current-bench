@@ -951,7 +951,7 @@ module Link = {
           (!(event->ReactEvent.Mouse.metaKey) && !(event->ReactEvent.Mouse.shiftKey)))))
         ) {
           event->ReactEvent.Mouse.preventDefault
-          href->ReasonReactRouter.push
+          href->RescriptReactRouter.push
         }}>
       icon_svg text
     </a>
