@@ -24,8 +24,6 @@ module Docker_util = struct
         run_args : string list;
       }
 
-      let pp_args = Fmt.(list ~sep:sp (quote string))
-
       let cmd { image; args; docker_context; run_args } =
         Cmd.docker ~docker_context
         @@ [ "run" ]
