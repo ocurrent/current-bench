@@ -9,12 +9,6 @@ type testMetrics = {
 
 @module("../icons/branch.svg") external branchIcon: string = "default"
 
-let commitUrl = (~repoId, commit) => `https://github.com/${repoId}/commit/${commit}`
-let goToCommitLink = (~repoId, commit) => {
-  let openUrl: string => unit = %raw(`function (url) { window.open(url, "_blank") }`)
-  openUrl(commitUrl(~repoId, commit))
-}
-
 let groupByTestName = (acc, item: testMetrics, idx) => {
   let go = vOpt => {
     let idxs = switch vOpt {
@@ -238,7 +232,7 @@ let make = (
       <div key=metricName>
         {Topbar.anchor(~id="line-graph-" ++ testName ++ "-" ++ metricName)}
         <LineGraph
-          onXLabelClick={goToCommitLink(~repoId)}
+          onXLabelClick={AppHelpers.goToCommitLink(~repoId)}
           title=metricName
           subTitle=?delta
           xTicks
