@@ -86,8 +86,8 @@ module BenchmarksMenu = {
 module SidebarMenu = {
   @react.component
   let make = (~repoId, ~selectedPull=?, ~selectedBenchmarkName=?) => {
-    let ({ReasonUrql.Hooks.response: response}, _) = {
-      ReasonUrql.Hooks.useQuery(
+    let ({ReScriptUrql.Hooks.response: response}, _) = {
+      ReScriptUrql.Hooks.useQuery(
         ~query=module(SidebarMenuData),
         {
           repoId: repoId,

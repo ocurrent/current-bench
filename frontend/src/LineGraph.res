@@ -300,6 +300,6 @@ let make = React.memo((
 
   <div className={Sx.make(sx)}>
     <Row spacing=#between alignY=#top sx={[Sx.mb.xl]}> {left} {right} </Row>
-    <div className={Sx.make(graphSx)} ref={ReactDOMRe.Ref.domRef(graphDivRef)} />
+    <div className={Sx.make(graphSx)} ref={ReactDOM.Ref.domRef(graphDivRef)} />
   </div>
 })

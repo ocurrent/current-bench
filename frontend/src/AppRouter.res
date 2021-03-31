@@ -8,7 +8,7 @@ type error = {
   reason: string,
 }
 
-let route = (url: ReasonReactRouter.url) =>
+let route = (url: RescriptReactRouter.url) =>
   switch url.path {
   | list{} => Ok(Main)
   | list{orgName, repoName} => Ok(Repo({repoId: orgName ++ "/" ++ repoName, benchmarkName: None}))
@@ -53,6 +53,6 @@ let path = route =>
     "/" ++ repoId ++ "/pull/" ++ Belt.Int.toString(pullNumber) ++ "/benchmark/" ++ benchmarkName
   }
 
-let useRoute = () => ReasonReactRouter.useUrl()->route
+let useRoute = () => RescriptReactRouter.useUrl()->route
 
-let go = route => ReasonReact.Router.push(path(route))
+let go = route => RescriptReactRouter.push(path(route))

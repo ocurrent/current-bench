@@ -130,10 +130,10 @@ module Benchmark = {
 module BenchmarkView = {
   @react.component
   let make = (~repoId, ~pullNumber=?, ~benchmarkName=?, ~startDate, ~endDate) => {
-    let ({ReasonUrql.Hooks.response: response}, _) = {
+    let ({ReScriptUrql.Hooks.response: response}, _) = {
       let startDate = Js.Date.toISOString(startDate)->Js.Json.string
       let endDate = Js.Date.toISOString(endDate)->Js.Json.string
-      ReasonUrql.Hooks.useQuery(
+      ReScriptUrql.Hooks.useQuery(
         ~query=module(GetBenchmarks),
         makeGetBenchmarksVariables(~repoId, ~pullNumber?, ~benchmarkName?, ~startDate, ~endDate),
       )
@@ -197,8 +197,8 @@ module ErrorView = {
 module RepoView = {
   @react.component
   let make = (~repoId=?, ~pullNumber=?, ~benchmarkName=?) => {
-    let ({ReasonUrql.Hooks.response: response}, _) = {
-      ReasonUrql.Hooks.useQuery(~query=module(GetAllRepos), ())
+    let ({ReScriptUrql.Hooks.response: response}, _) = {
+      ReScriptUrql.Hooks.useQuery(~query=module(GetAllRepos), ())
     }
 
     let ((startDate, endDate), setDateRange) = React.useState(getDefaultDateRange)

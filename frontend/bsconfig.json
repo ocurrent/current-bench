@@ -18,15 +18,14 @@
   "suffix": ".bs.js",
   "namespace": true,
   "bs-dependencies": [
-    "reason-react",
+    "@rescript/react",
     "bs-css",
     "bs-css-emotion",
     "@reasonml-community/graphql-ppx",
-    "reason-urql",
+    "@urql/rescript",
     "wonka",
     "bs-fetch",
     "@glennsl/bs-json"
   ],
-  "ppx-flags": ["@reasonml-community/graphql-ppx/ppx"],
-  "refmt": 3
+  "ppx-flags": ["@reasonml-community/graphql-ppx/ppx"]
 }

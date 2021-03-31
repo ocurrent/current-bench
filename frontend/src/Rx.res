@@ -28,6 +28,6 @@ let bool = x => React.string(string_of_bool(x))
 let string = React.string
 let text = React.string
 let array = (~empty=React.null, xs) => Array.length(xs) == 0 ? empty : React.array(xs)
-let list = l => ReasonReact.array(Array.of_list(l))
+let list = l => Array.of_list(l)
 
 let eventValue = e => ReactEvent.Form.target(e)["value"]
