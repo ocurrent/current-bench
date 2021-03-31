@@ -78,7 +78,7 @@ let make = (~repoId, ~pullNumber=?) => {
         )}
       </Column>
       <Column spacing=Sx.sm>
-        <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Builg logs" </Text>
+        <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Build logs" </Text>
         {switch lastCommitInfo.build_job_id {
         | Some(jobId) => renderJobIdLink(jobId)
         | None => <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray700)]> "No data" </Text>
