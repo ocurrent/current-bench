@@ -85,7 +85,7 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
     in
     let run_at = Ptime_clock.now () in
     let current_output =
-      Docker_util.pread_log ~run_args current_image
+      Docker_util.pread_log ~run_args current_image ?pull_number ?branch
         ~args:
           [
             "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "make"; "bench";
