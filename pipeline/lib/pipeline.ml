@@ -89,8 +89,10 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
       | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
       | `Local commit -> commit >>| Git.Commit.hash
     in
+    let repo_info = owner ^ "/" ^ repository in
     let current_output =
-      Docker_util.pread_log ~run_args current_image ?pull_number ?branch ~commit
+      Docker_util.pread_log ~run_args current_image ~repo_info ?pull_number
+        ?branch ~commit
         ~args:
           [
             "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "make"; "bench";
