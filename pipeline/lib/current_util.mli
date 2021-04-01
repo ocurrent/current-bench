@@ -6,6 +6,7 @@ module Docker_util : sig
     ?pool:unit Current.Pool.t ->
     ?run_args:string list ->
     Current_docker.Default.Image.t Current.t ->
+    repo_info:string ->
     ?branch:string ->
     ?pull_number:int ->
     commit:string ->
