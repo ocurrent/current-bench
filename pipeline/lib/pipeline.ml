@@ -84,18 +84,19 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
       @ docker_cpuset_mems
     in
     let run_at = Ptime_clock.now () in
+    let* commit =
+      match head with
+      | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
+      | `Local commit -> commit >>| Git.Commit.hash
+    in
     let current_output =
-      Docker_util.pread_log ~run_args current_image ?pull_number ?branch
+      Docker_util.pread_log ~run_args current_image ?pull_number ?branch ~commit
         ~args:
           [
             "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "make"; "bench";
           ]
     in
-    let+ commit =
-      match head with
-      | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
-      | `Local commit -> commit >>| Git.Commit.hash
-    and+ build_job_id = Current_util.get_job_id current_image
+    let+ build_job_id = Current_util.get_job_id current_image
     and+ run_job_id = Current_util.get_job_id current_output
     and+ output = current_output in
     let duration = Ptime.diff (Ptime_clock.now ()) run_at in
