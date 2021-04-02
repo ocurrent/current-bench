@@ -65,10 +65,11 @@ let make = (~repoId, ~pullNumber=?) => {
   | Error({networkError: Some(_)}) => <div> {"Network Error"->Rx.text} </div>
   | Error({networkError: None}) => <div> {"Unknown Error"->Rx.text} </div>
   | Fetching => Rx.text("Loading...")
+  | Data({lastCommitInfo: []})
+  | PartialData({lastCommitInfo: []}, _) => Rx.null
   | Data(data)
   | PartialData(data, _) =>
     let lastCommitInfo = data.lastCommitInfo[0]
-    Js.log(data)
     <Row sx=containerSx spacing=#between alignY=#bottom>
       <Column spacing=Sx.sm>
         <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Last Commit" </Text>
