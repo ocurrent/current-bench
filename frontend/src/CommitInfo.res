@@ -53,8 +53,8 @@ let renderJobIdLink = jobId => {
 
 @react.component
 let make = (~repoId, ~pullNumber=?) => {
-  let ({ReasonUrql.Hooks.response: response}, _) = {
-    ReasonUrql.Hooks.useQuery(
+  let ({ReScriptUrql.Hooks.response: response}, _) = {
+    ReScriptUrql.Hooks.useQuery(
       ~query=module(GetLastCommitInfo),
       makeGetLastCommitInfoVariables(~repoId, ~pullNumber?, ()),
     )
