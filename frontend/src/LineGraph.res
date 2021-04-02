@@ -107,7 +107,7 @@ let defaultOptions = (
         "gridLinePattern": [5, 5],
         "axisLineColor": "gainsboro",
         "axisLineWidth": 1.5,
-        "axisLabelWidth": 50,
+        "axisLabelWidth": 55,
       },
     },
     "rollPeriod": 1,
@@ -122,6 +122,7 @@ let defaultOptions = (
     "pointClickCallback": Js.Null.fromOption(onClick),
     "colors": ["#0F6FDE"],
     "animatedZooms": true,
+    "digitsAfterDecimal": 6,
     "hideOverlayOnMouseOut": true,
     "labels": Js.Null.fromOption(labels),
     "ylabel": Js.Null.fromOption(yLabel),
@@ -290,7 +291,7 @@ let make = React.memo((
     <Row alignX=#right spacing=Sx.md sx=[Sx.w.auto]>
       <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray900)]>
         {lastValue->Belt.Option.mapWithDefault("", value =>
-          Js.Float.toFixedWithPrecision(~digits=2, value)
+          Js.Float.toPrecisionWithPrecision(~digits=4, value)
         )}
       </Text>
       <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray500)]> {""} </Text> // TODO: unit needs to be added to the metrics

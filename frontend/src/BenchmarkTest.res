@@ -77,9 +77,9 @@ let calcDelta = (a, b) => {
 
 let deltaToString = n =>
   if n > 0.0 {
-    "+" ++ n->Js.Float.toFixedWithPrecision(~digits=2) ++ "%"
+    "+" ++ n->Js.Float.toPrecisionWithPrecision(~digits=6) ++ "%"
   } else {
-    n->Js.Float.toFixedWithPrecision(~digits=2) ++ "%"
+    n->Js.Float.toPrecisionWithPrecision(~digits=6) ++ "%"
   }
 
 let renderMetricOverviewRow = (
@@ -97,7 +97,7 @@ let renderMetricOverviewRow = (
     | Some(lastComparisionRow) =>
       let lastComparisonY = lastComparisionRow[1]
       (
-        Js.Float.toFixedWithPrecision(~digits=2)(lastComparisonY),
+        Js.Float.toPrecisionWithPrecision(~digits=6)(lastComparisonY),
         calcDelta(last_value, lastComparisonY)->deltaToString,
       )
     | _ => ("NA", "NA")
@@ -108,7 +108,7 @@ let renderMetricOverviewRow = (
         <a href={"#line-graph-" ++ testName ++ "-" ++ metricName}> {Rx.text(metricName)} </a>
       </Table.Col>
       <Table.Col sx=[Sx.text.right]>
-        {Rx.text(last_value->Js.Float.toFixedWithPrecision(~digits=2))}
+        {Rx.text(last_value->Js.Float.toPrecisionWithPrecision(~digits=6))}
       </Table.Col>
       <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterAbs)} </Table.Col>
       <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterRel)} </Table.Col>
