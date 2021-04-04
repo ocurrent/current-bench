@@ -409,18 +409,18 @@ browserslist@^4.14.5:
     escalade "^3.1.1"
     node-releases "^1.1.67"
 
-bs-css-emotion@^2.5.1:
-  version "2.5.1"
-  resolved "https://registry.yarnpkg.com/bs-css-emotion/-/bs-css-emotion-2.5.1.tgz#ab457544332d63d1fa69ea950a71dcf2ace88b1d"
-  integrity sha512-CQyyj8LlYdo5NeiBx2PC9v7Et/BQbj/thaHv84DFvrOivu9kk6A4rr5/Gl6HuAE77S4G0QmuuN2IRaE+vo3b+g==
+bs-css-emotion@2.4.1:
+  version "2.4.1"
+  resolved "https://registry.yarnpkg.com/bs-css-emotion/-/bs-css-emotion-2.4.1.tgz#fe3794c04ae8b0922f37173ddd9ec3b0522e5d33"
+  integrity sha512-qXUp9LpYLl+X78IcGtzt4sUKtg7RXZSAWYY22jXId3nDMfSYyq6AWoaCYVg/HfQKyyNAwokuTTVMtfQ9EtkFhg==
   dependencies:
-    bs-css "14.0.1"
+    bs-css "13.4.0"
     emotion "^10.0.0"
 
-bs-css@14.0.1:
-  version "14.0.1"
-  resolved "https://registry.yarnpkg.com/bs-css/-/bs-css-14.0.1.tgz#983394472d825c590a8f91230bfcb082e9474670"
-  integrity sha512-gNaKpU7sQKjyVCTgNa+ReHt0yAx19HcOYbGU4Sg7Jlv04NXK3FCvqffF60xb+x+jMMquOTLIj4VyQPiPSZ82Nw==
+bs-css@13.4.0:
+  version "13.4.0"
+  resolved "https://registry.yarnpkg.com/bs-css/-/bs-css-13.4.0.tgz#0918841c2812b0ae0ce1c9c569b98347ae25aa48"
+  integrity sha512-/vmbAeccXdngc9Ky2rXYtEoO9C5cqgrlUjnoseltFjY5S+HaI2PBFw+bIJ+pp5iTaJmn5Ip3cNj+Vsdex4ULaA==
 
 bs-fetch@^0.6.2:
   version "0.6.2"
