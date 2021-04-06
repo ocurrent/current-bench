@@ -4,7 +4,7 @@ This document contains instructions for working on the OCaml Benchmarks project.
 
 ## Requirements
 
-- Docker compose 1.28+ is required.
+- Docker version 20.10.5 and docker-compose version 1.28.6 is required.
 
 
 ## Development environment
