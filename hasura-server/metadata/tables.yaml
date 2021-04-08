@@ -1,0 +1,19 @@
+- table:
+    schema: public
+    name: benchmarks
+  select_permissions:
+  - role: public
+    permission:
+      columns:
+      - run_at
+      - repo_id
+      - commit
+      - branch
+      - pull_number
+      - benchmark_name
+      - test_name
+      - metrics
+      - duration
+      - build_job_id
+      - run_job_id
+      filter: {}

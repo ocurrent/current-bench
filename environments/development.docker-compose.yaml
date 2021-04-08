@@ -9,7 +9,7 @@ services:
     restart: always
     ports: ["5432:5432"]
   graphql-engine:
-    image: hasura/graphql-engine:v1.3.3
+    image: hasura/graphql-engine:v1.3.3.cli-migrations-v2
     ports:
     - "8080:8080"
     depends_on:
@@ -20,6 +20,9 @@ services:
       HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
       HASURA_GRAPHQL_ADMIN_SECRET: ${OCAML_BENCH_GRAPHQL_KEY?required}
+      HASURA_GRAPHQL_UNAUTHORIZED_ROLE: "public"
+    volumes:
+    - ../hasura-server/metadata:/hasura-metadata
   frontend:
     build: 
       context: ../frontend
