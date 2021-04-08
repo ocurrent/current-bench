@@ -21,7 +21,10 @@ services:
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
       HASURA_GRAPHQL_ADMIN_SECRET: ${OCAML_BENCH_GRAPHQL_KEY?required}
   frontend:
-    build: ../frontend
+    build: 
+      context: ../frontend
+      args:
+        VITE_GRAPHQL_URL: ${VITE_GRAPHQL_URL}
     ports:
     - "8082:80"
     restart: always
