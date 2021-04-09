@@ -5,11 +5,9 @@ let fetchOptions = ReScriptUrql.Client.FetchOpts(
   ),
 )
 
-let client = ReScriptUrql.Client.make(
-  ~url="http://autumn.ocamllabs.io:8080/v1/graphql",
-  ~fetchOptions,
-  (),
-)
+let url: string = %raw(`import.meta.env.VITE_GRAPHQL_URL`)
+
+let client = ReScriptUrql.Client.make(~url, ~fetchOptions, ())
 
 ReactDOM.render(
   <ReScriptUrql.Context.Provider value=client> <App /> </ReScriptUrql.Context.Provider>,
