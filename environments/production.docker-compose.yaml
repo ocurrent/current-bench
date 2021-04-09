@@ -26,7 +26,7 @@ services:
     build: 
       context: ../frontend
       args:
-        VITE_GRAPHQL_URL: ${VITE_GRAPHQL_URL}
+        VITE_GRAPHQL_URL: ${VITE_GRAPHQL_URL?required}
     ports:
     - "80:80"
     restart: always
