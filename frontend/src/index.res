@@ -1,6 +1,6 @@
 let url: string = %raw(`import.meta.env.VITE_GRAPHQL_URL`)
 
-let client = ReScriptUrql.Client.make(~url, ~fetchOptions, ())
+let client = ReScriptUrql.Client.make(~url, ())
 
 ReactDOM.render(
   <ReScriptUrql.Context.Provider value=client> <App /> </ReScriptUrql.Context.Provider>,
