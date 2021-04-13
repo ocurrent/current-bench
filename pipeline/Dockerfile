@@ -1,5 +1,9 @@
 FROM ocaml/opam:debian-ocaml-4.12 AS build
 
+ARG OCAML_BENCH_HOST
+
+ARG OCAML_BENCH_FRONTEND_PORT
+
 RUN sudo apt-get update && \
     sudo apt-get install -qq -yy \
     libffi-dev \
@@ -50,6 +54,9 @@ RUN apt-get update \
 
 WORKDIR /app
 ENV PATH="/app/bin:${PATH}"
+RUN echo "OCAML_BENCH_HOST=${OCAML_BENCH_HOST}}" > /app/.env
+
+RUN echo "OCAML_BENCH_FRONTEND_PORT=${OCAML_BENCH_FRONTEND_PORT}}" > /app/.env
 
 COPY ./aslr_seccomp.json /app/aslr_seccomp.json
 COPY ./db/migrations /app/db/migrations

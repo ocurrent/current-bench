@@ -1,7 +1,11 @@
 # pull official base image
 FROM node:lts AS builder
 
-ARG VITE_GRAPHQL_URL
+ARG OCAML_BENCH_HOST
+
+ARG OCAML_BENCH_GRAPHQL_PORT
+
+ARG OCAML_BENCH_FRONTEND_PORT
 
 # set working directory
 WORKDIR /app
@@ -12,7 +16,11 @@ RUN yarn install
 # add app
 COPY . /app/
 
-RUN echo "VITE_GRAPHQL_URL=${VITE_GRAPHQL_URL}" > /app/.env
+RUN echo "VITE_OCAML_BENCH_HOST=${OCAML_BENCH_HOST}}" > /app/.env
+
+RUN echo "VITE_OCAML_BENCH_FRONTEND_PORT=${OCAML_BENCH_FRONTEND_PORT}}" > /app/.env
+
+RUN echo "VITE_OCAML_BENCH_GRAPHQL_PORT=${OCAML_BENCH_GRAPHQL_PORT}}" > /app/.env
 
 RUN yarn build
 RUN yarn bundle

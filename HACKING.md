@@ -33,7 +33,10 @@ Edit the `./environments/development.env` file and adjust the configurations var
 | `OCAML_BENCH_DB_PASSWORD` | `docker`      |
 | `OCAML_BENCH_GRAPHQL_KEY` | `secret`      |
 | `OCAML_BENCH_TARGET_ARCH` | `amd64`       |
-
+| `OCAML_BENCH_HOST` | `localhost`|
+| `OCAML_BENCH_GRAPHQL_PORT` | `8080` |
+| `OCAML_BENCH_PIPELINE_PORT` | `8081` |
+| `OCAML_BENCH_FRONTEND_PORT` | `8082` |
 
 > To run the project on the Apple MacBookPro with an M1 CPU, set the `OCAML_BENCH_TARGET_ARCH` variable to `arm64`.
 
