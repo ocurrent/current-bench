@@ -8,7 +8,7 @@ services:
     - POSTGRES_PASSWORD=${OCAML_BENCH_DB_PASSWORD?required}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U docker"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 3
     restart: always
