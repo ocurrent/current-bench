@@ -4,7 +4,7 @@ This document contains instructions for working on the OCaml Benchmarks project.
 
 ## Requirements
 
-- Docker compose 1.28+ is required.
+- Docker version 20.10.5 and docker-compose version 1.28.6 is required.
 
 
 ## Development environment
@@ -205,3 +205,14 @@ Recreating current-bench_pipeline_1 ... done
 Attaching to current-bench_db_1, current-bench_db-migrate_1, current-bench_pipeline_1
 ...
 ```
+
+### Some errors you might run into
+
+1. If docker cannot find the environment file, you have to provide the full path to the env file in the Makefile for the specific make target.
+2. If there's a `docker-compose` error, you need to upgrade `docker-compose` to the latest version.
+3. There might be a process already listening on 5432 (port used by Postgres) when you get this error:
+```
+ERROR: for current-bench_db_1  Cannot start service db: driver failed programming external connectivity on endpoint current-bench_db_1 (8db805bf1bd343d8b12271c511e6c32c19be70ebed753ff4dad504e5ffdfba54): Error starting userland proxy: listen tcp4 0.0.0.0:5432: bind: address already in use
+```
+You have a postgres server running on your machine, kill the postgres process and run the make command again.
+

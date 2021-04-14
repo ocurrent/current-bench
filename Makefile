@@ -26,7 +26,7 @@ start-development: ./local-test-repo/.git
 	docker-compose \
 		--project-name="current-bench" \
 		--file=./environments/development.docker-compose.yaml \
-		--env-file=./development.env \
+		--env-file=./environments/development.env \
 		up \
 		--remove-orphans \
 		--build

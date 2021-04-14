@@ -45,7 +45,7 @@ RUN apt-get update \
     && echo "deb [arch=${TARGET_ARCH} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
         > /etc/apt/sources.list.d/docker.list \
     && apt-get update \
-    && apt-get install docker-ce-cli \
+    && apt-get install docker-ce-cli --assume-yes \
     && rm -r /var/lib/apt/lists /var/cache/apt
 
 WORKDIR /app
