@@ -54,5 +54,4 @@ ENV PATH="/app/bin:${PATH}"
 COPY ./aslr_seccomp.json /app/aslr_seccomp.json
 COPY ./db/migrations /app/db/migrations
 COPY --from=build /home/opam/.opam/4.12/bin/omigrate /app/bin/omigrate
-COPY ./scripts/wait-for /app/bin/wait-for
 COPY --from=build /mnt/project/_build/default/bin/main.exe /app/bin/current-bench-pipeline

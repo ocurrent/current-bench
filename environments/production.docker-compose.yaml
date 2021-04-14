@@ -6,6 +6,13 @@ services:
     - POSTGRES_DB=docker
     - POSTGRES_USER=docker
     - POSTGRES_PASSWORD=${OCAML_BENCH_DB_PASSWORD?required}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docker"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    restart: always
+    ports: ["5432:5432"]
     restart: always
     volumes:
     - db_data:/var/lib/postgresql/data
@@ -15,7 +22,8 @@ services:
     ports:
     - "8080:8080"
     depends_on:
-    - "db"
+      db:
+        condition: service_healthy
     restart: always
     environment:
       HASURA_GRAPHQL_DATABASE_URL: postgres://docker:docker@db:5432/docker
@@ -56,8 +64,9 @@ services:
     - "--github-private-key-file=${OCAML_BENCH_GITHUB_PRIVATE_KEY_FILE?required}"
     restart: always
     depends_on:
-    - "db"
-       
+      db:
+        condition: service_healthy
+
 volumes:
   db_data:
   pipeline_var:
