@@ -215,5 +215,6 @@ Attaching to current-bench_db_1, current-bench_db-migrate_1, current-bench_pipel
 ERROR: for current-bench_db_1  Cannot start service db: driver failed programming external connectivity on endpoint current-bench_db_1 (8db805bf1bd343d8b12271c511e6c32c19be70ebed753ff4dad504e5ffdfba54): Error starting userland proxy: listen tcp4 0.0.0.0:5432: bind: address already in use
 ```
 You have a postgres server running on your machine, kill the postgres process and run the make command again.
+
 4. If the database isn't getting populated, it is most likely that the `make bench` command that the pipeline runs failed. You can look for the logs in`var/job/<date>/<-docker-pread-.log>` to find out why the command failed. Once you fix it, the pipeline should start populating the database. 
 
