@@ -55,7 +55,7 @@ let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 1) ()
 let frontend_url =
   let host = Sys.getenv "OCAML_BENCH_HOST" in
   let port = Sys.getenv "OCAML_BENCH_FRONTEND_PORT" in
-  "http://" ^ host ^ ":" ^ port
+  "http://" ^ host ^ ":" ^ port ^ "/"
 
 (* $server/$repo_owner/$repo_name/pull/$pull_number *)
 let make_commit_status_url owner repository pull_number =

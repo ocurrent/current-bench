@@ -36,15 +36,15 @@ services:
   frontend:
     build: 
       context: ../frontend
-      args:
-        OCAML_BENCH_HOST: ${OCAML_BENCH_HOST?required}
-        OCAML_BENCH_FRONTEND_PORT: ${OCAML_BENCH_FRONTEND_PORT?required}
-        OCAML_BENCH_GRAPHQL_PORT: ${OCAML_BENCH_GRAPHQL_PORT?required}
     ports:
     - "${OCAML_BENCH_FRONTEND_PORT?required}:${OCAML_BENCH_FRONTEND_PORT?required}"
     restart: always
     depends_on:
     - "graphql-engine"
+    environment:
+      VITE_OCAML_BENCH_HOST: ${OCAML_BENCH_HOST?required}
+      VITE_OCAML_BENCH_PIPELINE_PORT: ${OCAML_BENCH_FRONTEND_PORT?required}
+      VITE_OCAML_BENCH_GRAPHQL_PORT: ${OCAML_BENCH_GRAPHQL_PORT?required}
   pipeline:
     build:
       context: ../pipeline
@@ -68,6 +68,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    environment:
+      OCAML_BENCH_HOST: ${OCAML_BENCH_HOST?required}
+      OCAML_BENCH_FRONTEND_PORT: ${OCAML_BENCH_FRONTEND_PORT?required}
 
 volumes:
   db_data:
