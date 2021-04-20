@@ -20,6 +20,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      db-migrate:
+        condition: service_started
     restart: always
     environment:
       HASURA_GRAPHQL_DATABASE_URL: postgres://docker:docker@db:5432/docker
