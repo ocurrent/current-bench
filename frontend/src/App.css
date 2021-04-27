@@ -69,7 +69,7 @@ summary::-webkit-details-marker {
   /* font-size: 14px; */
   z-index: 10;
   line-height: normal;
-  overflow: hidden;
+  overflow: visible;
   color: black;  /* replaces old axisLabelColor option */
 }
 
