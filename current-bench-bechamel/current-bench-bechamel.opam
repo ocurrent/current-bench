@@ -1,0 +1,27 @@
+opam-version: "2.0"
+synopsis: "Convert bechamel results into current-bench JSON format"
+maintainer: ["Rizo I. <rizo@tarides.com>" "Gargi Sharma <gargi@tarides.com>"]
+authors: ["Rizo I. <rizo@tarides.com>"]
+homepage: "https://github.com/ocurrent/current-bench"
+bug-reports: "https://github.com/ocurrent/current-bench/issues"
+depends: [
+  "dune" {>= "2.0"}
+  "bechamel"
+  "yojson"
+]
+build: [
+  ["dune" "subst"] {pinned}
+  [
+    "dune"
+    "build"
+    "-p"
+    name
+    "-j"
+    jobs
+    "@install"
+    "@runtest" {with-test}
+    "@doc" {with-doc}
+  ]
+]
+dev-repo: "git+https://github.com/ocurrent/current-bench.git"
+
