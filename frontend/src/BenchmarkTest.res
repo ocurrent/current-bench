@@ -23,9 +23,7 @@ let groupByTestName = (acc, item: testMetrics, idx) => {
 let decodeMetricValue = (json): LineGraph.DataRow.value => {
   switch Js.Json.classify(json) {
   | JSONNumber(n) => LineGraph.DataRow.single(n)
-  | JSONArray([]) =>
-    Js.log("Empty metrics value array.")
-    LineGraph.DataRow.single(nan)
+  | JSONArray([]) => LineGraph.DataRow.single(nan)
   | JSONArray(xs) =>
     let xs = xs->Belt.Array.map(x => x->Js.Json.decodeNumber->Belt.Option.getExn)
     LineGraph.DataRow.many(xs)

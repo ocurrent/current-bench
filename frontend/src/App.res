@@ -226,7 +226,7 @@ module RepoView = {
               <Welcome />
             </Column>
           </>
-        | Some(repoId) when !(repoIds->BeltHelpers.Array.contains(repoId)) =>
+        | Some(repoId) if !(repoIds->BeltHelpers.Array.contains(repoId)) =>
           <ErrorView msg={"No such repository: " ++ repoId} />
         | Some(repoId) =>
           let breadcrumbs =
