@@ -3,16 +3,32 @@ type annotation
 type point
 type event
 
+let computeStats = xs => {
+  if Array.length(xs) == 0 {
+    None
+  } else {
+    let (min, max, total, count) = Array.fold_left(((min, max, total, count), x) => {
+      let min = x < min ? x : min
+      let max = x > max ? x : max
+      let total = total +. x
+      let count = count +. 1.
+      (min, max, total, count)
+    }, (xs[0], xs[0], 0., 0.), xs)
+    Some((min, max, total /. count))
+  }
+}
+
 module DataRow = {
   type value
   type t = array<value>
 
-  let single = (x: float): value => Obj.magic([Obj.magic(nan), Obj.magic(x), Obj.magic(nan)])
+  let single = (x: float): value =>
+    Obj.magic([Obj.magic(Js.null), Obj.magic(x), Obj.magic(Js.null)])
   let many = (xs: array<float>): value => {
-    let low = xs[0] -. 1.0
-    let mid = xs[0]
-    let high = xs[0] +. 1.0
-    Obj.magic([low, mid, high])
+    switch computeStats(xs) {
+    | Some((min, max, avg)) => Obj.magic([min, avg, max])
+    | None => Obj.magic([Obj.magic(Js.null), nan, Obj.magic(Js.null)])
+    }
   }
 
   let with_index = (index: int, value): t => [Obj.magic(index), value]
@@ -27,13 +43,16 @@ module DataRow = {
     Obj.magic(row[0])
   }
 
-  let nan = (~index): t => [Obj.magic(index), Obj.magic(nan)]
+  let nan = (~index): t => [
+    Obj.magic(index),
+    Obj.magic([Obj.magic(Js.null), nan, Obj.magic(Js.null)]),
+  ]
 
   let toFloat = (row: t): float => {
     let value = row[1]
     if Js.Array.isArray(value) {
-      let value: array<float> = Obj.magic(value)
-      value[1]
+      let values: array<float> = Obj.magic(value)
+      values[1]
     } else {
       let value: float = Obj.magic(value)
       value
@@ -130,38 +149,30 @@ let defaultOptions = (
     "file": data,
     "axes": {
       "x": {
-        "drawGrid": false,
+        "drawGrid": true,
         "drawAxis": true,
-        "axisLineColor": "gainsboro",
-        "axisLineWidth": 1.5,
         "axisLabelFormatter": Js.Null.fromOption(xLabelFormatter),
         "ticker": ticker,
-        "axisLabelWidth": 50,
+        "axisLabelWidth": 45,
       },
       "y": {
         "drawAxis": true,
-        "gridLineWidth": 1.5,
-        "gridLineColor": "#eee",
-        "gridLinePattern": [5, 5],
-        "axisLineColor": "gainsboro",
-        "axisLineWidth": 1.5,
         "axisLabelWidth": 55,
       },
     },
+    "showRoller": false,
     "rollPeriod": 1,
     "xRangePad": 0,
-    "drawAxesAtZero": true,
-    "highlightCircleSize": 5,
+    "highlightCircleSize": 4,
     "legendFormatter": Js.Null.fromOption(legendFormatter),
     "legend": "follow",
-    "showRoller": false,
-    "strokeWidth": 1,
-    "errorBars": true,
+    "strokeWidth": 1.5,
+    "customBars": true,
     "fillGraph": false,
     "pointClickCallback": Js.Null.fromOption(onClick),
     "colors": ["#0F6FDE"],
-    "animatedZooms": true,
-    "digitsAfterDecimal": 6,
+    // "animatedZooms": true,
+    "digitsAfterDecimal": 3,
     "hideOverlayOnMouseOut": true,
     "labels": Js.Null.fromOption(labels),
     "ylabel": Js.Null.fromOption(yLabel),
@@ -229,8 +240,6 @@ let make = React.memo((
   let graphDivRef = React.useRef(Js.Nullable.null)
   let graphRef = React.useRef(None)
 
-  Js.log((title, data))
-
   // Dygraph does not display the last tick, so a dummy value
   // is added a the end of the data to overcome this.
   // See: https://github.com/danvk/dygraphs/issues/506
@@ -238,7 +247,7 @@ let make = React.memo((
   let data = switch lastRow {
   | Some(lastRow) =>
     let lastIndex = DataRow.unsafe_get_index(lastRow)
-    BeltHelpers.Array.push(data, DataRow.nan(~index=lastIndex))
+    BeltHelpers.Array.push(data, DataRow.nan(~index=lastIndex + 1))
   | None => data
   }
 
@@ -313,11 +322,9 @@ let make = React.memo((
     None
   }, (data, annotations))
 
-  let lastValue =
-    data
-    // take into account the dummy value added at the end of the data (to show the last tick)
-    ->Belt.Array.get(Belt.Array.length(data) - 2)
-    ->Belt.Option.map(value => Belt.Array.getExn(value, 1))
+  let lastValue = data
+  // take into account the dummy value added at the end of the data (to show the last tick)
+  ->Belt.Array.get(Belt.Array.length(data) - 2)
 
   let left = switch title {
   | Some(title) =>
@@ -334,7 +341,7 @@ let make = React.memo((
     <Row alignX=#right spacing=Sx.md sx=[Sx.w.auto]>
       <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray900)]>
         {lastValue->Belt.Option.mapWithDefault("", value =>
-          Js.Float.toPrecisionWithPrecision(~digits=4, value)
+          Js.Float.toPrecisionWithPrecision(~digits=4, DataRow.toFloat(value))
         )}
       </Text>
       <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray500)]> {""} </Text> // TODO: unit needs to be added to the metrics
