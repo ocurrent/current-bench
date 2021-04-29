@@ -1,8 +1,6 @@
 # pull official base image
 FROM node:lts AS builder
 
-ARG VITE_GRAPHQL_URL
-
 # set working directory
 WORKDIR /app
 
@@ -11,8 +9,6 @@ RUN yarn install
 
 # add app
 COPY . /app/
-
-RUN echo "VITE_GRAPHQL_URL=${VITE_GRAPHQL_URL}" > /app/.env
 
 RUN yarn build
 RUN yarn bundle

@@ -40,6 +40,8 @@ let renderExternalLink = (~href, text) => {
   <a target="_blank" className={Sx.make(sx)} href> {Rx.text(text)} </a>
 }
 
+let url: string = %raw(`import.meta.env.VITE_OCAML_BENCH_PIPELINE_URL`)
+
 let renderJobIdLink = jobId => {
   let shortJobId = switch String.split_on_char('/', jobId) {
   | list{_, shortJobId} => shortJobId
@@ -47,7 +49,7 @@ let renderJobIdLink = jobId => {
     Js.log(("Error: invalid jobId", jobId))
     jobId
   }
-  let href = "http://autumn.ocamllabs.io:8081/job/" ++ jobId
+  let href = url ++ "/job/" ++ jobId
   renderExternalLink(~href, shortJobId)
 }
 
