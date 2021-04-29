@@ -1,7 +1,4 @@
-let host: string = %raw(`import.meta.env.VITE_OCAML_BENCH_HOST`)
-let port: string = %raw(`import.meta.env.VITE_OCAML_BENCH_GRAPHQL_PORT`)
-
-let url: string = host ++ ":" ++ port ++ "/v1/graphql"
+let url: string = %raw(`import.meta.env.VITE_OCAML_BENCH_GRAPHQL_URL`)
 
 let client = ReScriptUrql.Client.make(~url, ())
 

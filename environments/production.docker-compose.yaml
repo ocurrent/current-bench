@@ -42,9 +42,8 @@ services:
     depends_on:
     - "graphql-engine"
     environment:
-      VITE_OCAML_BENCH_HOST: ${OCAML_BENCH_HOST?required}
-      VITE_OCAML_BENCH_PIPELINE_PORT: ${OCAML_BENCH_FRONTEND_PORT?required}
-      VITE_OCAML_BENCH_GRAPHQL_PORT: ${OCAML_BENCH_GRAPHQL_PORT?required}
+      VITE_OCAML_BENCH_PIPELINE_URL: ${OCAML_BENCH_FRONTEND_URL?required}
+      VITE_OCAML_BENCH_GRAPHQL_URL: ${OCAML_BENCH_GRAPHQL_URL?required}
   pipeline:
     build:
       context: ../pipeline
@@ -69,8 +68,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      OCAML_BENCH_HOST: ${OCAML_BENCH_HOST?required}
-      OCAML_BENCH_FRONTEND_PORT: ${OCAML_BENCH_FRONTEND_PORT?required}
+      OCAML_BENCH_FRONTEND_URL: ${OCAML_BENCH_FRONTEND_URL?required}
 
 volumes:
   db_data:

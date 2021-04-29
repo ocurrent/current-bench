@@ -40,8 +40,7 @@ let renderExternalLink = (~href, text) => {
   <a target="_blank" className={Sx.make(sx)} href> {Rx.text(text)} </a>
 }
 
-let host: string = %raw(`import.meta.env.VITE_OCAML_BENCH_HOST`)
-let port: string = %raw(`import.meta.env.VITE_OCAML_BENCH_PIPELINE_PORT`)
+let url: string = %raw(`import.meta.env.VITE_OCAML_BENCH_PIPELINE_URL`)
 
 let renderJobIdLink = jobId => {
   let shortJobId = switch String.split_on_char('/', jobId) {
@@ -50,7 +49,7 @@ let renderJobIdLink = jobId => {
     Js.log(("Error: invalid jobId", jobId))
     jobId
   }
-  let href = "http://" ++ host ++ ":" ++ port ++ "/job/" ++ jobId
+  let href = url ++ "/job/" ++ jobId
   renderExternalLink(~href, shortJobId)
 }
 
