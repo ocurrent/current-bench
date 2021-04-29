@@ -39,9 +39,10 @@ let read_channel_uri p =
 (* Generate a Dockerfile for building all the opam packages in the build context. *)
 let dockerfile ~base ~repository =
   let opam_dependencies =
-    if String.compare repository "dune" == 0 then
-      format_of_string "opam install ./dune-bench.opam -y --deps-only  -t"
-    else format_of_string "opam install -y --deps-only -t ."
+    (* FIXME: This should be supported by a custom Dockerfiles. *)
+    if String.equal repository "dune" then
+      "opam install ./dune-bench.opam -y --deps-only  -t"
+    else "opam install -y --deps-only -t ."
   in
   let open Dockerfile in
   from (Docker.Image.hash base)
@@ -51,7 +52,7 @@ let dockerfile ~base ~repository =
   @@ copy ~src:[ "--chown=opam:opam ." ] ~dst:"bench-dir" ()
   @@ workdir "bench-dir"
   @@ run "opam remote add origin https://opam.ocaml.org"
-  @@ run opam_dependencies
+  @@ run "%s" opam_dependencies
   @@ add ~src:[ "--chown=opam ." ] ~dst:"." ()
   @@ run "eval $(opam env)"
 
