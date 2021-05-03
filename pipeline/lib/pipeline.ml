@@ -199,9 +199,8 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
         (fun key head _ ->
           let head = `Github head in
           match key with
-          | `Ref default_branch -> pipeline ~head ~branch:default_branch ()
+          | `Ref branch -> if branch = default_branch then pipeline ~head ~branch () else Current.return ()
           | `PR pull_number -> pipeline ~head ~pull_number ()
-          | `Ref _ -> Current.return ()
           (* Skip all branches other than master, and check PRs *))
         ref_map (Current.return ())
   | Local path ->
@@ -252,9 +251,8 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
               (fun key head _ ->
                 let head = `Github head in
                 match key with
-                | `Ref default_branch -> pipeline ~head ~branch:default_branch ()
+                | `Ref branch -> if branch = default_branch then pipeline ~head ~branch () else Current.return ()
                 | `PR pull_number -> pipeline ~head ~pull_number ()
-                | `Ref _ -> Current.return ()
                 (* Skip all branches other than master, and check PRs *))
               ref_map (Current.return ())
 
