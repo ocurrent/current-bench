@@ -4,7 +4,7 @@ open Components
 type testMetrics = {
   name: string,
   commit: string,
-  metrics: Belt.Map.String.t<float>,
+  metrics: Belt.Map.String.t<LineGraph.DataRow.value>,
 }
 
 @module("../icons/branch.svg") external branchIcon: string = "default"
@@ -20,49 +20,17 @@ let groupByTestName = (acc, item: testMetrics, idx) => {
   Belt.Map.String.update(acc, item.name, go)
 }
 
-let decodeMetricValue = json => {
+let decodeMetricValue = (json): LineGraph.DataRow.value => {
   switch Js.Json.classify(json) {
-  | JSONNumber(n) => n
-  | JSONArray([]) => 0.0
-  | JSONArray(ns) =>
-    Belt.Array.get(ns, 0)->Belt.Option.getExn->Js.Json.decodeNumber->Belt.Option.getExn
+  | JSONNumber(n) => LineGraph.DataRow.single(n)
+  | JSONArray([]) => LineGraph.DataRow.single(nan)
+  | JSONArray(xs) =>
+    let xs = xs->Belt.Array.map(x => x->Js.Json.decodeNumber->Belt.Option.getExn)
+    LineGraph.DataRow.many(xs)
   | _ => invalid_arg("Invalid metric value: " ++ Js.Json.stringify(json))
   }
-}
-
-let collectMetricsByKey = (
-  ~metricName,
-  items: array<testMetrics>,
-  selection: Belt.Set.Int.t,
-): array<array<float>> => {
-  let data = Belt.Array.makeUninitializedUnsafe(Belt.Set.Int.size(selection))
-  Belt.Set.Int.reduce(selection, 0, (i, idx) => {
-    let item: testMetrics = Belt.Array.getExn(items, idx)
-    let metricWithIndex = [idx->float_of_int, item.metrics->Belt.Map.String.getExn(metricName)]
-    Belt.Array.setExn(data, i, metricWithIndex)
-    i + 1
-  })->ignore
-  data
-}
-
-let groupDataByMetric = (items: array<testMetrics>, selection: Belt.Set.Int.t): Belt.Map.String.t<
-  array<array<float>>,
-> => {
-  open Belt
-
-  let addMetricValue = (selectionIdx, acc, metricName, metricValue) => {
-    let x = selectionIdx->float_of_int
-    let y = metricValue
-    let row = [x, y]
-    BeltHelpers.MapString.addToArray(acc, metricName, row)
-  }
-
-  let groupByMetric = (acc, selectionIdx) => {
-    let testMetrics = Array.getExn(items, selectionIdx)
-    testMetrics.metrics->Map.String.reduce(acc, addMetricValue(selectionIdx))
-  }
-
-  selection->Set.Int.reduce(Map.String.empty, groupByMetric)
+  // ->ignore
+  // LineGraph.DataRow.many([Random.float(10.0), 5. +. Random.float(10.0), 10. +. Random.float(10.0)])
 }
 
 let calcDelta = (a, b) => {
@@ -84,7 +52,7 @@ let deltaToString = n =>
 
 let renderMetricOverviewRow = (
   ~repoId,
-  ~comparison as (comparisonTimeseries, _comparisonMetadata)=([], []),
+  ~comparison as (comparisonTimeseries: array<LineGraph.DataRow.t>, _comparisonMetadata)=([], []),
   ~testName,
   ~metricName,
   (timeseries, metadata),
@@ -92,10 +60,10 @@ let renderMetricOverviewRow = (
   if Belt.Array.length(timeseries) == 0 {
     React.null
   } else {
-    let last_value = BeltHelpers.Array.lastExn(timeseries)[1]
+    let last_value = BeltHelpers.Array.lastExn(timeseries)->LineGraph.DataRow.toFloat
     let (vsMasterAbs, vsMasterRel) = switch BeltHelpers.Array.last(comparisonTimeseries) {
     | Some(lastComparisionRow) =>
-      let lastComparisonY = lastComparisionRow[1]
+      let lastComparisonY = lastComparisionRow->LineGraph.DataRow.toFloat
       (
         Js.Float.toPrecisionWithPrecision(~digits=6)(lastComparisonY),
         calcDelta(last_value, lastComparisonY)->deltaToString,
@@ -123,11 +91,11 @@ let getMetricDelta = (
   if Belt.Array.length(timeseries) == 0 {
     None
   } else {
-    let last_value = BeltHelpers.Array.lastExn(timeseries)[1]
+    let last_value = BeltHelpers.Array.lastExn(timeseries)->LineGraph.DataRow.toFloat
 
     switch BeltHelpers.Array.last(comparisonTimeseries) {
     | Some(lastComparisionRow) =>
-      let lastComparisonY = lastComparisionRow[1]
+      let lastComparisonY = lastComparisionRow->LineGraph.DataRow.toFloat
       Some(calcDelta(last_value, lastComparisonY))
     | _ => None
     }
@@ -140,7 +108,7 @@ let make = (
   ~pullNumber,
   ~testName,
   ~comparison=Belt.Map.String.empty,
-  ~dataByMetricName,
+  ~dataByMetricName: Belt.Map.String.t<(array<LineGraph.DataRow.t>, 'a)>,
 ) => {
   let metric_table = {
     <Table sx=[Sx.mb.xl2]>
@@ -182,12 +150,15 @@ let make = (
         ([], []),
       )
 
-      let timeseries = Belt.Array.concat(comparisonTimeseries, timeseries)
+      let timeseries: array<LineGraph.DataRow.t> = Belt.Array.concat(
+        comparisonTimeseries,
+        timeseries,
+      )
       let metadata = Belt.Array.concat(comparisonMetadata, metadata)
 
       let xTicks = Belt.Array.reduceWithIndex(timeseries, Belt.Map.Int.empty, (acc, row, index) => {
         // Use indexed instead of dates. This allows us to map to commits.
-        Belt.Array.set(row, 0, float_of_int(index))->ignore
+        LineGraph.DataRow.set_index(index, row)
         let tick = switch Belt.Array.get(metadata, index) {
         | Some(xMetadata) =>
           let xValue = xMetadata["commit"]

@@ -54,19 +54,6 @@ let makeGetBenchmarksVariables = (
   }
 }
 
-let getTestMetrics = (item: BenchmarkMetrics.t): BenchmarkTest.testMetrics => {
-  {
-    BenchmarkTest.name: item.test_name,
-    metrics: item.metrics
-    ->Belt.Option.getExn
-    ->Js.Json.decodeObject
-    ->Belt.Option.getExn
-    ->jsDictToMap
-    ->Belt.Map.String.map(v => BenchmarkTest.decodeMetricValue(v)),
-    commit: item.commit,
-  }
-}
-
 module Benchmark = {
   let decodeRunAt = runAt => runAt->Js.Json.decodeString->Belt.Option.map(Js.Date.fromString)
 
@@ -82,7 +69,7 @@ module Benchmark = {
     benchmarks->Belt.Array.reduce(BenchmarkData.empty, (acc, item) => {
       item.metrics
       ->decodeMetrics
-      ->Belt.Map.String.reduce(acc, (acc, metricName, value) => {
+      ->Belt.Map.String.reduce(acc, (acc, metricName, value: LineGraph.DataRow.value) => {
         BenchmarkData.add(
           acc,
           ~testName=item.test_name,
@@ -239,7 +226,7 @@ module RepoView = {
               <Welcome />
             </Column>
           </>
-        | Some(repoId) when !(repoIds->BeltHelpers.Array.contains(repoId)) =>
+        | Some(repoId) if !(repoIds->BeltHelpers.Array.contains(repoId)) =>
           <ErrorView msg={"No such repository: " ++ repoId} />
         | Some(repoId) =>
           let breadcrumbs =
