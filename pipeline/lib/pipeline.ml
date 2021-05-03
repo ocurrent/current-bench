@@ -37,7 +37,13 @@ let read_channel_uri p =
   Util.read_fpath p |> String.trim |> Uri.of_string |> Current_slack.channel
 
 (* Generate a Dockerfile for building all the opam packages in the build context. *)
-let dockerfile ~base =
+let dockerfile ~base ~repository =
+  let opam_dependencies =
+    (* FIXME: This should be supported by a custom Dockerfiles. *)
+    if String.equal repository "dune" then
+      "opam install ./dune-bench.opam -y --deps-only  -t"
+    else "opam install -y --deps-only -t ."
+  in
   let open Dockerfile in
   from (Docker.Image.hash base)
   @@ run
@@ -46,7 +52,7 @@ let dockerfile ~base =
   @@ copy ~src:[ "--chown=opam:opam ." ] ~dst:"bench-dir" ()
   @@ workdir "bench-dir"
   @@ run "opam remote add origin https://opam.ocaml.org"
-  @@ run "opam install -y --deps-only -t ."
+  @@ run "%s" opam_dependencies
   @@ add ~src:[ "--chown=opam ." ] ~dst:"." ()
   @@ run "eval $(opam env)"
 
@@ -144,10 +150,6 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
 
 let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
     ~(source : Source.t) () =
-  let dockerfile =
-    let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
-    `Contents (dockerfile ~base)
-  in
   let docker_cpuset_cpus =
     match docker_config.cpu with
     | Some i -> [ "--cpuset-cpus"; string_of_int i ]
@@ -173,13 +175,16 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
         ]
   in
   let pipeline =
-    pipeline ~conninfo ~dockerfile ~tmpfs ~docker_cpuset_cpus
-      ~docker_cpuset_mems
+    pipeline ~conninfo ~tmpfs ~docker_cpuset_cpus ~docker_cpuset_mems
   in
   match source with
   | Github { repo; slack_path; token } ->
+      let dockerfile =
+        let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
+        `Contents (dockerfile ~base ~repository:repo.name)
+      in
       let pipeline =
-        pipeline ~slack_path ~repository:repo.name ~owner:repo.owner
+        pipeline ~slack_path ~dockerfile ~repository:repo.name ~owner:repo.owner
       in
       let* refs =
         let api =
@@ -200,6 +205,10 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
           (* Skip all branches other than master, and check PRs *))
         refs (Current.return ())
   | Local path ->
+      let dockerfile =
+        let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
+        `Contents (dockerfile ~base ~repository:"local")
+      in
       let local = Git.Local.v path in
       let* head = Git.Local.head local in
       let head_commit = `Local (Git.Local.head_commit local) in
@@ -214,8 +223,8 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
                     log "Could not extract branch name from: %s" git_ref);
                 None)
       in
-      pipeline ?branch ~head:head_commit ~repository:"local" ~owner:"local"
-        ~slack_path:None ()
+      pipeline ?branch ~dockerfile ~head:head_commit ~repository:"local"
+        ~owner:"local" ~slack_path:None ()
   | Github_app app ->
       Github.App.installations app
       |> Current.list_iter (module Github.Installation) @@ fun installation ->
@@ -229,8 +238,13 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
                  Github.Api.refs api repo
             in
             let* _, repo = repo in
+            let dockerfile =
+              let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
+              `Contents (dockerfile ~base ~repository:repo.name)
+            in
             let pipeline =
-              pipeline ~slack_path:None ~repository:repo.name ~owner:repo.owner
+              pipeline ~dockerfile ~slack_path:None ~repository:repo.name
+                ~owner:repo.owner
             in
             Github.Api.Ref_map.fold
               (fun key head _ ->
