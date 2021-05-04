@@ -1,6 +1,8 @@
 # pull official base image
 FROM node:lts AS builder
 
+ARG VITE_OCAML_BENCH_GRAPHQL_URL
+
 # set working directory
 WORKDIR /app
 
@@ -9,6 +11,8 @@ RUN yarn install
 
 # add app
 COPY . /app/
+
+RUN echo "VITE_OCAML_BENCH_GRAPHQL_URL=${VITE_OCAML_BENCH_GRAPHQL_URL}" > /app/.env
 
 RUN yarn build
 RUN yarn bundle
@@ -24,4 +28,3 @@ RUN rm -rf /usr/share/nginx/html/*
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 ENTRYPOINT ["nginx", "-g", "daemon off;"]
-

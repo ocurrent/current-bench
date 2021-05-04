@@ -34,6 +34,8 @@ services:
   frontend:
     build: 
       context: ../frontend
+      args:
+        VITE_OCAML_BENCH_GRAPHQL_URL: ${OCAML_BENCH_GRAPHQL_URL?required}
     ports:
       ["${OCAML_BENCH_FRONTEND_PORT?required}:${OCAML_BENCH_FRONTEND_PORT?required}"]
     restart: always
@@ -41,7 +43,6 @@ services:
     - "graphql-engine"
     environment:
         VITE_OCAML_BENCH_PIPELINE_URL: ${OCAML_BENCH_PIPELINE_URL?required}
-        VITE_OCAML_BENCH_GRAPHQL_URL: ${OCAML_BENCH_GRAPHQL_URL?required}
   pipeline:
     build:
       context: ../pipeline
