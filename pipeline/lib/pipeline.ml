@@ -199,7 +199,9 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
         (fun key head _ ->
           let head = `Github head in
           match key with
-          | `Ref branch -> if branch = default_branch then pipeline ~head ~branch () else Current.return ()
+          | `Ref branch ->
+              if branch = default_branch then pipeline ~head ~branch:"master" ()
+              else Current.return ()
           | `PR pull_number -> pipeline ~head ~pull_number ()
           (* Skip all branches other than master, and check PRs *))
         ref_map (Current.return ())
@@ -236,7 +238,7 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
               |> let> api, repo = repo in
                  Github.Api.refs api repo
             in
-            let ref_map = Github.Api.all_refs  refs in
+            let ref_map = Github.Api.all_refs refs in
             let default_branch = Github.Api.default_ref refs in
             let* _, repo = repo in
             let dockerfile =
@@ -251,7 +253,10 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
               (fun key head _ ->
                 let head = `Github head in
                 match key with
-                | `Ref branch -> if branch = default_branch then pipeline ~head ~branch () else Current.return ()
+                | `Ref branch ->
+                    if branch = default_branch then
+                      pipeline ~head ~branch:"master" ()
+                    else Current.return ()
                 | `PR pull_number -> pipeline ~head ~pull_number ()
                 (* Skip all branches other than master, and check PRs *))
               ref_map (Current.return ())
