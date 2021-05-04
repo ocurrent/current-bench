@@ -195,15 +195,18 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
         |> let> api, repo = repo in
            Github.Api.refs api repo
       in
+      let default_branch = Github.Api.default_ref refs in
+      let ref_map = Github.Api.all_refs refs in
       Github.Api.Ref_map.fold
         (fun key head _ ->
           let head = `Github head in
           match key with
-          | `Ref "refs/heads/master" -> pipeline ~head ~branch:"master" ()
+          | `Ref branch ->
+              if branch = default_branch then pipeline ~head ~branch:"master" ()
+              else Current.return ()
           | `PR pull_number -> pipeline ~head ~pull_number ()
-          | `Ref _ -> Current.return ()
           (* Skip all branches other than master, and check PRs *))
-        refs (Current.return ())
+        ref_map (Current.return ())
   | Local path ->
       let dockerfile =
         let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
@@ -237,6 +240,8 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
               |> let> api, repo = repo in
                  Github.Api.refs api repo
             in
+            let ref_map = Github.Api.all_refs refs in
+            let default_branch = Github.Api.default_ref refs in
             let* _, repo = repo in
             let dockerfile =
               let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
@@ -250,11 +255,13 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
               (fun key head _ ->
                 let head = `Github head in
                 match key with
-                | `Ref "refs/heads/master" -> pipeline ~head ~branch:"master" ()
+                | `Ref branch ->
+                    if branch = default_branch then
+                      pipeline ~head ~branch:"master" ()
+                    else Current.return ()
                 | `PR pull_number -> pipeline ~head ~pull_number ()
-                | `Ref _ -> Current.return ()
                 (* Skip all branches other than master, and check PRs *))
-              refs (Current.return ())
+              ref_map (Current.return ())
 
 let v ~current_config ~docker_config ~server:mode ~(source : Source.t) conninfo
     () =
