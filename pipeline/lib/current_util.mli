@@ -5,12 +5,12 @@ module Docker_util : sig
     ?label:string ->
     ?pool:unit Current.Pool.t ->
     ?run_args:string list ->
-    Current_docker.Default.Image.t Current.t ->
     repo_info:string ->
     ?branch:string ->
     ?pull_number:int ->
     commit:string ->
     args:string list ->
+    Current_docker.Default.Image.t Current.t ->
     string Current.t
   (** Similar to {!val:Current_docker.Default.pred} but includes the output in
       the job's logs. *)

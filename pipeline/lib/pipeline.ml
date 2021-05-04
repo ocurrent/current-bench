@@ -28,7 +28,7 @@ end
 module Docker_config = struct
   type t = { cpu : int option; numa_node : int option; shm_size : int }
 
-  let v ?cpu ?numa_node ~shm_size = { cpu; numa_node; shm_size }
+  let v ?cpu ?numa_node ~shm_size () = { cpu; numa_node; shm_size }
 end
 
 let pool = Current.Pool.create ~label:"docker" 1

@@ -134,8 +134,8 @@ module Docker_util = struct
 
   let pp_sp_label = Fmt.(option (sp ++ string))
 
-  let pread_log ?label ?pool ?run_args image ~repo_info ?branch ?pull_number
-      ~commit ~args =
+  let pread_log ?label ?pool ?run_args ~repo_info ?branch ?pull_number ~commit
+      ~args image =
     Current.component "pread_log%a" pp_sp_label label
     |> let> image = image in
        Raw.pread_log ~docker_context:Docker.docker_context ?pool ?run_args image

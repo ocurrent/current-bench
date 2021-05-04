@@ -63,7 +63,7 @@ module Docker = struct
   let v =
     Term.(
       const (fun cpu numa_node shm_size ->
-          Pipeline.Docker_config.v ?cpu ?numa_node ~shm_size)
+          Pipeline.Docker_config.v ?cpu ?numa_node ~shm_size ())
       $ cpu
       $ numa_node
       $ shm_size)
