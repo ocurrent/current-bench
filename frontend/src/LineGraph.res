@@ -3,6 +3,33 @@ type annotation
 type point
 type event
 
+let computeStdDev = (~mean, xs) => {
+  let var = ref(0.0)
+  let n = Array.length(xs)
+  for i in 0 to n - 1 {
+    let x = xs[i] -. mean
+    var := var.contents +. x *. x
+  }
+  sqrt(var.contents /. float_of_int(n - 1))
+}
+
+let computeMean = xs => {
+  if Array.length(xs) == 0 {
+    None
+  } else {
+    let (total, count) = Array.fold_left(((total, count), x) => {
+      if Js.Float.isNaN(x) {
+        (total, count +. 1.)
+      } else {
+        let total = total +. x
+        let count = count +. 1.
+        (total, count)
+      }
+    }, (0., 0.), xs)
+    Some(total /. count)
+  }
+}
+
 let computeStats = xs => {
   if Array.length(xs) == 0 {
     None
@@ -24,11 +51,16 @@ module DataRow = {
 
   let single = (x: float): value =>
     Obj.magic([Obj.magic(Js.null), Obj.magic(x), Obj.magic(Js.null)])
+
   let many = (xs: array<float>): value => {
     switch computeStats(xs) {
     | Some((min, max, avg)) => Obj.magic([min, avg, max])
     | None => Obj.magic([Obj.magic(Js.null), nan, Obj.magic(Js.null)])
     }
+  }
+
+  let valueWithErrorBars = (~mid, ~low, ~high): value => {
+    Obj.magic([Obj.magic(low), Obj.magic(mid), Obj.magic(high)])
   }
 
   let with_index = (index: int, value): t => [Obj.magic(index), value]
@@ -48,6 +80,13 @@ module DataRow = {
     Obj.magic([Obj.magic(Js.null), nan, Obj.magic(Js.null)]),
   ]
 
+  // Similar to nan, but with for two series.
+  let nan2 = (~index): t => [
+    Obj.magic(index),
+    Obj.magic([Obj.magic(Js.null), nan, Obj.magic(Js.null)]),
+    Obj.magic([Obj.magic(Js.null), nan, Obj.magic(Js.null)]),
+  ]
+
   let toFloat = (row: t): float => {
     let value = row[1]
     if Js.Array.isArray(value) {
@@ -57,6 +96,11 @@ module DataRow = {
       let value: float = Obj.magic(value)
       value
     }
+  }
+
+  let add_value = (row: t, value: value): t => {
+    Js.Array.push(value, row)->ignore
+    row
   }
 }
 
@@ -132,6 +176,11 @@ let convertTicks = (ticks: Belt.Map.Int.t<string>) => {
   ->Belt.Map.Int.valuesToArray
 }
 
+let addSeries = (data: array<DataRow.t>, series: array<DataRow.value>) => {
+  assert (Array.length(data) == Array.length(series))
+  data->Belt.Array.mapWithIndex((i, row) => DataRow.add_value(row, series[i]))
+}
+
 let defaultOptions = (
   ~legendFormatter=?,
   ~xTicks=?,
@@ -160,9 +209,17 @@ let defaultOptions = (
         "axisLabelWidth": 55,
       },
     },
+    "series": {
+      "std-dev": {
+        "strokeWidth": 1.0,
+        "strokePattern": [3, 2],
+        "highlightCircleSize": 0,
+      },
+    },
     "showRoller": false,
     "rollPeriod": 1,
     "xRangePad": 0,
+    "includeZero": true,
     "highlightCircleSize": 4,
     "legendFormatter": Js.Null.fromOption(legendFormatter),
     "legend": "follow",
@@ -170,7 +227,7 @@ let defaultOptions = (
     "customBars": true,
     "fillGraph": false,
     "pointClickCallback": Js.Null.fromOption(onClick),
-    "colors": ["#0F6FDE"],
+    "colors": ["#0F6FDE", "#888888"],
     // "animatedZooms": true,
     "digitsAfterDecimal": 3,
     "hideOverlayOnMouseOut": true,
@@ -240,6 +297,22 @@ let make = React.memo((
   let graphDivRef = React.useRef(Js.Nullable.null)
   let graphRef = React.useRef(None)
 
+  // Add constant stdDev series.
+  let constantSeries = {
+    let values = data->Belt.Array.map(DataRow.toFloat)
+    let mean = values->computeMean->Belt.Option.getWithDefault(0.0)
+    let stdDev = computeStdDev(~mean, values)
+    Array.make(
+      Array.length(data),
+      DataRow.valueWithErrorBars(~mid=mean, ~low=mean -. stdDev, ~high=mean +. stdDev),
+    )
+  }
+  let data = addSeries(data, constantSeries)
+  let labels = labels->Belt.Option.map(labels => {
+    Js.Array.push("std-dev", labels)->ignore
+    labels
+  })
+
   // Dygraph does not display the last tick, so a dummy value
   // is added a the end of the data to overcome this.
   // See: https://github.com/danvk/dygraphs/issues/506
@@ -247,7 +320,7 @@ let make = React.memo((
   let data = switch lastRow {
   | Some(lastRow) =>
     let lastIndex = DataRow.unsafe_get_index(lastRow)
-    BeltHelpers.Array.push(data, DataRow.nan(~index=lastIndex + 1))
+    BeltHelpers.Array.push(data, DataRow.nan2(~index=lastIndex + 1))
   | None => data
   }
 
