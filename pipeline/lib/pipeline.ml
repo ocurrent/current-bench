@@ -65,7 +65,8 @@ let make_commit_status_url owner repository pull_number =
   let uri_end =
     match pull_number with
     | None -> "/" ^ owner ^ "/" ^ repository
-    | Some number -> "/" ^ owner ^ "/" ^ repository ^ "/pull/" ^ string_of_int number
+    | Some number ->
+        "/" ^ owner ^ "/" ^ repository ^ "/pull/" ^ string_of_int number
   in
   Uri.of_string (frontend_url ^ uri_end)
 
@@ -196,13 +197,15 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
            Github.Api.refs api repo
       in
       let default_branch = Github.Api.default_ref refs in
+      let default_branch_name = Util.get_branch_name default_branch in
       let ref_map = Github.Api.all_refs refs in
       Github.Api.Ref_map.fold
         (fun key head _ ->
           let head = `Github head in
           match key with
           | `Ref branch ->
-              if branch = default_branch then pipeline ~head ~branch:"master" ()
+              if branch = default_branch then
+                pipeline ~head ~branch:default_branch_name ()
               else Current.return ()
           | `PR pull_number -> pipeline ~head ~pull_number ()
           (* Skip all branches other than master, and check PRs *))
@@ -242,6 +245,7 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
             in
             let ref_map = Github.Api.all_refs refs in
             let default_branch = Github.Api.default_ref refs in
+            let default_branch_name = Util.get_branch_name default_branch in
             let* _, repo = repo in
             let dockerfile =
               let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
@@ -257,7 +261,7 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
                 match key with
                 | `Ref branch ->
                     if branch = default_branch then
-                      pipeline ~head ~branch:"master" ()
+                      pipeline ~head ~branch:default_branch_name ()
                     else Current.return ()
                 | `PR pull_number -> pipeline ~head ~pull_number ()
                 (* Skip all branches other than master, and check PRs *))
