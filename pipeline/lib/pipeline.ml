@@ -58,7 +58,9 @@ let dockerfile ~base ~repository =
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 1) ()
 
-let frontend_url = Sys.getenv "OCAML_BENCH_FRONTEND_URL"
+let frontend_url =
+  try Sys.getenv "OCAML_BENCH_FRONTEND_URL"
+  with Not_found -> "http://localhost:8080"
 
 (* $server/$repo_owner/$repo_name/pull/$pull_number *)
 let make_commit_status_url owner repository pull_number =
@@ -75,6 +77,63 @@ let github_status_of_state url = function
   | Error (`Active _) -> Github.Api.Status.v ~url `Pending
   | Error (`Msg m) -> Github.Api.Status.v ~url `Failure ~description:m
 
+(* 
+build_job_id run_job_id state
+--------------------------------
+NULL         NULL       Building
+ID           NULL       Running
+ID           ID         Complete
+*)
+
+module Db = struct
+  let build_start ~run_at ~repo_id ~pull_number ~branch ~commit
+      (db : Postgresql.connection) =
+    let repo_id = Sql_util.string (fst repo_id ^ "/" ^ snd repo_id) in
+    let run_at = Sql_util.time run_at in
+    let commit = Sql_util.string commit in
+    let branch = Sql_util.(option string) branch in
+    let pull_number = Sql_util.(option int) pull_number in
+    let query =
+      Fmt.str
+        {|
+  INSERT INTO
+    benchmarks(run_at, repo_id, commit, branch, pull_number)
+  VALUES
+    (%s, %s, %s, %s, %s)
+  |}
+        run_at repo_id commit branch pull_number
+    in
+    try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
+    | Postgresql.Error err ->
+        Logs.err (fun log ->
+            log "Database error: %s" (Postgresql.string_of_error err))
+    | exn -> Logs.err (fun log -> log "Unknown error:\n%a" Fmt.exn exn)
+
+  let build_stop ~build_job_id ~run_job_id ~benchmark_name ~test_name ~metrics
+      (db : Postgresql.connection) =
+    let build_job_id = Sql_util.(option string) build_job_id in
+    let query =
+      Fmt.str
+        {|
+UPDATE
+  benchmarks
+SET
+  run_job_id = %s,
+  benchmark_name = %s,
+  test_name = %s,
+  metrics = %s
+WHERE
+  build_job_id = %s
+|}
+        run_job_id benchmark_name test_name metrics build_job_id
+    in
+    try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
+    | Postgresql.Error err ->
+        Logs.err (fun log ->
+            log "Database error: %s" (Postgresql.string_of_error err))
+    | exn -> Logs.err (fun log -> log "Unknown error:\n%a" Fmt.exn exn)
+end
+
 let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
     ~docker_cpuset_cpus ~docker_cpuset_mems ~head ~repository ~owner () =
   let repo_id = (owner, repository) in
@@ -84,7 +143,15 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
         Git.fetch (Current.map Github.Api.Commit.id (Current.return api_commit))
     | `Local commit -> commit
   in
+  let db = new Postgresql.connection ~conninfo () in
   let current_image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
+  let* build_job_id = Current_util.get_job_id current_image
+  and* commit =
+    match head with
+    | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
+    | `Local commit -> commit >>| Git.Commit.hash
+  in
+  record_benchmark_start ~repo_id ~pull_number ~branch ~commit ~build_job_id db;
   let s =
     let run_args =
       [ "--security-opt"; "seccomp=./aslr_seccomp.json" ]
@@ -93,11 +160,7 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
       @ docker_cpuset_mems
     in
     let run_at = Ptime_clock.now () in
-    let* commit =
-      match head with
-      | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
-      | `Local commit -> commit >>| Git.Commit.hash
-    in
+
     let repo_info = owner ^ "/" ^ repository in
     let current_output =
       Docker_util.pread_log ~run_args current_image ~repo_info ?pull_number
@@ -107,13 +170,11 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
             "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "make"; "bench";
           ]
     in
-    let+ build_job_id = Current_util.get_job_id current_image
-    and+ run_job_id = Current_util.get_job_id current_output
+    let+ run_job_id = Current_util.get_job_id current_output
     and+ output = current_output in
     let duration = Ptime.diff (Ptime_clock.now ()) run_at in
     Logs.debug (fun log -> log "Benchmark output:\n%s" output);
     let () =
-      let db = new Postgresql.connection ~conninfo () in
       output
       |> Json_util.parse_many
       |> List.iter (fun output_json ->
