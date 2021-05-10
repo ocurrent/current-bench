@@ -26,7 +26,7 @@ module Source = struct
 end
 
 module Docker_config = struct
-  type t = { cpu : int option; numa_node : int option; shm_size : int }
+  type t = { cpu : string option; numa_node : int option; shm_size : int }
 
   let v ?cpu ?numa_node ~shm_size () = { cpu; numa_node; shm_size }
 end
@@ -153,7 +153,7 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
     ~(source : Source.t) () =
   let docker_cpuset_cpus =
     match docker_config.cpu with
-    | Some i -> [ "--cpuset-cpus"; string_of_int i ]
+    | Some cpu -> [ "--cpuset-cpus"; cpu ]
     | None -> []
   in
   let docker_cpuset_mems =
