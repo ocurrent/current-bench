@@ -1,3 +1,4 @@
+(* TODO: Delete. *)
 module Benchmark = struct
   type t = {
     run_at : Ptime.t;
