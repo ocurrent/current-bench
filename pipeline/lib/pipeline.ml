@@ -42,7 +42,7 @@ let dockerfile ~base =
   from (Docker.Image.hash base)
   @@ run
        "sudo apt-get update && sudo apt-get install -qq -yy libffi-dev \
-        liblmdb-dev m4 pkg-config gnuplot-x11 libgmp-dev libssl-dev"
+        liblmdb-dev m4 pkg-config gnuplot-x11 libgmp-dev libssl-dev zlib1g-dev"
   @@ copy ~src:[ "--chown=opam:opam ." ] ~dst:"bench-dir" ()
   @@ workdir "bench-dir"
   @@ run "opam remote add origin https://opam.ocaml.org"
