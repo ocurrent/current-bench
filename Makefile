@@ -30,3 +30,7 @@ start-development: ./local-test-repo/.git
 		up \
 		--remove-orphans \
 		--build
+
+.PHONY: bench
+bench: ./local-test-repo/.git
+	@cd ./local-test-repo/ && make -s bench
