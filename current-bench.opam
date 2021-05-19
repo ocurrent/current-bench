@@ -1,0 +1,61 @@
+opam-version: "2.0"
+synopsis: "Run continuous benchmarks for repositories"
+maintainer: ["Rizo I. <rizo@tarides.com>" "Gargi Sharma <gargi@tarides.com>"]
+authors: ["Rizo I. <rizo@tarides.com>" "Gargi Sharma <gargi@tarides.com>"]
+homepage: "https://github.com/ocurrent/current-bench"
+bug-reports: "https://github.com/ocurrent/current-bench/issues"
+depends: [
+  "dune" {>= "2.0"}
+  "yojson"
+  "reason"
+  "bechamel"
+  "bos"
+  "capnp-rpc-unix"
+  "cmdliner"
+  "current" {>= "dev" }
+  "current_ansi" {>= "dev"}
+  "current_docker" {>= "dev"}
+  "current_git" {>= "dev"}
+  "current_github" {>= "dev"}
+  "current_incr" {>= "dev"}
+  "current_rpc" {>= "dev"}
+  "current_slack" {>= "dev"}
+  "current_web" {>= "dev"}
+  "curly"
+  "duration"
+  "fpath"
+  "logs"
+  "ocaml" {>= "4.08"}
+  "postgresql"
+  "rresult"
+  "omigrate"
+]
+
+pin-depends: [
+  [ "current_ansi.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
+  [  "current_docker.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
+  [  "current_github.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
+  [  "current_git.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
+  [  "current_incr.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
+  [  "current.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
+  [  "current_rpc.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
+  [  "current_slack.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
+  [  "current_web.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
+]
+
+build: [
+  ["dune" "subst"] {pinned}
+  [
+    "dune"
+    "build"
+    "-p"
+    name
+    "-j"
+    jobs
+    "@install"
+    "@runtest" {with-test}
+    "@doc" {with-doc}
+  ]
+]
+dev-repo: "git+https://github.com/ocurrent/current-bench.git"
+

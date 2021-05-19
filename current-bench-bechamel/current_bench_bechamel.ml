@@ -18,22 +18,22 @@ let process_results results =
     results;
   metrics_by_test
 
-
 let json_of_ols ols =
   match Bechamel.Analyze.OLS.estimates ols with
   | Some [ x ] -> `Float x
   | Some estimates -> `List (List.map (fun x -> `Float x) estimates)
   | None -> `List []
 
-
 let json_of_ols_results ?name (results : Bechamel.Analyze.OLS.t results) :
     Yojson.Safe.t =
   let metrics_by_test = process_results results in
   let results =
-    metrics_by_test |> Hashtbl.to_seq
+    metrics_by_test
+    |> Hashtbl.to_seq
     |> Seq.map (fun (test_name, metrics) ->
            let metrics =
-             metrics |> Hashtbl.to_seq
+             metrics
+             |> Hashtbl.to_seq
              |> Seq.map (fun (metric_name, ols) ->
                     (metric_name, json_of_ols ols))
              |> List.of_seq
