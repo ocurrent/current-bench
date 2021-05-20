@@ -18,6 +18,7 @@ stop-production:
 		down
 
 # Make sure the fake testing repo is initialised.
+.SILENT: ./local-test-repo/.git
 ./local-test-repo/.git:
 	cd ./local-test-repo/ && git init && git add . && git commit -m "Initial commit."
 
