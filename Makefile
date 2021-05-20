@@ -18,7 +18,6 @@ stop-production:
 		down
 
 # Make sure the fake testing repo is initialised.
-.SILENT: ./local-test-repo/.git
 ./local-test-repo/.git:
 	cd ./local-test-repo/ && git init && git add . && git commit -m "Initial commit."
 
@@ -33,5 +32,5 @@ start-development: ./local-test-repo/.git
 		--build
 
 .PHONY: bench
-bench: ./local-test-repo/.git
+bench: 
 	@cd ./local-test-repo/ && make -s bench
