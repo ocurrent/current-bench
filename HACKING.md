@@ -187,6 +187,20 @@ Assuming that the private key is saved in `ocaml-bench-github-key` at the projec
 $ docker run -it --rm -v $PWD/ocaml-bench-github-key:/mnt/ocaml-bench-github-key -v current-bench_pipeline_var:/mnt/pipeline_var alpine cp /mnt/ocaml-bench-github-key /mnt/pipeline_var/ocaml-bench-github-key
 ```
 
+#### Adding a docker volume for data dependencies
+`current-bench` supports benchmarks that have data dependency. You can add the dependencies to a
+docker volume which is then mounted to the pipeline container in `docker-compose`.
+
+To create a docker volumes you should run:
+```
+$ docker volume create bench-data
+```
+You can add the data required to your `bench-data` volume by inspecting the volume and copying the data directly to the path listed in the inspect results.
+```
+$ docker volume inspect
+```
+
+The underlying assumption here is that the `make bench` target would know that the dependencies live in the `bench-data` folder inside the container.
 
 ### Starting the production environment
 

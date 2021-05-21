@@ -49,6 +49,8 @@ services:
       args:
         TARGET_ARCH: ${OCAML_BENCH_TARGET_ARCH?required}
     volumes:
+<<<<<<< HEAD
+      - bench-data:/app/bench-data
       - pipeline_var:/app/var
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
@@ -75,3 +77,5 @@ services:
 volumes:
   db_data:
   pipeline_var:
+  bench-data:
+    external: true
