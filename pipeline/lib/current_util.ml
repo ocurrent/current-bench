@@ -94,7 +94,8 @@ module Docker_util = struct
       Current.Job.log job "Repo: %s - Branch: %s - PR: %s - Commit: %s"
         repo_info branch pull_number
         Key.(key.commit);
-      Current.Job.start job ?pool ~level:Current.Level.Average >>= fun () ->
+      Current.Job.start job ?pool ~level:Current.Level.Above_average
+      >>= fun () ->
       Current.Process.check_output ~cancellable:true ~job (Key.cmd key)
       >>= fun output_result ->
       match output_result with

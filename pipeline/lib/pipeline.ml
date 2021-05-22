@@ -88,7 +88,12 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
   let current_image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
   let s =
     let run_args =
-      [ "--security-opt"; "seccomp=./aslr_seccomp.json" ]
+      [
+        "--security-opt";
+        "seccomp=./aslr_seccomp.json";
+        "-v";
+        "/app/bench-data:/home/opam/bench-dir/bench-data";
+      ]
       @ tmpfs
       @ docker_cpuset_cpus
       @ docker_cpuset_mems
