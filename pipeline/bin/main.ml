@@ -47,7 +47,7 @@ end
 module Docker = struct
   let cpu =
     let doc = "CPU/core that should run the benchmarks." in
-    Arg.(value & opt (some int) None & info [ "docker-cpu" ] ~doc)
+    Arg.(value & opt (some string) None & info [ "docker-cpu" ] ~doc)
 
   let numa_node =
     let doc =
