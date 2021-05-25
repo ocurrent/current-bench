@@ -16,7 +16,7 @@ services:
     restart: always
     volumes:
     - db_data:/var/lib/postgresql/data
-    ports: ["5432:5432"]
+    expose: "5432"
   graphql-engine:
     image: hasura/graphql-engine:v1.3.3.cli-migrations-v2
     ports:
@@ -37,14 +37,13 @@ services:
     build: 
       context: ../frontend
       args:
+        VITE_OCAML_BENCH_PIPELINE_URL: ${OCAML_BENCH_PIPELINE_URL?required}
         VITE_OCAML_BENCH_GRAPHQL_URL: ${OCAML_BENCH_GRAPHQL_URL?required}
     ports:
     - "${OCAML_BENCH_FRONTEND_PORT?required}:${OCAML_BENCH_FRONTEND_PORT?required}"
     restart: always
     depends_on:
     - "graphql-engine"
-    environment:
-      VITE_OCAML_BENCH_PIPELINE_URL: ${OCAML_BENCH_PIPELINE_URL?required}
   pipeline:
     build:
       context: ../pipeline

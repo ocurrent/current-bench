@@ -46,7 +46,11 @@ end
 
 module Docker = struct
   let cpu =
-    let doc = "CPU/core that should run the benchmarks." in
+    let doc =
+      "CPU/core that should run the benchmarks. A comma-separated list or \
+       hyphen-separated range of CPUs a container can use, if you have more \
+       than one CPU"
+    in
     Arg.(value & opt (some string) None & info [ "docker-cpu" ] ~doc)
 
   let numa_node =
