@@ -1,6 +1,23 @@
 (library
  (name pipeline)
  (public_name pipeline)
- (libraries current current.fs current_docker current_git current_github
-   current_slack current_web dockerfile fmt.tty logs logs.fmt prometheus
-   rresult uri curly postgresql yojson))
+ (libraries
+  current
+  current.fs
+  current_docker
+  current_git
+  current_github
+  current_slack
+  current_web
+  dockerfile
+  fmt.tty
+  logs
+  logs.fmt
+  prometheus
+  rresult
+  uri
+  curly
+  postgresql
+  yojson)
+ (preprocess
+  (pps ppx_deriving.std)))

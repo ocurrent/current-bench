@@ -8,7 +8,7 @@ module Docker_util : sig
     repo_info:string ->
     ?branch:string ->
     ?pull_number:int ->
-    commit:string ->
+    commit_hash:string ->
     args:string list ->
     Current_docker.Default.Image.t Current.t ->
     string Current.t

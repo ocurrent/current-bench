@@ -24,9 +24,9 @@ VALUES
           log "Database error: %s" (Postgresql.string_of_error err))
   | exn -> Logs.err (fun log -> log "Unknown error:\n%a" Fmt.exn exn)
 
-let record_run_start ~(repo_id : Github.Repo_id.t) ~build_job_id ~run_job_id
+let record_run_start ~repo_id_string ~build_job_id ~run_job_id
     (db : Postgresql.connection) =
-  let repo_id = Sql_util.string (repo_id.owner ^ "/" ^ repo_id.name) in
+  let repo_id_string = Sql_util.string repo_id_string in
   let build_job_id = Sql_util.string build_job_id in
   let run_job_id = Sql_util.string run_job_id in
   let query =
@@ -40,7 +40,7 @@ WHERE
 AND
   build_job_id = %s
 |}
-      run_job_id repo_id build_job_id
+      run_job_id repo_id_string build_job_id
   in
   try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
   | Postgresql.Error err ->
@@ -48,10 +48,10 @@ AND
           log "Database error: %s" (Postgresql.string_of_error err))
   | exn -> Logs.err (fun log -> log "Unknown error:\n%a" Fmt.exn exn)
 
-let record_run_finish ~(repo_id : Github.Repo_id.t) ~build_job_id
+let record_run_finish ~repo_id_string ~build_job_id
     ~output:(_ : Yojson.Safe.t list) (db : Postgresql.connection) =
   let output = Sql_util.json (`String "TODO") in
-  let repo_id = Sql_util.string (repo_id.owner ^ "/" ^ repo_id.name) in
+  let repo_id_string = Sql_util.string repo_id_string in
   let build_job_id = Sql_util.string build_job_id in
   let query =
     Fmt.str
@@ -64,7 +64,7 @@ WHERE
 AND
   build_job_id = %s
 |}
-      output repo_id build_job_id
+      output repo_id_string build_job_id
   in
   try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
   | Postgresql.Error err ->

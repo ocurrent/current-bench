@@ -1,5 +1,7 @@
 type value = string
 
+val null : value
+
 val option : ('a -> value) -> 'a option -> value
 
 val json : Yojson.Safe.t -> value
