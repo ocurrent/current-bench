@@ -78,35 +78,9 @@ module Docker_engine : S = struct
   let run ~(config : Config.Docker.t) state commit_context db =
     let repo_id_string = Commit_context.repo_id_string commit_context in
     let build_job_id = state.build_job_id in
-    let tmpfs =
-      match config.numa_node with
-      | Some i ->
-          [
-            "--tmpfs";
-            Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg,mpol=bind:%d"
-              config.shm_size i;
-          ]
-      | None ->
-          [
-            "--tmpfs";
-            Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg" config.shm_size;
-          ]
-    in
-    let docker_cpuset_cpus =
-      match config.cpuset_cpus with
-      | Some i -> [ "--cpuset-cpus"; string_of_int i ]
-      | None -> []
-    in
-    let docker_cpuset_mems =
-      match config.numa_node with
-      | Some i -> [ "--cpuset-mems"; string_of_int i ]
-      | None -> []
-    in
     let run_args =
       [ "--security-opt"; "seccomp=./aslr_seccomp.json" ]
-      @ tmpfs
-      @ docker_cpuset_cpus
-      @ docker_cpuset_mems
+      @ Config.Docker.to_cmd_args config
     in
     let current_image = state.image in
     let commit_hash = Commit_context.hash commit_context in

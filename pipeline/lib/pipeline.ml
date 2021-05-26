@@ -6,29 +6,20 @@ module Docker_util = Current_util.Docker_util
 module Slack = Current_slack
 module Logging = Logging
 module Benchmark = Models.Benchmark
+module Config = Config
 
 let ( >>| ) x f = Current.map f x
 
 module Source = struct
-  type github = {
-    token : Fpath.t;
-    slack_path : Fpath.t option;
-    repo : Github.Repo_id.t;
-  }
+  type github = { token : Fpath.t; repo : Github.Repo_id.t }
 
   type t = Github of github | Local of Fpath.t | Github_app of Github.App.t
 
-  let github ~token ~slack_path ~repo = Github { token; slack_path; repo }
+  let github ~token ~repo = Github { token; repo }
 
   let local path = Local path
 
   let github_app t = Github_app t
-end
-
-module Docker_config = struct
-  type t = { cpu : string option; numa_node : int option; shm_size : int }
-
-  let v ?cpu ?numa_node ~shm_size () = { cpu; numa_node; shm_size }
 end
 
 let pool = Current.Pool.create ~label:"docker" 1
@@ -76,8 +67,8 @@ let github_status_of_state url = function
   | Error (`Active _) -> Github.Api.Status.v ~url `Pending
   | Error (`Msg m) -> Github.Api.Status.v ~url `Failure ~description:m
 
-let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
-    ~docker_cpuset_cpus ~docker_cpuset_mems ~head ~repository ~owner () =
+let pipeline ~docker_config ~slack_path ~conninfo ?branch ?pull_number
+    ~dockerfile ~head ~repository ~owner () =
   let repo_id = (owner, repository) in
   let src =
     match head with
@@ -89,9 +80,7 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
   let s =
     let run_args =
       [ "--security-opt"; "seccomp=./aslr_seccomp.json" ]
-      @ tmpfs
-      @ docker_cpuset_cpus
-      @ docker_cpuset_mems
+      @ Config.Docker.to_cmd_args docker_config
     in
     let run_at = Ptime_clock.now () in
     let* commit_hash =
@@ -151,43 +140,18 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
       |> Github.Api.Commit.set_status (Current.return head) "ocaml-benchmarks"
       |> Current.ignore_value
 
-let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
-    ~(source : Source.t) () =
-  let docker_cpuset_cpus =
-    match docker_config.cpu with
-    | Some cpu -> [ "--cpuset-cpus"; cpu ]
-    | None -> []
-  in
-  let docker_cpuset_mems =
-    match docker_config.numa_node with
-    | Some i -> [ "--cpuset-mems"; string_of_int i ]
-    | None -> []
-  in
-  let tmpfs =
-    match docker_config.numa_node with
-    | Some i ->
-        [
-          "--tmpfs";
-          Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg,mpol=bind:%d"
-            docker_config.shm_size i;
-        ]
-    | None ->
-        [
-          "--tmpfs";
-          Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg" docker_config.shm_size;
-        ]
-  in
-  let pipeline =
-    pipeline ~conninfo ~tmpfs ~docker_cpuset_cpus ~docker_cpuset_mems
-  in
+let process_pipeline ~(docker_config : Config.Docker.t)
+    ~(slack_config : Config.Slack.t) ~conninfo ~(source : Source.t) () =
+  let pipeline = pipeline ~conninfo ~docker_config in
   match source with
-  | Github { repo; slack_path; token } ->
+  | Github { repo; token } ->
       let dockerfile =
         let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
         `Contents (dockerfile ~base ~repository:repo.name)
       in
       let pipeline =
-        pipeline ~slack_path ~dockerfile ~repository:repo.name ~owner:repo.owner
+        pipeline ~slack_path:slack_config.path ~dockerfile ~repository:repo.name
+          ~owner:repo.owner
       in
       let* refs =
         let api =
@@ -270,10 +234,12 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
                 (* Skip all branches other than master, and check PRs *))
               ref_map (Current.return ())
 
-let v ~current_config ~docker_config ~server:mode ~(source : Source.t) conninfo
-    () =
+let v ~current_config ~docker_config ~slack_config ~server:mode
+    ~(source : Source.t) conninfo () =
   Db_util.check_connection ~conninfo;
-  let pipeline = process_pipeline ~docker_config ~conninfo ~source in
+  let pipeline =
+    process_pipeline ~docker_config ~slack_config ~conninfo ~source
+  in
   let engine = Current.Engine.create ~config:current_config pipeline in
   let routes =
     Routes.((s "webhooks" / s "github" /? nil) @--> Github.webhook)
