@@ -26,11 +26,9 @@ let monitor ~config (source : Source.t) =
   | Local repo_path -> Local_pipeline.monitor_repo ~config repo_path
   | Github_app app -> Github_pipeline.monitor_app ~config app
 
-let v ~current_config ~docker_config ?slack_path ~server:mode
-    ~(source : Source.t) ~db_uri () =
-  let config : Config.t = { slack_path; docker = docker_config; db_uri } in
+let v ~config ~server:mode ~(source : Source.t) () =
   let pipeline () = monitor ~config source in
-  let engine = Current.Engine.create ~config:current_config pipeline in
+  let engine = Current.Engine.create ~config:config.current pipeline in
   let routes =
     Routes.((s "webhooks" / s "github" /? nil) @--> Github.webhook)
     :: Current_web.routes engine

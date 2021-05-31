@@ -12,22 +12,22 @@ module Source : sig
 end
 
 module Config : sig
-  module Docker : sig
-    type t
+  type t
 
-    val make :
-      ?cpuset_cpus:string -> ?numa_node:int -> shm_size:int -> unit -> t
-  end
-
-  type t = { docker : Docker.t; slack_path : Fpath.t option; db_uri : Uri.t }
+  val make :
+    current:Current.Config.t ->
+    ?docker_cpuset_cpus:string ->
+    ?docker_numa_node:int ->
+    docker_shm_size:int ->
+    ?slack_path:Fpath.t ->
+    db_uri:Uri.t ->
+    unit ->
+    t
 end
 
 val v :
-  current_config:Current.Config.t ->
-  docker_config:Config.Docker.t ->
-  ?slack_path:Fpath.t ->
+  config:Config.t ->
   server:Conduit_lwt_unix.server ->
   source:Source.t ->
-  db_uri:Uri.t ->
   unit ->
   unit Current.or_error

@@ -15,7 +15,7 @@ module type S = sig
     state Current.t
 
   val run :
-    config:Config.Docker.t ->
+    config:Config.t ->
     state ->
     Commit_context.t ->
     Postgresql.connection ->
@@ -32,6 +32,33 @@ end
 module Docker_engine : S = struct
   module Docker = Current_docker.Default
   open Current.Syntax
+
+  let cmd_args_of_config (config : Config.t) =
+    let cpuset_cpus =
+      match config.docker_cpuset_cpus with
+      | Some cpu -> [ "--cpuset-cpus"; cpu ]
+      | None -> []
+    in
+    let cpuset_mems =
+      match config.docker_numa_node with
+      | Some i -> [ "--cpuset-mems"; string_of_int i ]
+      | None -> []
+    in
+    let tmpfs =
+      match config.docker_numa_node with
+      | Some i ->
+          [
+            "--tmpfs";
+            Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg,mpol=bind:%d"
+              config.docker_shm_size i;
+          ]
+      | None ->
+          [
+            "--tmpfs";
+            Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg" config.docker_shm_size;
+          ]
+    in
+    List.concat [ cpuset_cpus; cpuset_mems; tmpfs ]
 
   let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 1) ()
 
@@ -76,12 +103,12 @@ module Docker_engine : S = struct
             log "Could not obtain job id when building docker image");
         failwith "No build job id"
 
-  let run ~(config : Config.Docker.t) state commit_context db =
+  let run ~(config : Config.t) state commit_context db =
     let repo_id_string = Commit_context.repo_id_string commit_context in
     let build_job_id = state.build_job_id in
     let run_args =
       [ "--security-opt"; "seccomp=./aslr_seccomp.json" ]
-      @ Config.Docker.to_cmd_args config
+      @ cmd_args_of_config config
     in
     let current_image = state.image in
     let commit_hash = Commit_context.hash commit_context in
