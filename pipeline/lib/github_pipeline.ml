@@ -1,30 +1,8 @@
 module Github = Current_github
-module Git = Current_git
 open Current.Syntax
-
-let pool = Current.Pool.create ~label:"docker" 1
 
 let github_api_of_oauth_file token =
   token |> Util.read_fpath |> String.trim |> Current_github.Api.of_oauth
-
-let conninfo () = assert false
-
-let execute ~(config : Config.t) commit_context =
-  Postgresql_util.with_connection ~conninfo:(conninfo ()) (fun db ->
-      let commit = Commit_context.fetch commit_context in
-      let* state = Engine.Docker_engine.build ~pool commit_context commit in
-      let* output =
-        Engine.Docker_engine.run ~config:config.docker state commit_context db
-      in
-      let* () = Engine.Docker_engine.complete commit_context state output db in
-      Current.return output)
-
-let monitor_commit ~(config : Config.t) commit_context =
-  let* commit_context = commit_context in
-  let output = execute ~config commit_context in
-  let* () = Slack_reporting.post ~config:config.slack output in
-  let* () = Github_reporting.post commit_context output in
-  Current.return ()
 
 let collect_commits repo =
   let* refs =
@@ -49,7 +27,9 @@ let collect_commits repo =
 let monitor_repo ~config repo =
   repo
   |> collect_commits
-  |> Current.list_iter (module Commit_context) (monitor_commit ~config)
+  |> Current.list_iter
+       (module Commit_context)
+       (Base_pipeline.monitor_commit ~config)
 
 let monitor_installation ~config installation =
   installation

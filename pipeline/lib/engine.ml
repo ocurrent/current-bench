@@ -64,6 +64,7 @@ module Docker_engine : S = struct
   let build ~pool (_commit_context : Commit_context.t) commit =
     let dockerfile =
       let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
+      (* TODO *)
       `Contents (dockerfile ~base ~repository:"x")
     in
     let image = Docker.build ~pool ~pull:false ~dockerfile (`Git commit) in

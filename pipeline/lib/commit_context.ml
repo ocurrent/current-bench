@@ -9,7 +9,11 @@ type github = {
 }
 [@@deriving ord, show]
 
-type local = { repo_path : Fpath.t; commit : Git.Commit.t }
+type local = {
+  repo_path : Fpath.t;
+  branch : string option;
+  commit : Git.Commit.t;
+}
 [@@deriving ord, show]
 
 type t = Github of github | Local of local [@@deriving ord, show]
@@ -17,7 +21,7 @@ type t = Github of github | Local of local [@@deriving ord, show]
 let github ~repo_id ?pull_number ?branch ~commit () =
   Github { repo_id; pull_number; branch; commit }
 
-let local ~repo_path ~commit () = Local { repo_path; commit }
+let local ?branch ~repo_path ~commit () = Local { repo_path; branch; commit }
 
 let is_github t = match t with Github _ -> true | _ -> false
 

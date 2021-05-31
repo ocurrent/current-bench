@@ -31,8 +31,4 @@ module Docker = struct
     List.concat [ cpuset_cpus; cpuset_mems; tmpfs ]
 end
 
-module Slack = struct
-  type t = { path : Fpath.t option } [@@deriving make]
-end
-
-type t = { docker : Docker.t; slack : Slack.t }
+type t = { docker : Docker.t; slack_path : Fpath.t option; db_uri : Uri.t }

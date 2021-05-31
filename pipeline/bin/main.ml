@@ -37,16 +37,11 @@ module Local = struct
     Term.(const Pipeline.Source.local $ path)
 end
 
-module Slack = struct
-  let path =
-    let doc =
-      "File containing the Slack endpoint URI to use for result notifications."
-    in
-    Arg.(value & opt (some path) None & info [ "s"; "slack" ] ~doc)
-
-  let config =
-    Term.(const (fun path -> Pipeline.Config.Slack.make ?path ()) $ path)
-end
+let slack_path =
+  let doc =
+    "File containing the Slack endpoint URI to use for result notifications."
+  in
+  Arg.(value & opt (some path) None & info [ "s"; "slack" ] ~doc)
 
 module Docker = struct
   let cpuset_cpus =
@@ -83,7 +78,7 @@ let setup_log =
   in
   Term.(const init $ Fmt_cli.style_renderer () $ Logs_cli.level ())
 
-let conninfo =
+let db_uri =
   Arg.required
   @@ Arg.opt Arg.(some string) None
   @@ Arg.info ~doc:"Connection info for Postgres DB" ~docv:"PATH"
@@ -92,15 +87,15 @@ let conninfo =
 let cmd : (Pipeline.Source.t -> (unit, [ `Msg of string ]) result) Term.t =
   Term.(
     const
-      (fun current_config server docker_config slack_config conninfo () source
-      ->
-        Pipeline.v ~current_config ~docker_config ~slack_config ~server ~source
-          conninfo ())
+      (fun current_config server docker_config slack_path conninfo () source ->
+        let db_uri = Uri.of_string conninfo in
+        Pipeline.v ~current_config ~docker_config ?slack_path ~server ~source
+          ~db_uri ())
     $ Current.Config.cmdliner
     $ Current_web.cmdliner
     $ Docker.config
-    $ Slack.config
-    $ conninfo
+    $ slack_path
+    $ db_uri
     $ setup_log)
 
 let () =

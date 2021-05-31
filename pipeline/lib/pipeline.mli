@@ -19,21 +19,15 @@ module Config : sig
       ?cpuset_cpus:string -> ?numa_node:int -> shm_size:int -> unit -> t
   end
 
-  module Slack : sig
-    type t
-
-    val make : ?path:Fpath.t -> unit -> t
-  end
-
-  type t = { docker : Docker.t; slack : Slack.t }
+  type t = { docker : Docker.t; slack_path : Fpath.t option; db_uri : Uri.t }
 end
 
 val v :
   current_config:Current.Config.t ->
   docker_config:Config.Docker.t ->
-  slack_config:Config.Slack.t ->
+  ?slack_path:Fpath.t ->
   server:Conduit_lwt_unix.server ->
   source:Source.t ->
-  string ->
+  db_uri:Uri.t ->
   unit ->
   unit Current.or_error
