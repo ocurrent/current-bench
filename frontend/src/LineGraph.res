@@ -403,9 +403,9 @@ let make = React.memo((
   | Some(title) =>
     <Column spacing=Sx.lg sx=[Sx.w.auto]>
       <Text sx=[Sx.leadingNone, Sx.text.bold, Sx.text.xl]> title </Text>
-      {Rx.onSome(subTitle, subTitle =>
-        <Text sx=[Sx.leadingNone, Sx.text.sm, Sx.text.color(Sx.gray600)]> subTitle </Text>
-      )}
+      <Text sx=[Sx.leadingNone, Sx.text.sm, Sx.text.color(Sx.gray600), [Css.minHeight(#em(1.0))]]>
+        {Belt.Option.getWithDefault(subTitle, "")}
+      </Text>
     </Column>
   | None => React.null
   }
