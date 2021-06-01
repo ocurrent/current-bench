@@ -1,14 +1,18 @@
-let strokeWidth = ref("1.2");
+let strokeWidth = ref("1.2")
 
-[@react.component]
-let make = (~sx=[||], ~svg) =>
-  <div className={Sx.make(sx)}> svg </div>;
+@react.component
+let make = (~sx=[], ~svg) => <div className={Sx.make(sx)}> svg </div>
 
-let github = 
-  <svg width="24px" height="24px"
-   strokeWidth=strokeWidth^ fill="currentColor"><path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.463 2 11.97c0 4.404 2.865 8.14 6.839 9.458.5.092.682-.216.682-.48 0-.236-.008-.864-.013-1.695-2.782.602-3.369-1.337-3.369-1.337-.454-1.151-1.11-1.458-1.11-1.458-.908-.618.069-.606.069-.606 1.003.07 1.531 1.027 1.531 1.027.892 1.524 2.341 1.084 2.91.828.092-.643.35-1.083.636-1.332-2.22-.251-4.555-1.107-4.555-4.927 0-1.088.39-1.979 1.029-2.675-.103-.252-.446-1.266.098-2.638 0 0 .84-.268 2.75 1.022A9.606 9.606 0 0112 6.82c.85.004 1.705.114 2.504.336 1.909-1.29 2.747-1.022 2.747-1.022.546 1.372.202 2.386.1 2.638.64.696 1.028 1.587 1.028 2.675 0 3.83-2.339 4.673-4.566 4.92.359.307.678.915.678 1.846 0 1.332-.012 2.407-.012 2.734 0 .267.18.577.688.48C19.137 20.107 22 16.373 22 11.969 22 6.463 17.522 2 12 2z"></path></svg>;
+let github =
+  <svg width="24px" height="24px" strokeWidth=strokeWidth.contents fill="currentColor">
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M12 2C6.477 2 2 6.463 2 11.97c0 4.404 2.865 8.14 6.839 9.458.5.092.682-.216.682-.48 0-.236-.008-.864-.013-1.695-2.782.602-3.369-1.337-3.369-1.337-.454-1.151-1.11-1.458-1.11-1.458-.908-.618.069-.606.069-.606 1.003.07 1.531 1.027 1.531 1.027.892 1.524 2.341 1.084 2.91.828.092-.643.35-1.083.636-1.332-2.22-.251-4.555-1.107-4.555-4.927 0-1.088.39-1.979 1.029-2.675-.103-.252-.446-1.266.098-2.638 0 0 .84-.268 2.75 1.022A9.606 9.606 0 0112 6.82c.85.004 1.705.114 2.504.336 1.909-1.29 2.747-1.022 2.747-1.022.546 1.372.202 2.386.1 2.638.64.696 1.028 1.587 1.028 2.675 0 3.83-2.339 4.673-4.566 4.92.359.307.678.915.678 1.846 0 1.332-.012 2.407-.012 2.734 0 .267.18.577.688.48C19.137 20.107 22 16.373 22 11.969 22 6.463 17.522 2 12 2z"
+    />
+  </svg>
 
-let branch = 
+let branch =
   <svg
     width="16px"
     height="16px"
@@ -17,7 +21,11 @@ let branch =
     strokeLinecap="square"
     strokeLinejoin="miter"
     xmlns="http://www.w3.org/2000/svg">
-    <path fillRule="evenodd" fill="currentColor" d="M11.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 113 2.122V6A2.5 2.5 0 0110 8.5H6a1 1 0 00-1 1v1.128a2.251 2.251 0 11-1.5 0V5.372a2.25 2.25 0 111.5 0v1.836A2.492 2.492 0 016 7h4a1 1 0 001-1v-.628A2.25 2.25 0 019.5 3.25zM4.25 12a.75.75 0 100 1.5.75.75 0 000-1.5zM3.5 3.25a.75.75 0 111.5 0 .75.75 0 01-1.5 0z"/>
+    <path
+      fillRule="evenodd"
+      fill="currentColor"
+      d="M11.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 113 2.122V6A2.5 2.5 0 0110 8.5H6a1 1 0 00-1 1v1.128a2.251 2.251 0 11-1.5 0V5.372a2.25 2.25 0 111.5 0v1.836A2.492 2.492 0 016 7h4a1 1 0 001-1v-.628A2.25 2.25 0 019.5 3.25zM4.25 12a.75.75 0 100 1.5.75.75 0 000-1.5zM3.5 3.25a.75.75 0 111.5 0 .75.75 0 01-1.5 0z"
+    />
   </svg>
 
 let calendar =
@@ -37,10 +45,10 @@ let calendar =
     <path d="M7 5V3" />
     <path d="M17 5V3" />
     <rect x="15" y="15" width="2" height="2" />
-  </svg>;
+  </svg>
 
 let ocaml =
-    <svg
+  <svg
     xmlns="http://www.w3.org/2000/svg"
     version="1.1"
     id="Layer_1"
@@ -106,7 +114,7 @@ let ocaml =
         d="M39.35,101.251c-1.428-0.145-2.754-0.308-4.141-0.588c-2.59-0.522-5.42-1.031-7.971-1.642   c-1.549-0.375-6.709-2.202-7.83-2.717c-2.629-1.212-4.375-4.505-6.43-4.166c-1.312,0.214-2.59,0.664-3.406,1.987   c-0.666,1.079-0.892,2.934-1.353,4.178c-0.535,1.444-1.459,2.792-2.268,4.168c-1.488,2.524-4.166,4.807-5.32,7.266   c-0.232,0.506-0.438,1.072-0.631,1.662v9.434v16.321v2.358c1.346,0.23,2.754,0.513,4.33,0.934   c11.631,3.103,14.469,3.366,25.877,2.061l1.07-0.142c0.873-1.816,1.547-8.004,2.113-9.919c0.441-1.468,1.047-2.638,1.277-4.137   c0.217-1.424-0.02-2.781-0.142-4.075c-0.32-3.242,2.361-4.4,3.641-7.184c1.154-2.519,1.82-5.385,2.775-7.96   c0.916-2.471,2.346-5.963,4.785-7.207C45.43,101.538,40.631,101.379,39.35,101.251z"
       />
     </g>
-  </svg>;
+  </svg>
 
 let empty =
   <svg
@@ -117,11 +125,11 @@ let empty =
     viewBox="0 0 24 24"
     ariaLabelledby="boltIconTitle"
     stroke="currentcolor"
-    strokeWidth=strokeWidth^
+    strokeWidth=strokeWidth.contents
     strokeLinecap="square"
     strokeLinejoin="miter"
     fill="none"
-  />;
+  />
 
 let bolt =
   <svg
@@ -132,12 +140,12 @@ let bolt =
     viewBox="0 0 24 24"
     ariaLabelledby="boltIconTitle"
     stroke="currentcolor"
-    strokeWidth=strokeWidth^
+    strokeWidth=strokeWidth.contents
     strokeLinecap="square"
     strokeLinejoin="miter"
     fill="none">
     <path d="M5 14l8-11v7h5l-8 11v-7z" />
-  </svg>;
+  </svg>
 
 let gallery =
   <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 17 17">
@@ -145,7 +153,7 @@ let gallery =
       d="M13 10v-10h-13v13h13v-3zM1 1h11v8h-0.755l-2.564-3.319-1.159 1.214-2.248-3.881-3.576 5.986h-0.698v-8zM9.982 9h-7.119l2.398-4.014 2.064 3.564 1.275-1.337 1.382 1.787zM1 12v-2h11v2h-11zM17 3v13h-13v-1.984h1v0.984h11v-11h-2v-1h3z"
       fill="currentcolor"
     />
-  </svg>;
+  </svg>
 
 let ruler =
   <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 17 17">
@@ -153,7 +161,7 @@ let ruler =
       d="M12.036 0.015l-12.021 12.021 4.95 4.949 12.020-12.020-4.949-4.95zM1.429 12.036l0.696-0.696 1.414 1.414 0.707-0.707-1.414-1.414 0.719-0.719 0.707 0.707 0.707-0.707-0.707-0.707 0.707-0.707 1.414 1.414 0.707-0.707-1.414-1.414 0.696-0.696 0.707 0.707 0.707-0.707-0.707-0.707 0.707-0.707 1.414 1.414 0.707-0.707-1.414-1.414 0.718-0.718 0.707 0.707 0.707-0.707-0.707-0.707 0.707-0.707 1.415 1.414 0.707-0.707-1.415-1.414 0.708-0.708 3.535 3.536-10.606 10.606-3.536-3.535z"
       fill="currentcolor"
     />
-  </svg>;
+  </svg>
 
 let server =
   <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 17 17">
@@ -161,15 +169,16 @@ let server =
       d="M17 3.5c0-2.273-4.38-3.5-8.5-3.5s-8.5 1.227-8.5 3.5c0 0.149 0.024 0.318 0.080 0.5h-0.080v9.5c0 2.273 4.38 3.5 8.5 3.5s8.5-1.227 8.5-3.5v-9.5h-0.080c0.056-0.182 0.080-0.351 0.080-0.5zM8.5 1c4.293 0 7.5 1.32 7.5 2.5 0 0.398-0.388 0.835-1.093 1.229-1.419 0.796-3.814 1.271-6.407 1.271s-4.988-0.475-6.407-1.271c-0.705-0.394-1.093-0.831-1.093-1.229 0-1.18 3.207-2.5 7.5-2.5zM8.5 16c-4.293 0-7.5-1.32-7.5-2.5v-1.633c0.175 0.135 0.367 0.271 0.604 0.403 1.562 0.874 4.14 1.396 6.896 1.396 0.345 0 0.687-0.008 1.023-0.024 2.361-0.111 4.505-0.607 5.872-1.372v0c0-0.001 0.001-0.001 0.001-0.001 0.236-0.133 0.43-0.268 0.604-0.403v1.634c0 1.18-3.207 2.5-7.5 2.5zM14.907 11.397c-1.42 0.795-3.814 1.27-6.407 1.27-0.324 0-0.646-0.008-0.962-0.022-2.214-0.102-4.203-0.552-5.445-1.247v0c-0.704-0.396-1.093-0.833-1.093-1.231v-1.634c0.175 0.135 0.368 0.271 0.605 0.403 1.561 0.874 4.139 1.396 6.895 1.396s5.334-0.522 6.895-1.396c0.237-0.132 0.43-0.268 0.605-0.403v1.634c0 0.398-0.389 0.835-1.093 1.23zM14.906 8.063c-1.419 0.795-3.813 1.27-6.406 1.27s-4.987-0.475-6.406-1.27c-0.705-0.394-1.094-0.832-1.094-1.23v-1.634c0.175 0.136 0.367 0.271 0.604 0.404 1.562 0.875 4.139 1.397 6.896 1.397s5.334-0.522 6.896-1.397c0.237-0.133 0.429-0.268 0.604-0.404v1.634c0 0.398-0.389 0.836-1.094 1.23z"
       fill="currentcolor"
     />
-  </svg>;
+  </svg>
 
 let panel =
-  <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 17 17">
+  <svg
+    version="1.1" xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 17 17">
     <path
       d="M0 0v17h17v-17h-17zM16 16h-15v-15h15v15zM4 10.232v2.768h1v-2.768c0.738-0.218 1.281-0.894 1.281-1.701s-0.543-1.483-1.281-1.701v-2.83h-1v2.83c-0.738 0.218-1.281 0.894-1.281 1.701s0.543 1.484 1.281 1.701zM4.5 7.75c0.431 0 0.781 0.351 0.781 0.781s-0.35 0.781-0.781 0.781-0.781-0.35-0.781-0.781 0.35-0.781 0.781-0.781zM8 8.107v4.893h1v-4.893c0.738-0.218 1.281-0.894 1.281-1.701s-0.543-1.483-1.281-1.701v-0.705h-1v0.705c-0.738 0.218-1.281 0.894-1.281 1.701s0.543 1.484 1.281 1.701zM8.5 5.625c0.431 0 0.781 0.351 0.781 0.781s-0.35 0.782-0.781 0.782-0.781-0.351-0.781-0.782 0.35-0.781 0.781-0.781zM12.5 13.417c0.982 0 1.781-0.799 1.781-1.781 0-0.808-0.543-1.483-1.281-1.701v-5.935h-1v5.935c-0.738 0.218-1.281 0.894-1.281 1.701 0 0.982 0.799 1.781 1.781 1.781zM12.5 10.854c0.431 0 0.781 0.351 0.781 0.781s-0.351 0.781-0.781 0.781-0.781-0.351-0.781-0.781 0.35-0.781 0.781-0.781z"
       fill="currentcolor"
     />
-  </svg>;
+  </svg>
 
 let remove =
   <svg
@@ -180,13 +189,12 @@ let remove =
     viewBox="0 0 24 24"
     ariaLabelledby="removeIconTitle"
     stroke="currentcolor"
-    strokeWidth=strokeWidth^
+    strokeWidth=strokeWidth.contents
     strokeLinecap="square"
     strokeLinejoin="miter"
     fill="none">
-    <path d="M17,12 L7,12" />
-    <circle cx="12" cy="12" r="10" />
-  </svg>;
+    <path d="M17,12 L7,12" /> <circle cx="12" cy="12" r="10" />
+  </svg>
 
 let cancel =
   <svg
@@ -197,15 +205,17 @@ let cancel =
     viewBox="0 0 24 24"
     ariaLabelledby="cancelIconTitle"
     stroke="currentcolor"
-    strokeWidth=strokeWidth^
+    strokeWidth=strokeWidth.contents
     strokeLinecap="square"
     strokeLinejoin="miter"
     fill="none">
-    <path d="M15.5355339 15.5355339L8.46446609 8.46446609M15.5355339 8.46446609L8.46446609 15.5355339" />
+    <path
+      d="M15.5355339 15.5355339L8.46446609 8.46446609M15.5355339 8.46446609L8.46446609 15.5355339"
+    />
     <path
       d="M4.92893219,19.0710678 C1.02368927,15.1658249 1.02368927,8.83417511 4.92893219,4.92893219 C8.83417511,1.02368927 15.1658249,1.02368927 19.0710678,4.92893219 C22.9763107,8.83417511 22.9763107,15.1658249 19.0710678,19.0710678 C15.1658249,22.9763107 8.83417511,22.9763107 4.92893219,19.0710678 Z"
     />
-  </svg>;
+  </svg>
 
 let danger =
   <svg
@@ -216,7 +226,7 @@ let danger =
     viewBox="0 0 24 24"
     ariaLabelledby="dangerIconTitle"
     stroke="currentcolor"
-    strokeWidth=strokeWidth^
+    strokeWidth=strokeWidth.contents
     strokeLinecap="square"
     strokeLinejoin="miter"
     fill="none">
@@ -225,7 +235,7 @@ let danger =
     <path
       d="M12.8619342,4.46528817 L21.1135176,18.4929799 C21.3935371,18.969013 21.2346366,19.5819147 20.7586035,19.8619342 C20.6049268,19.9523322 20.4298761,20 20.2515834,20 L3.74841664,20 C3.19613189,20 2.74841664,19.5522847 2.74841664,19 C2.74841664,18.8217072 2.7960844,18.6466565 2.88648243,18.4929799 L11.1380658,4.46528817 C11.4180853,3.98925504 12.030987,3.83035459 12.5070201,4.11037408 C12.6535738,4.19658212 12.7757262,4.3187345 12.8619342,4.46528817 Z"
     />
-  </svg>;
+  </svg>
 
 let help =
   <svg
@@ -236,7 +246,7 @@ let help =
     viewBox="0 0 24 24"
     ariaLabelledby="helpIconTitle"
     stroke="currentcolor"
-    strokeWidth=strokeWidth^
+    strokeWidth=strokeWidth.contents
     strokeLinecap="square"
     strokeLinejoin="miter"
     fill="none">
@@ -245,7 +255,7 @@ let help =
     />
     <line x1="12" y1="17" x2="12" y2="17" />
     <circle cx="12" cy="12" r="10" />
-  </svg>;
+  </svg>
 
 let radar =
   <svg
@@ -266,7 +276,7 @@ let radar =
     <circle cx="32" cy="32" r="4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
     <circle cx="56" cy="32" r="6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
     <path fill="none" strokeLinecap="round" strokeLinejoin="round" d="M34.8 34.8l18.4 18.4" />
-  </svg>;
+  </svg>
 
 let ok =
   <svg
@@ -277,12 +287,12 @@ let ok =
     viewBox="0 0 24 24"
     ariaLabelledby="ok"
     stroke="currentcolor"
-    strokeWidth=strokeWidth^
+    strokeWidth=strokeWidth.contents
     strokeLinecap="square"
     strokeLinejoin="miter"
     fill="none">
     <polyline points="4 13 9 18 20 7" />
-  </svg>;
+  </svg>
 
 let edit =
   <svg
@@ -293,14 +303,14 @@ let edit =
     viewBox="0 0 24 24"
     ariaLabelledby="edit"
     stroke="currentcolor"
-    strokeWidth=strokeWidth^
+    strokeWidth=strokeWidth.contents
     strokeLinecap="square"
     strokeLinejoin="miter"
     fill="none">
     <path
       d="M18.4142136 4.41421356L19.5857864 5.58578644C20.366835 6.36683502 20.366835 7.63316498 19.5857864 8.41421356L8 20 4 20 4 16 15.5857864 4.41421356C16.366835 3.63316498 17.633165 3.63316498 18.4142136 4.41421356zM14 6L18 10"
     />
-  </svg>;
+  </svg>
 
 let bin =
   <svg
@@ -311,14 +321,14 @@ let bin =
     viewBox="0 0 24 24"
     ariaLabelledby="bin"
     stroke="currentcolor"
-    strokeWidth=strokeWidth^
+    strokeWidth=strokeWidth.contents
     strokeLinecap="square"
     strokeLinejoin="miter"
     fill="none">
     <path
       d="M19 6L5 6M14 5L10 5M6 10L6 20C6 20.6666667 6.33333333 21 7 21 7.66666667 21 11 21 17 21 17.6666667 21 18 20.6666667 18 20 18 19.3333333 18 16 18 10"
     />
-  </svg>;
+  </svg>
 
 let close =
   <svg
@@ -329,12 +339,14 @@ let close =
     viewBox="0 0 24 24"
     ariaLabelledby="close"
     stroke="currentcolor"
-    strokeWidth=strokeWidth^
+    strokeWidth=strokeWidth.contents
     strokeLinecap="square"
     strokeLinejoin="miter"
     fill="none">
-    <path d="M6.34314575 6.34314575L17.6568542 17.6568542M6.34314575 17.6568542L17.6568542 6.34314575" />
-  </svg>;
+    <path
+      d="M6.34314575 6.34314575L17.6568542 17.6568542M6.34314575 17.6568542L17.6568542 6.34314575"
+    />
+  </svg>
 
 let plus =
   <svg
@@ -345,12 +357,12 @@ let plus =
     viewBox="0 0 24 24"
     ariaLabelledby="plusIconTitle"
     stroke="currentcolor"
-    strokeWidth=strokeWidth^
+    strokeWidth=strokeWidth.contents
     strokeLinecap="square"
     strokeLinejoin="miter"
     fill="none">
     <path d="M20 12L4 12M12 4L12 20" />
-  </svg>;
+  </svg>
 
 let minus =
   <svg
@@ -361,12 +373,12 @@ let minus =
     viewBox="0 0 24 24"
     ariaLabelledby="minusIconTitle"
     stroke="currentcolor"
-    strokeWidth=strokeWidth^
+    strokeWidth=strokeWidth.contents
     strokeLinecap="square"
     strokeLinejoin="miter"
     fill="none">
     <path d="M20,12 L4,12" />
-  </svg>;
+  </svg>
 
 let home =
   <svg
@@ -381,9 +393,8 @@ let home =
     strokeLinecap="square"
     strokeLinejoin="miter"
     fill="none">
-    <path d="M3 10.182V22h18V10.182L12 2z" />
-    <rect width="6" height="8" x="9" y="14" />
-  </svg>;
+    <path d="M3 10.182V22h18V10.182L12 2z" /> <rect width="6" height="8" x="9" y="14" />
+  </svg>
 
 let layers =
   <svg
@@ -394,19 +405,19 @@ let layers =
     xmlns="http://www.w3.org/2000/svg"
     ariaLabelledby="layers"
     stroke="currentcolor"
-    strokeWidth=strokeWidth^
+    strokeWidth=strokeWidth.contents
     strokeLinecap="square"
     strokeLinejoin="miter">
     <path d="M12 4L20 8.00004L12 12L4 8.00004L12 4Z" />
     <path d="M20 12L12 16L4 12" />
     <path d="M20 16L12 20L4 16" />
-  </svg>;
+  </svg>
 
 let farm =
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 512 512"
-    strokeWidth=strokeWidth^
+    strokeWidth=strokeWidth.contents
     stroke="currentcolor"
     fill="currentcolor"
     width="22"
@@ -414,7 +425,7 @@ let farm =
     <path
       d="M496,402.278v-97.94A30.164,30.164,0,0,0,465.547,274H434.8a7.466,7.466,0,0,0-7.8,7.561V313H401V245.8l.145-.013c34.157-1.152,62.483-29.577,63.287-63.382l.29-7.97a8.034,8.034,0,0,0-8.358-8.327l-7.82.333A64.349,64.349,0,0,0,401,189.985V145.606c0-.085-.171-.171-.174-.257-1.144-35.47-31.015-65.229-66.484-66.372-.086,0-.257.023-.342.023h-5.364A7.65,7.65,0,0,0,321,86.945v5.363c0,.086-.011.172-.008.258C322.11,127.238,350,156.464,385,158.828V313H359V281.561c0-4.418-4.058-7.561-8.476-7.561H298.137c-4.418,0-8.137,3.143-8.137,7.561V313H264V245.8l.314-.013c34.157-1.152,62.568-29.577,63.372-63.382l.332-7.971a8,8,0,0,0-8.327-8.326l-7.983.333c-18.84.642-36,9.763-47.708,23.546V145.606c0-.085,0-.171,0-.257-1.144-35.47-30.932-65.229-66.4-66.372-.086,0-.172.023-.258.023h-5.363A7.932,7.932,0,0,0,184,86.945v5.363c0,.086-.011.172-.008.258,1.118,34.672,29.6,63.9,64.008,66.262V313H222V281.561c0-4.418-3.719-7.561-8.137-7.561H161.476c-4.418,0-8.476,3.143-8.476,7.561V313H121V245.8l.068-.013c34.156-1.152,62.443-29.577,63.247-63.382l.271-7.97a8.05,8.05,0,0,0-8.373-8.327l-7.745.333A64.191,64.191,0,0,0,121,189.985V145.606c0-.085-.249-.171-.252-.257-1.143-35.47-31.054-65.229-66.523-66.372-.086,0-.3.023-.381.023H48.48C44.062,79,40,82.526,40,86.945v5.363c0,.086.489.172.492.258C41.61,127.238,70,156.463,105,158.828V313H85V281.561A7.466,7.466,0,0,0,77.2,274H46.453A30.164,30.164,0,0,0,16,304.338v97.94A30.489,30.489,0,0,0,46.453,433H465.547A30.489,30.489,0,0,0,496,402.278ZM448.339,182.454c-.828,25.076-21.864,46.122-47.324,47.316C402.169,204.686,423.191,183.649,448.339,182.454ZM352.311,127.3a52.6,52.6,0,0,1-15.482-32.158,54.016,54.016,0,0,1,47.641,47.641A52.6,52.6,0,0,1,352.311,127.3Zm-40.633,55.159c-.828,25.074-21.866,46.12-47.324,47.316C265.508,204.684,286.528,183.646,311.678,182.454ZM215.649,127.3a52.6,52.6,0,0,1-15.482-32.158,54.013,54.013,0,0,1,47.641,47.641A52.6,52.6,0,0,1,215.649,127.3Zm-47.465,55.159c-.829,25.076-21.865,46.122-47.325,47.316C122.013,204.684,143.033,183.646,168.184,182.454ZM72.155,127.3A52.592,52.592,0,0,1,56.672,95.137a52.6,52.6,0,0,1,32.159,15.482,52.6,52.6,0,0,1,15.482,32.159A52.6,52.6,0,0,1,72.155,127.3ZM46.453,290H69v31.42c0,4.419,3.783,7.58,8.2,7.58h84.275A7.256,7.256,0,0,0,169,321.42V290h37v31.42a7.535,7.535,0,0,0,7.863,7.58h84.274A7.535,7.535,0,0,0,306,321.42V290h37v31.42a7.256,7.256,0,0,0,7.524,7.58H434.8c4.418,0,8.2-3.161,8.2-7.58V290h22.547A14.15,14.15,0,0,1,480,304.338V372H32V304.338A14.15,14.15,0,0,1,46.453,290ZM32,402.278V388H480v14.278A14.473,14.473,0,0,1,465.547,417H46.453A14.473,14.473,0,0,1,32,402.278Z"
     />
-  </svg>;
+  </svg>
 
 let alarm =
   <svg
@@ -425,14 +436,14 @@ let alarm =
     viewBox="0 0 24 24"
     ariaLabelledby="alarm"
     stroke="currentcolor"
-    strokeWidth=strokeWidth^
+    strokeWidth=strokeWidth.contents
     strokeLinecap="square"
     strokeLinejoin="miter"
     fill="none">
     <circle cx="12" cy="13" r="9" />
     <polyline points="12 8 12 13 15 16" />
     <path d="M19 2L22 5M2 5L5 2" />
-  </svg>;
+  </svg>
 
 let bell =
   <svg
@@ -443,7 +454,7 @@ let bell =
     viewBox="0 0 24 24"
     ariaLabelledby="bell"
     stroke="currentcolor"
-    strokeWidth=strokeWidth^
+    strokeWidth=strokeWidth.contents
     strokeLinecap="square"
     strokeLinejoin="miter"
     fill="none">
@@ -456,7 +467,7 @@ let bell =
       d="M11,21 C12.1045695,21 13,20.1045695 13,19 C13,17.8954305 12.1045695,17 11,17"
       transform="rotate(90 12 19)"
     />
-  </svg>;
+  </svg>
 
 let radio =
   <svg
@@ -467,7 +478,7 @@ let radio =
     viewBox="1 0 23 23"
     ariaLabelledby="radio"
     stroke="currentcolor"
-    strokeWidth=strokeWidth^
+    strokeWidth=strokeWidth.contents
     strokeLinecap="square"
     strokeLinejoin="miter"
     fill="none">
@@ -475,4 +486,4 @@ let radio =
       d="M5.44972845 6C2.18342385 9.2663046 2.18342385 14.7336954 5.44972845 18M8.59918369 8C6.46693877 10.1322449 6.46693877 13.8677551 8.59918369 16M18.5502716 18C21.8165761 14.7336954 21.8165761 9.2663046 18.5502716 6M15.4008163 16C17.5330612 13.8677551 17.5330612 10.1322449 15.4008163 8"
     />
     <circle cx="12" cy="12" r="1" />
-  </svg>;
+  </svg>
