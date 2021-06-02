@@ -1,5 +1,4 @@
 module Git = Current_git
-module Docker_util = Current_util.Docker_util
 
 module type S = sig
   type state
@@ -103,32 +102,48 @@ module Docker_engine : S = struct
             log "Could not obtain job id when building docker image");
         failwith "No build job id"
 
+  let log_commit_info job commit_context =
+    let repo = Commit_context.repo_id_string commit_context in
+    let branch = Commit_context.branch commit_context in
+    let commit = Commit_context.hash commit_context in
+    Current.Job.log job "repo=%S branch=(%a) commit=%S" repo
+      Fmt.Dump.(option string)
+      branch commit
+
+  let log_job_output job output = Current.Job.log job "Output: %S" output
+
   let run ~(config : Config.t) state commit_context db =
-    let repo_id_string = Commit_context.repo_id_string commit_context in
     let build_job_id = state.build_job_id in
     let run_args =
       [ "--security-opt"; "seccomp=./aslr_seccomp.json" ]
       @ cmd_args_of_config config
     in
     let current_image = state.image in
-    let commit_hash = Commit_context.hash commit_context in
     let current_output =
-      Docker_util.pread_log ~run_args current_image ~repo_info:"TODO"
-        ~commit_hash
+      Docker.pread ~run_args current_image
         ~args:
           [
             "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "make"; "bench";
           ]
     in
-    let* run_job_id = Current_util.get_job_id current_output
-    and* output = current_output in
+    let* run_job_id = Current_util.get_job_id current_output in
     match run_job_id with
-    | Some run_job_id ->
-        Storage.record_run_start ~repo_id_string ~build_job_id ~run_job_id db;
-        Logs.debug (fun log -> log "Benchmark output:\n%s" output);
-        let json_list = Json_util.parse_many output in
-        Current.return { run_job_id; output = json_list }
-    | _ -> failwith "No run job id"
+    | None -> failwith "No run job id"
+    | Some run_job_id -> (
+        match Current.Job.lookup_running run_job_id with
+        | None ->
+            Logs.debug (fun log ->
+                log "Could not find job with id: %S" run_job_id);
+            failwith "Could not find job"
+        | Some job ->
+            log_commit_info job commit_context;
+            let* output = current_output in
+            let repo_id_string = Commit_context.repo_id_string commit_context in
+            Storage.record_run_start ~repo_id_string ~build_job_id ~run_job_id
+              db;
+            log_job_output job output;
+            let json_list = Json_util.parse_many output in
+            Current.return { run_job_id; output = json_list })
 
   let complete commit_context state { output; _ } db =
     let repo_id_string = Commit_context.repo_id_string commit_context in

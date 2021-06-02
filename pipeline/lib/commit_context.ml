@@ -42,3 +42,6 @@ let hash t =
   match t with
   | Github { commit; _ } -> Github.Api.Commit.hash commit
   | Local { commit; _ } -> Git.Commit.hash commit
+
+let branch t =
+  match t with Github { branch; _ } -> branch | Local { branch; _ } -> branch
