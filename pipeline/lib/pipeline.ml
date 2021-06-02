@@ -20,22 +20,59 @@ end
 
 let pool = Current.Pool.create ~label:"docker" 1
 
+let log_commit_info job commit_context =
+  let repo = Commit_context.repo_id_string commit_context in
+  let branch = Commit_context.branch commit_context in
+  let commit = Commit_context.hash commit_context in
+  Current.Job.log job "repo=%S branch=(%a) commit=%S" repo
+    Fmt.Dump.(option string)
+    branch commit
+
+let log_job_output job output = Current.Job.log job "Output: %S" output
+
+let string_of_output output =
+  String.concat "\n" (List.map Yojson.Safe.pretty_to_string output)
+
 let monitor_commit ~(config : Config.t) commit_context =
   let* commit_context = commit_context in
   let output =
     let conninfo = Uri.to_string config.db_uri in
     Postgresql_util.with_connection ~conninfo (fun db ->
         let commit = Commit_context.fetch commit_context in
-        let* state = Engine.Docker_engine.build ~pool commit_context commit in
-        let* output =
-          Engine.Docker_engine.run ~config state commit_context db
+        let current_build =
+          Engine.Docker_engine.build ~pool commit_context commit
         in
+        let* build_job_id =
+          Current_util.get_job_id current_build |> Current.map Option.get
+        in
+        let repo_id_string = Commit_context.repo_id_string commit_context in
+        let () =
+          let branch = Commit_context.branch commit_context in
+          let pull_number = Commit_context.pull_number commit_context in
+          let commit = Commit_context.hash commit_context in
+          Storage.record_build_start ~repo_id:repo_id_string ~pull_number
+            ~commit ~branch ~build_job_id db
+        in
+        let* state = current_build in
+        let current_run = Engine.Docker_engine.run ~config current_build in
+        let* run_job_id =
+          Current_util.get_job_id current_run |> Current.map Option.get
+        in
+        let run_job = Current.Job.lookup_running run_job_id |> Option.get in
+        log_commit_info run_job commit_context;
+        let* output = current_run in
+        let output_string = string_of_output output in
+        log_job_output run_job output_string;
         let* () =
-          Engine.Docker_engine.complete commit_context state output db
+          Engine.Docker_engine.complete commit_context state current_run
         in
-        Current.return output)
+        Storage.record_run_finish ~repo_id_string ~build_job_id ~output db;
+        current_run)
   in
-  let* () = Reporting.Slack.post ~path:config.slack_path output in
+  let* () =
+    Reporting.Slack.post ~path:config.slack_path
+      (Current.map string_of_output output)
+  in
   let* () = Reporting.Github.post commit_context output in
   Current.return ()
 

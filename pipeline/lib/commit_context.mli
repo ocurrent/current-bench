@@ -41,6 +41,8 @@ val fetch : t -> Git.Commit.t Current.t
 
 val repo_id_string : t -> string
 
+val pull_number : t -> int option
+
 val hash : t -> string
 
 val branch : t -> string option

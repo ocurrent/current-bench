@@ -1,11 +1,9 @@
 module Git = Current_git
 
+type output = Yojson.Safe.t list
+
 module type S = sig
   type state
-
-  type output
-
-  val string_of_output : output -> string
 
   val build :
     pool:unit Current.Pool.t ->
@@ -13,19 +11,9 @@ module type S = sig
     Git.Commit.t Current.t ->
     state Current.t
 
-  val run :
-    config:Config.t ->
-    state ->
-    Commit_context.t ->
-    Postgresql.connection ->
-    output Current.t
+  val run : config:Config.t -> state Current.t -> output Current.t
 
-  val complete :
-    Commit_context.t ->
-    state ->
-    output ->
-    Postgresql.connection ->
-    unit Current.t
+  val complete : Commit_context.t -> state -> output Current.t -> unit Current.t
 end
 
 module Docker_engine : S = struct
@@ -61,12 +49,7 @@ module Docker_engine : S = struct
 
   let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 1) ()
 
-  type state = { image : Docker.Image.t Current.t; build_job_id : string }
-
-  type output = { output : Yojson.Safe.t list; run_job_id : string }
-
-  let string_of_output t =
-    String.concat "\n" (List.map Yojson.Safe.pretty_to_string t.output)
+  type state = Docker.Image.t
 
   let dockerfile ~base =
     let open Dockerfile in
@@ -86,32 +69,14 @@ module Docker_engine : S = struct
       let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
       `Contents (dockerfile ~base)
     in
-    let image = Docker.build ~pool ~pull:false ~dockerfile (`Git commit) in
-    let* build_job_id = Current_util.get_job_id image in
-    match build_job_id with
-    | Some build_job_id -> Current.return { image; build_job_id }
-    | None ->
-        Logs.err (fun log ->
-            log "Could not obtain job id when building docker image");
-        failwith "No build job id"
+    Docker.build ~pool ~pull:false ~dockerfile (`Git commit)
 
-  let log_commit_info job commit_context =
-    let repo = Commit_context.repo_id_string commit_context in
-    let branch = Commit_context.branch commit_context in
-    let commit = Commit_context.hash commit_context in
-    Current.Job.log job "repo=%S branch=(%a) commit=%S" repo
-      Fmt.Dump.(option string)
-      branch commit
-
-  let log_job_output job output = Current.Job.log job "Output: %S" output
-
-  let run ~(config : Config.t) state commit_context db =
-    let build_job_id = state.build_job_id in
+  let run ~(config : Config.t) state =
     let run_args =
       [ "--security-opt"; "seccomp=./aslr_seccomp.json" ]
       @ cmd_args_of_config config
     in
-    let current_image = state.image in
+    let current_image = state in
     let current_output =
       Docker.pread ~run_args current_image
         ~args:
@@ -119,28 +84,9 @@ module Docker_engine : S = struct
             "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "make"; "bench";
           ]
     in
-    let* run_job_id = Current_util.get_job_id current_output in
-    match run_job_id with
-    | None -> failwith "No run job id"
-    | Some run_job_id -> (
-        match Current.Job.lookup_running run_job_id with
-        | None ->
-            Logs.debug (fun log ->
-                log "Could not find job with id: %S" run_job_id);
-            failwith "Could not find job"
-        | Some job ->
-            log_commit_info job commit_context;
-            let* output = current_output in
-            let repo_id_string = Commit_context.repo_id_string commit_context in
-            Storage.record_run_start ~repo_id_string ~build_job_id ~run_job_id
-              db;
-            log_job_output job output;
-            let json_list = Json_util.parse_many output in
-            Current.return { run_job_id; output = json_list })
+    let* output = current_output in
+    let json_list = Json_util.parse_many output in
+    Current.return json_list
 
-  let complete commit_context state { output; _ } db =
-    let repo_id_string = Commit_context.repo_id_string commit_context in
-    let build_job_id = state.build_job_id in
-    Storage.record_run_finish ~repo_id_string ~build_job_id ~output db;
-    Current.return ()
+  let complete _commit_context _state _output = Current.return ()
 end

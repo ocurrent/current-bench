@@ -38,6 +38,9 @@ let repo_id_string t =
   | Github { repo_id = { owner; name }; _ } -> String.concat "/" [ owner; name ]
   | Local { repo_path; _ } -> Fpath.to_string repo_path
 
+let pull_number t =
+  match t with Github { pull_number; _ } -> pull_number | Local _ -> None
+
 let hash t =
   match t with
   | Github { commit; _ } -> Github.Api.Commit.hash commit
