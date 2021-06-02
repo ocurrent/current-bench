@@ -68,13 +68,7 @@ module Docker_engine : S = struct
   let string_of_output t =
     String.concat "\n" (List.map Yojson.Safe.pretty_to_string t.output)
 
-  let dockerfile ~base ~repository =
-    let opam_dependencies =
-      (* FIXME: This should be supported by a custom Dockerfiles. *)
-      if String.equal repository "dune" then
-        "opam install ./dune-bench.opam -y --deps-only  -t"
-      else "opam install -y --deps-only -t ."
-    in
+  let dockerfile ~base =
     let open Dockerfile in
     from (Docker.Image.hash base)
     @@ run
@@ -83,15 +77,14 @@ module Docker_engine : S = struct
     @@ copy ~src:[ "--chown=opam:opam ." ] ~dst:"bench-dir" ()
     @@ workdir "bench-dir"
     @@ run "opam remote add origin https://opam.ocaml.org"
-    @@ run "%s" opam_dependencies
+    @@ run "opam install -y --deps-only -t ."
     @@ add ~src:[ "--chown=opam ." ] ~dst:"." ()
     @@ run "eval $(opam env)"
 
   let build ~pool (_commit_context : Commit_context.t) commit =
     let dockerfile =
       let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
-      (* TODO *)
-      `Contents (dockerfile ~base ~repository:"x")
+      `Contents (dockerfile ~base)
     in
     let image = Docker.build ~pool ~pull:false ~dockerfile (`Git commit) in
     let* build_job_id = Current_util.get_job_id image in
