@@ -1,9 +1,8 @@
 module Github = Current_github
 
-let record_build_start ~run_at ~(repo_id : Github.Repo_id.t) ~pull_number
-    ~branch ~commit ~build_job_id (db : Postgresql.connection) =
-  let repo_id = Sql_util.string (repo_id.owner ^ "/" ^ repo_id.name) in
-  let run_at = Sql_util.time run_at in
+let record_build_start ~(repo_id : string) ~pull_number ~branch ~commit
+    ~build_job_id (db : Postgresql.connection) =
+  let repo_id = Sql_util.string repo_id in
   let commit = Sql_util.string commit in
   let build_job_id = Sql_util.string build_job_id in
   let branch = Sql_util.(option string) branch in
@@ -12,11 +11,11 @@ let record_build_start ~run_at ~(repo_id : Github.Repo_id.t) ~pull_number
     Fmt.str
       {|
 INSERT INTO
-  benchmarks(run_at, repo_id, commit, branch, pull_number, build_job_id)
+  benchmarks(repo_id, commit, branch, pull_number, build_job_id, status)
 VALUES
-  (%s, %s, %s, %s, %s, %s)
+  (%s, %s, %s, %s, %s, 'build_started')
 |}
-      run_at repo_id commit branch pull_number build_job_id
+      repo_id commit branch pull_number build_job_id
   in
   try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
   | Postgresql.Error err ->
@@ -34,7 +33,8 @@ let record_run_start ~repo_id_string ~build_job_id ~run_job_id
       {|
 UPDATE benchmarks
 SET
-  run_job_id = %s
+  run_job_id = %s,
+  status = 'run_started'
 WHERE
   repo_id = %s
 AND
@@ -58,7 +58,8 @@ let record_run_finish ~repo_id_string ~build_job_id
       {|
 UPDATE benchmarks
 SET
-  output = %s
+  output = %s,
+  status = 'run_succeeded'
 WHERE
   repo_id = %s
 AND
