@@ -99,9 +99,7 @@ module DataRow = {
   }
 
   let add_value = (row: t, value: value): t => {
-    let newRow = row->Belt.Array.sliceToEnd(0)
-    Js.Array.push(value, newRow)->ignore
-    newRow
+    row->BeltHelpers.Array.add(value)
   }
 }
 
@@ -317,9 +315,7 @@ let make = React.memo((
   }
   let data = addSeries(data, constantSeries)
   let labels = labels->Belt.Option.map(labels => {
-    let newLabels = labels->Belt.Array.sliceToEnd(0)
-    Js.Array.push("std-dev", newLabels)->ignore
-    newLabels
+    labels->BeltHelpers.Array.add("std-dev")
   })
 
   // Dygraph does not display the last tick, so a dummy value
@@ -329,7 +325,7 @@ let make = React.memo((
   let data = switch lastRow {
   | Some(lastRow) =>
     let lastIndex = DataRow.unsafe_get_index(lastRow)
-    data->Belt.Array.sliceToEnd(0)->BeltHelpers.Array.push(DataRow.nan2(~index=lastIndex + 1))
+    data->BeltHelpers.Array.add(DataRow.nan2(~index=lastIndex + 1))
   | None => data
   }
 
