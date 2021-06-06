@@ -31,6 +31,14 @@ start-development: ./local-test-repo/.git
 		--remove-orphans \
 		--build
 
+.PHONY: stop-development
+stop-development: ./local-test-repo/.git
+	docker-compose \
+		--project-name="current-bench" \
+		--file=./environments/development.docker-compose.yaml \
+		--env-file=./environments/development.env \
+		down
+
 .PHONY: bench
 bench: 
 	@cd ./local-test-repo/ && make -s bench
