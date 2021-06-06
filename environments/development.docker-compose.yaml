@@ -12,7 +12,7 @@ services:
       timeout: 5s
       retries: 3
     restart: always
-    expose: "5432"
+    expose: ["5432"]
   graphql-engine:
     image: hasura/graphql-engine:v1.3.3.cli-migrations-v2
     ports:
