@@ -1,11 +1,11 @@
-version: '3.8'
+version: "3.8"
 services:
   db:
     build: ../pipeline/postgres
     environment:
-    - POSTGRES_DB=docker
-    - POSTGRES_USER=docker
-    - POSTGRES_PASSWORD=${OCAML_BENCH_DB_PASSWORD?required}
+      - POSTGRES_DB=docker
+      - POSTGRES_USER=docker
+      - POSTGRES_PASSWORD=${OCAML_BENCH_DB_PASSWORD?required}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U docker"]
       interval: 5s
@@ -16,7 +16,7 @@ services:
   graphql-engine:
     image: hasura/graphql-engine:v1.3.3.cli-migrations-v2
     ports:
-    - "${OCAML_BENCH_GRAPHQL_PORT?required}:${OCAML_BENCH_GRAPHQL_PORT?required}"
+      - "${OCAML_BENCH_GRAPHQL_PORT?required}:${OCAML_BENCH_GRAPHQL_PORT?required}"
     depends_on:
       db:
         condition: service_healthy
@@ -30,37 +30,42 @@ services:
       HASURA_GRAPHQL_ADMIN_SECRET: ${OCAML_BENCH_GRAPHQL_KEY?required}
       HASURA_GRAPHQL_UNAUTHORIZED_ROLE: "public"
     volumes:
-    - ../hasura-server/metadata:/hasura-metadata
+      - ../hasura-server/metadata:/hasura-metadata
   frontend:
-    build: 
+    build:
       context: ../frontend
       args:
         VITE_OCAML_BENCH_PIPELINE_URL: ${OCAML_BENCH_PIPELINE_URL?required}
         VITE_OCAML_BENCH_GRAPHQL_URL: ${OCAML_BENCH_GRAPHQL_URL?required}
     ports:
-      ["${OCAML_BENCH_FRONTEND_PORT?required}:${OCAML_BENCH_FRONTEND_PORT?required}"]
+      [
+        "${OCAML_BENCH_FRONTEND_PORT?required}:${OCAML_BENCH_FRONTEND_PORT?required}",
+      ]
 
     restart: always
     depends_on:
-    - "graphql-engine"
+      - "graphql-engine"
   pipeline:
     build:
       context: ../pipeline
       args:
         TARGET_ARCH: ${OCAML_BENCH_TARGET_ARCH?required}
     volumes:
-    # Mount the source code of the test project to allow local testing.
-    - ../local-test-repo:/app/local-test-repo
-    - /var/run/docker.sock:/var/run/docker.sock
-    ports: ["${OCAML_BENCH_PIPELINE_PORT?required}:${OCAML_BENCH_PIPELINE_PORT?required}"]
+      # Mount the source code of the test project to allow local testing.
+      - ../local-test-repo:/app/local-test-repo
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      [
+        "${OCAML_BENCH_PIPELINE_PORT?required}:${OCAML_BENCH_PIPELINE_PORT?required}",
+      ]
     command:
-    - "current-bench-pipeline"
-    - "local"
-    - "/app/local-test-repo"
-    - "--verbose"
-    - "--port=${OCAML_BENCH_PIPELINE_PORT?required}"
-    - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU?required}"
-    - "--conn-info=host=db user=docker port=5432 dbname=docker password=${OCAML_BENCH_DB_PASSWORD?required}"
+      - "current-bench-pipeline"
+      - "local"
+      - "/app/local-test-repo"
+      - "--verbose"
+      - "--port=${OCAML_BENCH_PIPELINE_PORT?required}"
+      - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU?required}"
+      - "--conn-info=host=db user=docker port=5432 dbname=docker password=${OCAML_BENCH_DB_PASSWORD?required}"
     restart: always
     depends_on:
       db:
@@ -71,11 +76,11 @@ services:
   db-migrate:
     image: current-bench_pipeline:latest
     command:
-    - "omigrate"
-    - "setup"
-    - "--verbose"
-    - "--source=/app/db/migrations"
-    - "--database=postgresql://docker:${OCAML_BENCH_DB_PASSWORD?required}@db:5432/docker"
+      - "omigrate"
+      - "setup"
+      - "--verbose"
+      - "--source=/app/db/migrations"
+      - "--database=postgresql://docker:${OCAML_BENCH_DB_PASSWORD?required}@db:5432/docker"
     depends_on:
       db:
         condition: service_healthy
