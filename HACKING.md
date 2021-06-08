@@ -193,14 +193,14 @@ docker volume which is then mounted to the pipeline container in `docker-compose
 
 To create a docker volumes you should run:
 ```
-$ docker volume create bench-data
+$ docker volume create current-bench-data
 ```
-You can add the data required to your `bench-data` volume by inspecting the volume and copying the data directly to the path listed in the inspect results.
+You can add the data required to your `current-bench-data` volume by inspecting the volume and copying the data directly to the path listed in the inspect results.
 ```
 $ docker volume inspect
 ```
 
-The underlying assumption here is that the `make bench` target would know that the dependencies live in the `bench-data` folder inside the container.
+The underlying assumption here is that the `make bench` target would know that the dependencies live in the `current-bench-data` folder inside the container.
 
 ### Starting the production environment
 

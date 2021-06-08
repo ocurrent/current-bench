@@ -91,8 +91,8 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
       [
         "--security-opt";
         "seccomp=./aslr_seccomp.json";
-        "-v";
-        "/app/bench-data:/home/opam/bench-dir/bench-data";
+        "--mount";
+        "type=volume,src=current-bench-data,dst=/home/opam/bench-dir/current-bench-data";
       ]
       @ tmpfs
       @ docker_cpuset_cpus

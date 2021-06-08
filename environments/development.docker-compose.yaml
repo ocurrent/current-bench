@@ -60,6 +60,7 @@ services:
         "${OCAML_BENCH_PIPELINE_PORT?required}:${OCAML_BENCH_PIPELINE_PORT?required}",
       ]
     # Mount the source code of the test project to allow local testing.
+    - current-bench-data:/app/current-bench-data:ro
     - ../local-test-repo:/app/local-test-repo
     - /var/run/docker.sock:/var/run/docker.sock
     ports: ["${OCAML_BENCH_PIPELINE_PORT?required}:${OCAML_BENCH_PIPELINE_PORT?required}"]
@@ -91,5 +92,5 @@ services:
         condition: service_healthy
 
 volumes:
-  bench-data:
+  current-bench-data:
     external: true
