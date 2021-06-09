@@ -57,7 +57,7 @@ let dockerfile ~base ~repository =
   @@ add ~src:[ "--chown=opam ." ] ~dst:"." ()
   @@ run "eval $(opam env)"
 
-let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 1) ()
+let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
 let frontend_url = Sys.getenv "OCAML_BENCH_FRONTEND_URL"
 
