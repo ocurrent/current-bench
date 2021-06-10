@@ -51,7 +51,7 @@ services:
       args:
         TARGET_ARCH: ${OCAML_BENCH_TARGET_ARCH?required}
     volumes:
-	  - bench-data:/app/bench-data
+      - current-bench-data:/app/current-bench-data
       # Mount the source code of the test project to allow local testing.
       - ../local-test-repo:/app/local-test-repo
       - /var/run/docker.sock:/var/run/docker.sock
@@ -94,3 +94,4 @@ services:
 volumes:
   current-bench-data:
     external: true
+
