@@ -18,6 +18,7 @@
   uri
   curly
   postgresql
-  yojson)
+  yojson
+  ppx_deriving_yojson.runtime)
  (preprocess
-  (pps ppx_deriving.std)))
+  (pps ppx_deriving.std ppx_deriving_yojson)))
