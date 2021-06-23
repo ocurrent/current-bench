@@ -99,8 +99,7 @@ module DataRow = {
   }
 
   let add_value = (row: t, value: value): t => {
-    Js.Array.push(value, row)->ignore
-    row
+    row->BeltHelpers.Array.add(value)
   }
 }
 
@@ -297,6 +296,13 @@ let make = React.memo((
   let graphDivRef = React.useRef(Js.Nullable.null)
   let graphRef = React.useRef(None)
 
+  let intersection = Hooks.useIntersection(graphDivRef, IntersectionObserver.makeOption())
+
+  let isIntersecting =
+    intersection
+    ->Belt.Option.map(IntersectionObserver.Entry.isIntersecting)
+    ->Belt.Option.getWithDefault(false)
+
   // Add constant stdDev series.
   let constantSeries = {
     let values = data->Belt.Array.map(DataRow.toFloat)
@@ -309,8 +315,7 @@ let make = React.memo((
   }
   let data = addSeries(data, constantSeries)
   let labels = labels->Belt.Option.map(labels => {
-    Js.Array.push("std-dev", labels)->ignore
-    labels
+    labels->BeltHelpers.Array.add("std-dev")
   })
 
   // Dygraph does not display the last tick, so a dummy value
@@ -320,7 +325,7 @@ let make = React.memo((
   let data = switch lastRow {
   | Some(lastRow) =>
     let lastIndex = DataRow.unsafe_get_index(lastRow)
-    BeltHelpers.Array.push(data, DataRow.nan2(~index=lastIndex + 1))
+    data->BeltHelpers.Array.add(DataRow.nan2(~index=lastIndex + 1))
   | None => data
   }
 
@@ -335,26 +340,29 @@ let make = React.memo((
 
     switch Js.Nullable.toOption(graphDivRef.current) {
     | None => ()
-    | Some(ref) => {
-        let graph = init(ref, data, options)
-        graphRef.current = Some(graph)
+    | Some(ref) =>
+      switch (graphRef.current, isIntersecting) {
+      | (None, true) => {
+          let graph = init(ref, data, options)
+          graphRef.current = Some(graph)
 
-        if Array.length(annotations) > 0 {
-          graph->ready(() => {
-            graph->setAnnotations(annotations)
-          })
-        }
+          if Array.length(annotations) > 0 {
+            graph->ready(() => {
+              graph->setAnnotations(annotations)
+            })
+          }
 
-        switch onXLabelClick {
-        | Some(handler) =>
-          getElementsByClassName("dygraph-axis-label-x")->Belt.Array.forEach(elem =>
-            getElementHTMLonClick(elem, handler)
-          )
-        | None => ()
+          switch onXLabelClick {
+          | Some(handler) =>
+            getElementsByClassName("dygraph-axis-label-x")->Belt.Array.forEach(elem =>
+              getElementHTMLonClick(elem, handler)
+            )
+          | None => ()
+          }
         }
+      | _ => ()
       }
     }
-
     Some(
       _ => {
         switch graphRef.current {
@@ -366,7 +374,7 @@ let make = React.memo((
         }
       },
     )
-  }, [])
+  }, [isIntersecting])
 
   React.useLayoutEffect2(() => {
     switch graphRef.current {
@@ -403,9 +411,9 @@ let make = React.memo((
   | Some(title) =>
     <Column spacing=Sx.lg sx=[Sx.w.auto]>
       <Text sx=[Sx.leadingNone, Sx.text.bold, Sx.text.xl]> title </Text>
-      {Rx.onSome(subTitle, subTitle =>
-        <Text sx=[Sx.leadingNone, Sx.text.sm, Sx.text.color(Sx.gray600)]> subTitle </Text>
-      )}
+      <Text sx=[Sx.leadingNone, Sx.text.sm, Sx.text.color(Sx.gray600), [Css.minHeight(#em(1.0))]]>
+        {Belt.Option.getWithDefault(subTitle, "")}
+      </Text>
     </Column>
   | None => React.null
   }

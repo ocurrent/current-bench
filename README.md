@@ -37,6 +37,11 @@ The metadata about `repo`, `branch` and `commit` is added by the pipeline.
 Multiple concatenated JSON objects can be produced and will be interpreted as different benchmarks. The name of the benchmark is optional when there is only one output, but must be present if multiple result objects are produced.
 
 
+## Data dependencies in your project
+
+If you have a data dependency, then currently we add the dependency to the docker volume called `current-bench-data`.
+The dependency lives in `<org_name>/<repo_name>` folder so you can assume the depdency to live in `current-bench-data/<org_name>/<repo_name>` folder.
+
 ## Tuning the environment
 
 See general instructions in [ocaml-bench-scripts](https://github.com/ocaml-bench/ocaml_bench_scripts/) for configuring the benchmarking hardware. In particular, you need an isolated CPU to run the benchmarks on.

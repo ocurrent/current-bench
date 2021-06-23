@@ -38,9 +38,10 @@ module Array = {
     loop(len - 1, None)
   }
 
-  let push = (arr, item) => {
-    ignore(Js.Array.push(item, arr))
-    arr
+  let add = (arr, item) => {
+    let newArr = Belt.Array.sliceToEnd(arr, 0)
+    ignore(Js.Array.push(item, newArr))
+    newArr
   }
 
   let last = arr => Belt.Array.get(arr, Belt.Array.length(arr) - 1)
