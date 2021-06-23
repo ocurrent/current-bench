@@ -71,15 +71,10 @@ let run_commit ~db ~config ~commit_context ~build_job_id img =
         ~output db;
       Current.return (Some output)
 
-let monitor_commit ~(config : Config.t) current_commit_context =
+let monitor_commit ~db ~(config : Config.t) current_commit_context =
   Current.component "monitor_commit"
   |> let** commit_context = current_commit_context in
      Logs.debug (fun log -> log "monitor_commit");
-
-     let db =
-       let conninfo = Uri.to_string config.db_uri in
-       new Postgresql.connection ~conninfo ()
-     in
 
      let build_state = build_commit ~db current_commit_context in
      let img = Current.map fst build_state in
@@ -130,22 +125,22 @@ module Github_pipeline = struct
         | `Ref _ -> acc)
       all_refs []
 
-  let monitor_repo ~config repo =
+  let monitor_repo ~db ~config repo =
     repo
     |> collect_commits
-    |> Current.list_iter (module Commit_context) (monitor_commit ~config)
+    |> Current.list_iter (module Commit_context) (monitor_commit ~db ~config)
 
-  let monitor_installation ~config installation =
+  let monitor_installation ~db ~config installation =
     installation
     |> Github.Installation.repositories
-    |> Current.list_iter (module Github.Api.Repo) (monitor_repo ~config)
+    |> Current.list_iter (module Github.Api.Repo) (monitor_repo ~db ~config)
 
-  let monitor_app ~config app =
+  let monitor_app ~db ~config app =
     app
     |> Github.App.installations
     |> Current.list_iter
          (module Github.Installation)
-         (monitor_installation ~config)
+         (monitor_installation ~db ~config)
 end
 
 module Local_pipeline = struct
@@ -165,22 +160,27 @@ module Local_pipeline = struct
     let commit_context = Commit_context.local ?branch ~repo_path ~commit () in
     Current.return commit_context
 
-  let monitor_repo ~config repo_path =
+  let monitor_repo ~db ~config repo_path =
     let commit_context = make_commit_context repo_path in
-    monitor_commit ~config commit_context
+    monitor_commit ~db ~config commit_context
 end
 
-let monitor ~config (source : Source.t) =
+let monitor ~db ~config (source : Source.t) =
   match source with
   | Github { repo; token } ->
       let api = Github_pipeline.github_api_of_oauth_file token in
       let repo = Current.return (api, repo) in
-      Github_pipeline.monitor_repo ~config repo
-  | Local repo_path -> Local_pipeline.monitor_repo ~config repo_path
-  | Github_app app -> Github_pipeline.monitor_app ~config app
+      Github_pipeline.monitor_repo ~db ~config repo
+  | Local repo_path -> Local_pipeline.monitor_repo ~db ~config repo_path
+  | Github_app app -> Github_pipeline.monitor_app ~db ~config app
 
-let v ~config ~server:mode ~(source : Source.t) () =
-  let pipeline () = monitor ~config source in
+let v ~(config : Config.t) ~server:mode ~(source : Source.t) () =
+  let db =
+    let conninfo = Uri.to_string config.db_uri in
+    new Postgresql.connection ~conninfo ()
+  in
+
+  let pipeline () = monitor ~db ~config source in
   let engine = Current.Engine.create ~config:config.current pipeline in
   let routes =
     Routes.((s "webhooks" / s "github" /? nil) @--> Github.webhook)
