@@ -1,7 +1,6 @@
-module Github = Current_github
-
 let record_build_start ~(repo_id : string) ~pull_number ~branch ~commit
     ~build_job_id (db : Postgresql.connection) =
+  Logs.debug (fun log -> log "Recording build start...");
   let repo_id = Sql_util.string repo_id in
   let commit = Sql_util.string commit in
   let build_job_id = Sql_util.string build_job_id in
@@ -11,9 +10,10 @@ let record_build_start ~(repo_id : string) ~pull_number ~branch ~commit
     Fmt.str
       {|
 INSERT INTO
-  benchmarks(repo_id, commit, branch, pull_number, build_job_id, status)
+  benchmarks_new(repo_id, commit, branch, pull_number, build_job_id, status)
 VALUES
   (%s, %s, %s, %s, %s, 'build_started')
+ON CONFLICT DO NOTHING
 |}
       repo_id commit branch pull_number build_job_id
   in
@@ -25,13 +25,14 @@ VALUES
 
 let record_run_start ~repo_id_string ~build_job_id ~run_job_id
     (db : Postgresql.connection) =
+  Logs.debug (fun log -> log "Recording run start...");
   let repo_id_string = Sql_util.string repo_id_string in
   let build_job_id = Sql_util.string build_job_id in
   let run_job_id = Sql_util.string run_job_id in
   let query =
     Fmt.str
       {|
-UPDATE benchmarks
+UPDATE benchmarks_new
 SET
   run_job_id = %s,
   status = 'run_started'
@@ -48,16 +49,19 @@ AND
           log "Database error: %s" (Postgresql.string_of_error err))
   | exn -> Logs.err (fun log -> log "Unknown error:\n%a" Fmt.exn exn)
 
-let record_run_finish ~repo_id_string ~build_job_id
-    ~output:(_ : Yojson.Safe.t list) (db : Postgresql.connection) =
-  let output = Sql_util.json (`String "TODO") in
+let record_run_finish ~repo_id_string ~build_job_id ~run_job_id
+    ~(output : Yojson.Safe.t list) (db : Postgresql.connection) =
+  Logs.debug (fun log -> log "Recording run finish...");
+  let output = Sql_util.json (`List output) in
   let repo_id_string = Sql_util.string repo_id_string in
   let build_job_id = Sql_util.string build_job_id in
+  let run_job_id = Sql_util.string run_job_id in
   let query =
     Fmt.str
       {|
-UPDATE benchmarks
+UPDATE benchmarks_new
 SET
+  run_job_id = %s,
   output = %s,
   status = 'run_succeeded'
 WHERE
@@ -65,7 +69,7 @@ WHERE
 AND
   build_job_id = %s
 |}
-      output repo_id_string build_job_id
+      run_job_id output repo_id_string build_job_id
   in
   try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
   | Postgresql.Error err ->
