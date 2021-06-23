@@ -11,12 +11,16 @@ module type S = sig
     Git.Commit.t Current.t ->
     state Current.t
 
-  val run : config:Config.t -> state Current.t -> output Current.t
+  val run :
+    pool:unit Current.Pool.t ->
+    config:Config.t ->
+    state Current.t ->
+    output Current.t
 
   val complete : Commit_context.t -> state -> output Current.t -> unit Current.t
 end
 
-module Docker_engine : S = struct
+module Docker_engine = struct
   module Docker = Current_docker.Default
   open Current.Syntax
 
@@ -71,22 +75,14 @@ module Docker_engine : S = struct
     in
     Docker.build ~pool ~pull:false ~dockerfile (`Git commit)
 
-  let run ~(config : Config.t) state =
+  let run ?info ~pool ~(config : Config.t) current_image =
     let run_args =
       [ "--security-opt"; "seccomp=./aslr_seccomp.json" ]
       @ cmd_args_of_config config
     in
-    let current_image = state in
-    let current_output =
-      Docker.pread ~run_args current_image
-        ~args:
-          [
-            "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "make"; "bench";
-          ]
-    in
-    let* output = current_output in
-    let json_list = Json_util.parse_many output in
-    Current.return json_list
+    Current_util.Docker.pread_log ?info ~pool ~run_args current_image
+      ~args:
+        [ "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "make"; "bench" ]
 
   let complete _commit_context _state _output = Current.return ()
 end

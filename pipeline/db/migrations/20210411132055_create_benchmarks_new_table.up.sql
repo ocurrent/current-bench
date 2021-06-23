@@ -19,5 +19,5 @@ CREATE TABLE benchmarks_new (
 
   output json,
 
-  PRIMARY KEY (started_at, repo_id)
+  PRIMARY KEY (repo_id, build_job_id)
 );

@@ -1,3 +1,5 @@
+open Current.Syntax
+
 module Github = struct
   module Github = Current_github
 
@@ -33,11 +35,13 @@ module Github = struct
     |> Github.Api.Commit.set_status (Current.return commit) "ocaml-benchmarks"
     |> Current.ignore_value
 
-  let post (commit_context : Commit_context.t) output =
-    match commit_context with
-    | Github github_context ->
-        output |> Current.state |> report_github_status github_context
-    | _ -> Current.return ()
+  let post commit_context output =
+    Current.component "github-post"
+    |> let** (commit_context : Commit_context.t) = commit_context in
+       match commit_context with
+       | Github github_context ->
+           output |> Current.state |> report_github_status github_context
+       | _ -> Current.return ()
 end
 
 module Slack = struct
