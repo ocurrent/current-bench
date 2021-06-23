@@ -51,7 +51,7 @@ module Docker_engine = struct
     in
     List.concat [ cpuset_cpus; cpuset_mems; tmpfs ]
 
-  let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 1) ()
+  let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
   type state = Docker.Image.t
 
@@ -77,7 +77,12 @@ module Docker_engine = struct
 
   let run ?info ~pool ~(config : Config.t) current_image =
     let run_args =
-      [ "--security-opt"; "seccomp=./aslr_seccomp.json" ]
+      [
+        "--security-opt";
+        "seccomp=./aslr_seccomp.json";
+        "--mount";
+        "type=volume,src=current-bench-data,dst=/home/opam/bench-dir/current-bench-data";
+      ]
       @ cmd_args_of_config config
     in
     Current_util.Docker.pread_log ?info ~pool ~run_args current_image
