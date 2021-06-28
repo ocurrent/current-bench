@@ -57,49 +57,43 @@ let build_commit ~db commit_context =
          Current.pair img current_job_id_opt
 
 let run_commit ~db ~config ~commit_context ~build_job_id img =
-  let info = Commit_context.show commit_context in
-  let output = Engine.Docker_engine.run ~info ~pool ~config img in
-  let* run_job_id_opt = Current_util.get_job_id output in
-  match run_job_id_opt with
-  | None ->
-      Fmt.epr "run job id not ready@.";
-      Current.return None
-  | Some run_job_id ->
-      let repo_id_string = Commit_context.repo_id_string commit_context in
-      let* output = Current.map Json_util.parse_many output in
-      Storage.record_run_finish ~repo_id_string ~build_job_id ~run_job_id
-        ~output db;
-      Current.return (Some output)
+  Current.component "build"
+  |> let** commit_context = commit_context in
+     let info = Commit_context.show commit_context in
+     let output = Engine.Docker_engine.run ~info ~pool ~config img in
+     let* run_job_id_opt = Current_util.get_job_id output in
+     match run_job_id_opt with
+     | None ->
+         Fmt.epr "run job id not ready@.";
+         Current.return None
+     | Some run_job_id ->
+         let repo_id_string = Commit_context.repo_id_string commit_context in
+         let* output = Current.map Json_util.parse_many output in
+         Storage.record_run_finish ~repo_id_string ~build_job_id ~run_job_id
+           ~output db;
+         Current.return (Some output)
 
-let monitor_commit ~db ~(config : Config.t) current_commit_context =
-  Current.component "monitor_commit"
-  |> let** commit_context = current_commit_context in
-     Logs.debug (fun log -> log "monitor_commit");
-
-     let build_state = build_commit ~db current_commit_context in
-     let img = Current.map fst build_state in
-     let* build_job_id_opt = Current.map snd build_state in
-
-     let* output =
-       match build_job_id_opt with
-       | None ->
-           Fmt.epr "build job id not ready@.";
-           Current.return None
-       | Some build_job_id ->
-           run_commit ~db ~config ~commit_context ~build_job_id img
-     in
-
-     match output with
-     | None -> Current.return ()
-     | Some output ->
-         let* () =
-           Reporting.Slack.post ~path:config.slack_path
-             (Current.return (string_of_output output))
-         in
-         let* () =
-           Reporting.Github.post current_commit_context (Current.return output)
-         in
-         Current.return ()
+let monitor_commit ~db ~(config : Config.t) commit_context =
+  let build_state = build_commit ~db commit_context in
+  let img = Current.map fst build_state in
+  let* build_job_id_opt = Current.map snd build_state in
+  let* output =
+    match build_job_id_opt with
+    | None ->
+        Fmt.epr "build job id not ready@.";
+        Current.return None
+    | Some build_job_id ->
+        run_commit ~db ~config ~commit_context ~build_job_id img
+  in
+  match output with
+  | None -> Current.return ()
+  | Some output ->
+      let* () =
+        Reporting.Slack.post ~path:config.slack_path
+          (Current.return (string_of_output output))
+      in
+      let* () = Reporting.Github.post commit_context (Current.return output) in
+      Current.return ()
 
 module Github_pipeline = struct
   let github_api_of_oauth_file token =
