@@ -242,22 +242,19 @@ The payload contains:
 
 ### Benchmark status encoding
 
-It is possible to track in-progress benchmarks by analysing the current state of the columns. The state is encoding by mutating entries in the results table.
+The status of the benchmarking jobs is tracked in the database as a JSON value.
 
-The state is defined based on the presence or absence of the following columns:
+The following table lists the possible status codes:
 
-| Build job id | Run job id | Output   | Status   |
-|--------------|------------|----------|----------|
-| Not NULL     | NULL       | NULL     | Building |
-| Not NULL     | Not NULL   | NULL     | Pending  |
-| Not NULL     | Not NULL   | Not NULL | Finished |
+| Status               | Description                         |
+|----------------------|-------------------------------------|
+| "Building"           | The build job started.              |
+| "Running"            | The run job started.                |
+| "Done"               | The run job completed successfully. |
+| ["Build_error", msg] | The build job failed.               |
+| ["Run_error", msg]   | The run job failed.                 |
 
-Any errors during the execution of the benchmark will be recorded in OCurrent's job storage.
-
-A single execution of the benchmark is identified by:
-
-- `repo_id`
-- `build_job_id`
+The errors will be written to the job's log when possible.
 
 
 ## Some errors you might run into
