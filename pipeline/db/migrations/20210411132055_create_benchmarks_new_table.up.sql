@@ -1,10 +1,3 @@
-CREATE TYPE benchmarks_status AS ENUM (
-  'build_started',
-  'build_failed',
-  'run_started',
-  'run_failed',
-  'run_succeeded'
-);
 
 
 CREATE TABLE benchmarks_new (
@@ -15,7 +8,7 @@ CREATE TABLE benchmarks_new (
   pull_number INTEGER DEFAULT NULL,
   build_job_id CHARACTER VARYING(256) NOT NULL,
   run_job_id CHARACTER VARYING(256) DEFAULT NULL,
-  status benchmarks_status DEFAULT NULL,
+  status json DEFAULT NULL,
 
   output json,
 

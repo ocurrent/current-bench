@@ -12,7 +12,7 @@ let record_build_start ~(repo_id : string) ~pull_number ~branch ~commit
 INSERT INTO
   benchmarks_new(repo_id, commit, branch, pull_number, build_job_id, status)
 VALUES
-  (%s, %s, %s, %s, %s, 'build_started')
+  (%s, %s, %s, %s, %s, '"Building"')
 ON CONFLICT DO NOTHING
 |}
       repo_id commit branch pull_number build_job_id
@@ -35,7 +35,7 @@ let record_run_start ~repo_id_string ~build_job_id ~run_job_id
 UPDATE benchmarks_new
 SET
   run_job_id = %s,
-  status = 'run_started'
+  status = '"Running"'
 WHERE
   repo_id = %s
 AND
@@ -63,7 +63,7 @@ UPDATE benchmarks_new
 SET
   run_job_id = %s,
   output = %s,
-  status = 'run_succeeded'
+  status = '"Done"'
 WHERE
   repo_id = %s
 AND
