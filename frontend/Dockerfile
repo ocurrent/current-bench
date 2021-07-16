@@ -32,7 +32,7 @@ RUN echo "VITE_OCAML_BENCH_GRAPHQL_URL=${VITE_OCAML_BENCH_GRAPHQL_URL}" > /app/.
 RUN echo "VITE_OCAML_BENCH_PIPELINE_URL=${VITE_OCAML_BENCH_PIPELINE_URL}" >> /app/.env
 RUN echo "VITE_CURRENT_BENCH_VERSION=${VITE_CURRENT_BENCH_VERSION}" >> /app/.env
 
-RUN yarn build
+RUN yarn build 
 RUN yarn bundle
 
 # build nginx image with static files built previously

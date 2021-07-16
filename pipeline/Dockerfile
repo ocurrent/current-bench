@@ -23,7 +23,7 @@ COPY --chown=opam pipeline/. .
 RUN sudo chown opam .
 
 # Build the project.
-RUN opam exec -- dune build --profile=release bin/main.exe
+RUN opam exec -- dune build --profile=release ./pipeline/bin/main.exe
 
 FROM debian:stable-slim
 

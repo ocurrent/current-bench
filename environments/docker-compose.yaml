@@ -1,0 +1,63 @@
+version: "3.8"
+services:
+  db:
+    image: current-bench-postgres:latest
+    environment:
+      - POSTGRES_DB=docker
+      - POSTGRES_USER=docker
+      - POSTGRES_PASSWORD=${OCAML_BENCH_DB_PASSWORD?required}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docker"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    ports: ["5432:5432"]
+    volumes:
+      - db_data:/var/lib/postgresql/data
+  graphql-engine:
+    image: hasura/graphql-engine:v1.3.3.cli-migrations-v2
+    ports:
+      - "${OCAML_BENCH_GRAPHQL_PORT?required}:${OCAML_BENCH_GRAPHQL_PORT?required}"
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://docker:docker@db:5432/docker
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      HASURA_GRAPHQL_ADMIN_SECRET: ${OCAML_BENCH_GRAPHQL_KEY?required}
+      HASURA_GRAPHQL_UNAUTHORIZED_ROLE: "public"
+    volumes:
+      - ../hasura-server/metadata:/hasura-metadata
+  frontend:
+    image: ocurrent/current-bench-frontend:live
+    ports:
+      - "${OCAML_BENCH_FRONTEND_PORT?required}:${OCAML_BENCH_FRONTEND_PORT?required}"
+    environment:
+      VITE_OCAML_BENCH_GRAPHQL_URL: ${OCAML_BENCH_GRAPHQL_URL?required}
+      VITE_OCAML_BENCH_PIPELINE_URL: ${OCAML_BENCH_PIPELINE_URL?required}
+  pipeline:
+    image: ocurrent/current-bench-pipeline:live
+    volumes:
+      - current-bench-data:/app/current-bench-data:ro
+      - pipeline_var:/app/var
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      [
+        "${OCAML_BENCH_PIPELINE_PORT?required}:${OCAML_BENCH_PIPELINE_PORT?required}",
+      ]
+    command:
+      - "current-bench-pipeline"
+      - "github_app"
+      - "--verbosity=debug"
+      - "--port=${OCAML_BENCH_PIPELINE_PORT?required}"
+      - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU}"
+      - "--conn-info=host=db user=docker port=5432 dbname=docker password=${OCAML_BENCH_DB_PASSWORD?required}"
+      - "--github-app-id=${OCAML_BENCH_GITHUB_APP_ID}"
+      - "--github-account-allowlist=${OCAML_BENCH_GITHUB_ACCOUNT_ALLOW_LIST?required}"
+      - "--github-private-key-file=${OCAML_BENCH_GITHUB_PRIVATE_KEY_FILE?required}"
+    environment:
+      OCAML_BENCH_FRONTEND_URL: ${OCAML_BENCH_FRONTEND_URL?required}
+
+volumes:
+  db_data:
+  pipeline_var:
+  current-bench-data:
+    external: true
