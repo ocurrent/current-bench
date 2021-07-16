@@ -16,13 +16,13 @@ RUN sudo apt-get update && \
 WORKDIR /mnt/project
 
 # Build dependencies.
-COPY --chown=opam:opam pipeline.opam pipeline.opam
+COPY --chown=opam:opam ./pipeline/pipeline.opam install.opam
 RUN opam install -y --deps-only -t .
 COPY --chown=opam . .
 RUN sudo chown opam .
 
 # Build the project.
-RUN opam exec -- dune build --profile=release bin/main.exe
+RUN opam exec -- dune build --profile=release ./pipeline/bin/main.exe
 
 FROM debian:stable-slim
 
@@ -51,7 +51,7 @@ RUN apt-get update \
 WORKDIR /app
 ENV PATH="/app/bin:${PATH}"
 
-COPY ./aslr_seccomp.json /app/aslr_seccomp.json
-COPY ./db/migrations /app/db/migrations
+COPY ./pipeline/aslr_seccomp.json /app/aslr_seccomp.json
+COPY ./pipeline/db/migrations /app/db/migrations
 COPY --from=build /home/opam/.opam/4.12/bin/omigrate /app/bin/omigrate
-COPY --from=build /mnt/project/_build/default/bin/main.exe /app/bin/current-bench-pipeline
+COPY --from=build /mnt/project/_build/default/pipeline/bin/main.exe /app/bin/current-bench-pipeline
