@@ -230,6 +230,11 @@ Attaching to current-bench_db_1, current-bench_db-migrate_1, current-bench_pipel
 ...
 ```
 
+### Deploying using ocurrent-deployer
+
+We have a live branch on the current-bench repo which is deployed by `ocurrent-deployer` everytime something is merged to the branch.
+For this, we have a docker stack deploy on the machine we run `current-bench` on. The docker stack deploys using the `docker-compose.yaml` file in the environments folder.
+
 ### Some errors you might run into
 
 1. If docker cannot find the environment file, you have to provide the full path to the env file in the Makefile for the specific make target.
@@ -241,4 +246,3 @@ ERROR: for current-bench_db_1  Cannot start service db: driver failed programmin
 You have a postgres server running on your machine, kill the postgres process and run the make command again.
 
 4. If the database isn't getting populated, it is most likely that the `make bench` command that the pipeline runs failed. You can look for the logs in`var/job/<date>/<-docker-pread-.log>` to find out why the command failed. Once you fix it, the pipeline should start populating the database. 
-
