@@ -20,12 +20,6 @@ let groupByTestName = (acc, item: testMetrics, idx) => {
   Belt.Map.String.update(acc, item.name, go)
 }
 
-let convertTimeStringToSeconds = str => {
-  let minutes =  Js.Float.fromString(Js.String.substring(~from=0, ~to_= Js.String.indexOf("min", str), str));
-  let seconds = Js.Float.fromString(Js.String.substring(~from=Js.String.indexOf("min", str)+3, ~to_=Js.String.indexOf("s", str), str));
-  minutes *. 60.0 +. seconds
-}
-
 let decodeMetricValue = (json): LineGraph.DataRow.value => {
   switch Js.Json.classify(json) {
   | JSONNumber(n) => LineGraph.DataRow.single(n)
@@ -34,10 +28,13 @@ let decodeMetricValue = (json): LineGraph.DataRow.value => {
     let xs = xs->Belt.Array.map(x => x->Js.Json.decodeNumber->Belt.Option.getExn)
     LineGraph.DataRow.many(xs)
   | JSONString(val) =>
-    switch Js.String2.match_(val, %re("/^[0-9]+min[0-9]+s$/")) {
-   | Some(arr) => LineGraph.DataRow.single(convertTimeStringToSeconds (arr[0]))
-   | None => invalid_arg("Invalid metric value:" ++ Js.Json.stringify(json))
-   }
+  switch Js.String2.match_(val, %re("/^([0-9]+)min([0-9]+)s$/")) {
+   | Some([_, minutes, seconds]) => {
+       let n = Js.Float.fromString(minutes) *. 60.0 +. Js.Float.fromString(seconds)
+       LineGraph.DataRow.single(n)
+     }
+   | _ => invalid_arg("Invalid metric value:" ++ Js.Json.stringify(json))
+}
   | _ => invalid_arg("Invalid metric value: " ++ Js.Json.stringify(json))
   }
   // ->ignore
