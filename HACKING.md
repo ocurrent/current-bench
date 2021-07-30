@@ -45,6 +45,13 @@ Edit the `./environments/development.env` file and adjust the configurations var
 
 Make sure that the `./environments/development.env` exists and has the correct configuration.
 
+Before you start your docker containers for the first time, you'll
+need to create an external docker volume, like this:
+
+```
+docker volume create --name=current-bench-data
+```
+
 Start the docker-compose environment:
 
 ```
