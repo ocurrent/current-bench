@@ -34,7 +34,8 @@ services:
       - ../hasura-server/metadata:/hasura-metadata
   frontend:
     build:
-      context: ../frontend
+      context: ..
+      dockerfile: frontend/Dockerfile
       args:
         VITE_OCAML_BENCH_PIPELINE_URL: ${OCAML_BENCH_PIPELINE_URL?required}
         VITE_OCAML_BENCH_GRAPHQL_URL: ${OCAML_BENCH_GRAPHQL_URL?required}
@@ -45,7 +46,8 @@ services:
       - "graphql-engine"
   pipeline:
     build:
-      context: ../pipeline
+      context: ..
+      dockerfile: pipeline/Dockerfile
       args:
         TARGET_ARCH: ${OCAML_BENCH_TARGET_ARCH?required}
     volumes:
