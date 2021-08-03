@@ -42,3 +42,7 @@ stop-development: ./local-test-repo/.git
 .PHONY: bench
 bench: 
 	@cd ./local-test-repo/ && make -s bench
+
+.PHONY: deployer
+deployer:
+	docker build . -t current-bench-postgres -f pipeline/db/Dockerfile && cd environments && docker stack deploy -c <(docker-compose config) current-bench
