@@ -1,7 +1,7 @@
 # OCaml - Continuous benchmarks
 
 Prototype for running predictable, IO-bound benchmarks in an ocurrent pipeline. This is *work in progress*.
-If you want to be on the whitelist, please contact @gs0510, or you can open an issue on the repository.
+If you want to be on the allowlist for running benchmarks for your repository, please contact @gs0510, or you can open an issue.
 
 ## Enroll your project
 
