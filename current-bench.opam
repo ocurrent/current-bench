@@ -12,15 +12,15 @@ depends: [
   "bos"
   "capnp-rpc-unix"
   "cmdliner"
-  "current" {>= "dev" }
-  "current_ansi" {>= "dev"}
-  "current_docker" {>= "dev"}
-  "current_git" {>= "dev"}
-  "current_github" {>= "dev"}
-  "current_incr" {>= "dev"}
-  "current_rpc" {>= "dev"}
-  "current_slack" {>= "dev"}
-  "current_web" {>= "dev"}
+  "current"
+  "current_ansi"
+  "current_docker"
+  "current_git"
+  "current_github"
+  "current_incr"
+  "current_rpc"
+  "current_slack"
+  "current_web"
   "curly"
   "duration"
   "fpath"
@@ -29,18 +29,6 @@ depends: [
   "postgresql"
   "rresult"
   "omigrate"
-]
-
-pin-depends: [
-  [ "current_ansi.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
-  [  "current_docker.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
-  [  "current_github.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
-  [  "current_git.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
-  [  "current_incr.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
-  [  "current.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
-  [  "current_rpc.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
-  [  "current_slack.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
-  [  "current_web.dev" "git+https://github.com/ocurrent/ocurrent.git#e554e0b755d6059ebb195e6365cddcc87772022b"]
 ]
 
 build: [
