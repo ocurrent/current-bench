@@ -9,6 +9,9 @@ module Benchmark = Models.Benchmark
 
 let ( >>| ) x f = Current.map f x
 
+let is_duplicate elem lst = lst |>
+  List.map (fun x -> if x = elem then 1 else 0) |>
+  List.fold_left (fun acc x -> acc + x) 0 |> fun x -> x > 1
 module Source = struct
   type github = {
     token : Fpath.t;
@@ -122,6 +125,17 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
       let db = new Postgresql.connection ~conninfo () in
       output
       |> Json_util.parse_many
+      |> fun output_json_lst ->
+          let benchmark_name_lst =
+            List.map (fun output_json -> 
+              Yojson.Safe.Util.(member "name" output_json) 
+              |> Yojson.Safe.Util.to_string_option) output_json_lst
+          in
+          List.iter (fun x -> 
+            if is_duplicate x benchmark_name_lst then 
+              raise (Failure "Same benchmark name, please change it to unique benchmark name") 
+              else ()) benchmark_name_lst |> fun _ ->
+        output_json_lst
       |> List.iter (fun output_json ->
              let benchmark_name =
                Yojson.Safe.Util.(member "name" output_json)
