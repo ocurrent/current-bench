@@ -53,4 +53,5 @@ export BENCH_DATA_2
 bench:
 	whoami
 	cat /sys/fs/cgroup/cpuset/cpuset.cpus
+	sleep 500
 	@echo "$$BENCH_DATA_1"
