@@ -1,4 +1,3 @@
 local-test-repo/.git
 *.env
 _build
-test-benchmarks
