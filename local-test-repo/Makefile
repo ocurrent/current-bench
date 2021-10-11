@@ -51,4 +51,6 @@ endef
 export BENCH_DATA_1
 export BENCH_DATA_2
 bench:
+	whoami &&
+	cat /sys/fs/cgroup/cpuset/cpuset.cpus &&
 	@echo "$$BENCH_DATA_1"
