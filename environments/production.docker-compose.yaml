@@ -16,6 +16,7 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
     expose: ["5432"]
+    cpuset: "${OCAML_BENCH_PLATFORM_CPUSET}"
   graphql-engine:
     image: hasura/graphql-engine:v1.3.3.cli-migrations-v2
     ports:
@@ -32,6 +33,7 @@ services:
       HASURA_GRAPHQL_UNAUTHORIZED_ROLE: "public"
     volumes:
       - ../hasura-server/metadata:/hasura-metadata
+    cpuset: "${OCAML_BENCH_PLATFORM_CPUSET}"
   frontend:
     build:
       context: ../frontend
@@ -43,6 +45,7 @@ services:
     restart: always
     depends_on:
       - "graphql-engine"
+    cpuset: "${OCAML_BENCH_PLATFORM_CPUSET}"
   pipeline:
     build:
       context: ../pipeline
@@ -72,6 +75,7 @@ services:
         condition: service_healthy
     environment:
       OCAML_BENCH_FRONTEND_URL: ${OCAML_BENCH_FRONTEND_URL?required}
+    cpuset: "${OCAML_BENCH_PLATFORM_CPUSET}"
 
 volumes:
   db_data:
