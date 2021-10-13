@@ -1,11 +1,14 @@
 # pull official base image
-FROM node:lts AS builder
+FROM node:lts AS dev
 
 ARG VITE_OCAML_BENCH_GRAPHQL_URL
 ARG VITE_OCAML_BENCH_PIPELINE_URL
 
 # set working directory
 WORKDIR /app
+
+# Build frontend code for production
+FROM dev AS builder
 
 COPY package.json yarn.lock /app/
 RUN yarn install
