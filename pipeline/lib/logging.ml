@@ -83,13 +83,13 @@ let test_pipeline =
 let with_dot ~dotfile f () =
   SVar.set selected (Ok f);
   Logs.debug (fun f -> f "Pipeline: @[%a@]" Current.Analysis.pp test_pipeline);
-  let path = Fmt.strf "%s.%d.dot" dotfile 1 in
+  let path = Fmt.str "%s.%d.dot" dotfile 1 in
   let ch = open_out path in
   let f = Format.formatter_of_out_channel ch in
   let env = [] in
   let collapse_link ~k ~v = Some (k ^ v) in
   let job_info { Current.Metadata.job_id; update } =
-    let url = job_id |> Option.map (fun id -> Fmt.strf "/job/%s" id) in
+    let url = job_id |> Option.map (fun id -> Fmt.str "/job/%s" id) in
     (update, url)
   in
   Fmt.pf f "%a@!"
