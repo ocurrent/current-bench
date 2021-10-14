@@ -12,15 +12,15 @@ depends: [
   "bos"
   "capnp-rpc-unix"
   "cmdliner"
-  "current"
-  "current_ansi"
-  "current_docker"
-  "current_git"
-  "current_github"
-  "current_incr"
-  "current_rpc"
-  "current_slack"
-  "current_web"
+  "current" {>= "0.5"}
+  "current_ansi" {>= "0.5"}
+  "current_docker" {>= "0.5"}
+  "current_git" {>= "0.5"}
+  "current_github" {>= "0.5"}
+  "current_incr" {>= "0.5"}
+  "current_rpc" {>= "0.5"}
+  "current_slack" {>= "0.5"}
+  "current_web" {>= "0.5"}
   "curly"
   "duration"
   "fpath"
