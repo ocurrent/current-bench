@@ -9,15 +9,27 @@ module Benchmark = Models.Benchmark
 
 let ( >>| ) x f = Current.map f x
 
-let is_duplicate (elem : string option) (tbl : (string option, int) Hashtbl.t) =
-  Hashtbl.find_all tbl elem |> List.length |> fun x ->
-  if x > 1 then
-    Result.error
-      (Printf.sprintf
-         "Benchmark %s has a duplicate name, please change the name of the \
-          benchmark to something unique"
-         (match elem with Some x -> x | None -> "None"))
-  else Result.ok ()
+let get_benchmark_name json =
+  json |> Yojson.Safe.Util.(member "name") |> Yojson.Safe.Util.to_string_option
+
+let get_result_list json =
+  json |> Yojson.Safe.Util.(member "results") |> Yojson.Safe.Util.to_list
+
+let validate_json json_list =
+  let tbl = Hashtbl.create 1000 in
+  List.iter
+    (fun json ->
+      let benchmark_name = get_benchmark_name json in
+      match Hashtbl.find_opt tbl benchmark_name with
+      | Some _ ->
+          raise
+          @@ Failure
+               "This benchmark name already exists, please create a unique name"
+      | None ->
+          let results = get_result_list json in
+          Hashtbl.add tbl benchmark_name results)
+    json_list;
+  tbl
 
 module Source = struct
   type github = {
@@ -126,37 +138,19 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
     let+ build_job_id = Current_util.get_job_id current_image
     and+ run_job_id = Current_util.get_job_id current_output
     and+ output = current_output in
-    let output_json_lst = output |> Json_util.parse_many in
-    let benchmark_tbl =
-      let tbl = Hashtbl.create 1000 in
-      List.iteri
-        (fun index output_json ->
-          Hashtbl.add tbl
-            (Yojson.Safe.Util.(member "name" output_json)
-            |> Yojson.Safe.Util.to_string_option)
-            index)
-        output_json_lst;
-      tbl
-    in
     let duration = Ptime.diff (Ptime_clock.now ()) run_at in
     Logs.debug (fun log -> log "Benchmark output:\n%s" output);
     let () =
       let db = new Postgresql.connection ~conninfo () in
-      output_json_lst
-      |> List.iter (fun output_json ->
-             let benchmark_name =
-               Yojson.Safe.Util.(member "name" output_json)
-               |> Yojson.Safe.Util.to_string_option
-             in
-             match is_duplicate benchmark_name benchmark_tbl with
-             | Error e -> raise @@ Failure e
-             | Ok _ ->
-                 Yojson.Safe.Util.(member "results" output_json)
-                 |> Yojson.Safe.Util.to_list
-                 |> List.map
-                      (Benchmark.make ~duration ~run_at ~repo_id ~benchmark_name
-                         ~commit ?pull_number ?build_job_id ?run_job_id ?branch)
-                 |> List.iter (Models.Benchmark.Db.insert db));
+      output
+      |> Json_util.parse_many
+      |> validate_json
+      |> Hashtbl.iter (fun benchmark_name results ->
+             results
+             |> List.map
+                  (Benchmark.make ~duration ~run_at ~repo_id ~benchmark_name
+                     ~commit ?pull_number ?build_job_id ?run_job_id ?branch)
+             |> List.iter (Models.Benchmark.Db.insert db));
       db#finish
     in
     match slack_path with Some p -> Some (p, output) | None -> None
