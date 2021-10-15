@@ -7,7 +7,7 @@ bug-reports: "https://github.com/ocurrent/current-bench/issues"
 depends: [
   "dune" {>= "2.0"}
   "yojson"
-  "reason"
+  "reason" {>= "dev"}
   "bechamel"
   "bos"
   "capnp-rpc-unix"
@@ -29,6 +29,10 @@ depends: [
   "postgresql"
   "rresult"
   "omigrate"
+]
+
+pin-depends: [
+  [ "reason.dev" "git+https://github.com/reasonml/reason.git#ccc34729994b4a80d4f6274cc0165cd9113444d6"]
 ]
 
 build: [
