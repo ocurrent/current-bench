@@ -91,7 +91,7 @@ INSERT INTO
   benchmarks(run_at, duration, repo_id, commit, branch, pull_number, build_job_id, run_job_id, benchmark_name, test_name,  metrics)
 VALUES
   (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-  ON CONFLICT DO NOTHING
+  ON CONFLICT (commit, test_name, run_job_id) DO NOTHING
 |}
         run_at duration repository commit branch pull_number build_job_id
         run_job_id benchmark_name test_name metrics
