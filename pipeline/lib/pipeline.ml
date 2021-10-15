@@ -9,6 +9,28 @@ module Benchmark = Models.Benchmark
 
 let ( >>| ) x f = Current.map f x
 
+let get_benchmark_name json =
+  json |> Yojson.Safe.Util.(member "name") |> Yojson.Safe.Util.to_string_option
+
+let get_result_list json =
+  json |> Yojson.Safe.Util.(member "results") |> Yojson.Safe.Util.to_list
+
+let validate_json json_list =
+  let tbl = Hashtbl.create 1000 in
+  List.iter
+    (fun json ->
+      let benchmark_name = get_benchmark_name json in
+      match Hashtbl.find_opt tbl benchmark_name with
+      | Some _ ->
+          raise
+          @@ Failure
+               "This benchmark name already exists, please create a unique name"
+      | None ->
+          let results = get_result_list json in
+          Hashtbl.add tbl benchmark_name results)
+    json_list;
+  tbl
+
 module Source = struct
   type github = {
     token : Fpath.t;
@@ -122,13 +144,9 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
       let db = new Postgresql.connection ~conninfo () in
       output
       |> Json_util.parse_many
-      |> List.iter (fun output_json ->
-             let benchmark_name =
-               Yojson.Safe.Util.(member "name" output_json)
-               |> Yojson.Safe.Util.to_string_option
-             in
-             Yojson.Safe.Util.(member "results" output_json)
-             |> Yojson.Safe.Util.to_list
+      |> validate_json
+      |> Hashtbl.iter (fun benchmark_name results ->
+             results
              |> List.map
                   (Benchmark.make ~duration ~run_at ~repo_id ~benchmark_name
                      ~commit ?pull_number ?build_job_id ?run_job_id ?branch)
