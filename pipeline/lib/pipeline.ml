@@ -120,13 +120,13 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
       @ docker_cpuset_cpus
       @ docker_cpuset_mems
     in
-    let run_at = Ptime_clock.now () in
     let* commit =
       match head with
       | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
       | `Local commit -> commit >>| Git.Commit.hash
     in
     let repo_info = owner ^ "/" ^ repository in
+    let run_at = Ptime_clock.now () in
     let current_output =
       Docker_util.pread_log ~pool ~run_args current_image ~repo_info
         ?pull_number ?branch ~commit
