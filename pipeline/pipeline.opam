@@ -13,7 +13,7 @@ depends: [
   "capnp-rpc-unix"
   "cmdliner"
   "current" {>= "0.5"}
-  "current_ansi" {>= "0.5"}
+  "current_ansi"
   "current_docker" {>= "0.5"}
   "current_git" {>= "0.5"}
   "current_github" {>= "0.5"}
