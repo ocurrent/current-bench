@@ -81,6 +81,14 @@ let dockerfile ~base ~repository =
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
+let dockerfile ~src:commit ~repository =
+  let custom_dockerfile = Fpath.v "Dockerfile" in
+  let* existing = Custom_dockerfile.file_exists ~commit custom_dockerfile in
+  if existing then Current.return (`File custom_dockerfile)
+  else
+    let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
+    `Contents (dockerfile ~base ~repository)
+
 let frontend_url = Sys.getenv "OCAML_BENCH_FRONTEND_URL"
 
 (* $server/$repo_owner/$repo_name/pull/$pull_number *)
@@ -98,16 +106,15 @@ let github_status_of_state url = function
   | Error (`Active _) -> Github.Api.Status.v ~url `Pending
   | Error (`Msg m) -> Github.Api.Status.v ~url `Failure ~description:m
 
-let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
+let pipeline ~slack_path ~conninfo ?branch ?pull_number ~tmpfs
     ~docker_cpuset_cpus ~docker_cpuset_mems ~head ~repository ~owner () =
   let repo_id = (owner, repository) in
   let src =
     match head with
     | `Github api_commit ->
-        Git.fetch (Current.map Github.Api.Commit.id (Current.return api_commit))
+        Git.fetch (Current.return (Github.Api.Commit.id api_commit))
     | `Local commit -> commit
   in
-  let current_image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
   let s =
     let run_args =
       [
@@ -125,6 +132,8 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~dockerfile ~tmpfs
       | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
       | `Local commit -> commit >>| Git.Commit.hash
     in
+    let dockerfile = dockerfile ~src ~repository in
+    let current_image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
     let repo_info = owner ^ "/" ^ repository in
     let run_at = Ptime_clock.now () in
     let current_output =
@@ -204,12 +213,8 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
   in
   match source with
   | Github { repo; slack_path; token } ->
-      let dockerfile =
-        let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
-        `Contents (dockerfile ~base ~repository:repo.name)
-      in
       let pipeline =
-        pipeline ~slack_path ~dockerfile ~repository:repo.name ~owner:repo.owner
+        pipeline ~slack_path ~repository:repo.name ~owner:repo.owner
       in
       let* refs =
         let api =
@@ -235,10 +240,6 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
           (* Skip all branches other than master, and check PRs *))
         ref_map (Current.return ())
   | Local path ->
-      let dockerfile =
-        let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
-        `Contents (dockerfile ~base ~repository:"local")
-      in
       let local = Git.Local.v path in
       let* head = Git.Local.head local in
       let head_commit = `Local (Git.Local.head_commit local) in
@@ -253,8 +254,8 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
                     log "Could not extract branch name from: %s" git_ref);
                 None)
       in
-      pipeline ?branch ~dockerfile ~head:head_commit ~repository:"local"
-        ~owner:"local" ~slack_path:None ()
+      pipeline ?branch ~head:head_commit ~repository:"local" ~owner:"local"
+        ~slack_path:None ()
   | Github_app app ->
       Github.App.installations app
       |> Current.list_iter (module Github.Installation) @@ fun installation ->
@@ -271,13 +272,8 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
             let default_branch = Github.Api.default_ref refs in
             let default_branch_name = Util.get_branch_name default_branch in
             let* _, repo = repo in
-            let dockerfile =
-              let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
-              `Contents (dockerfile ~base ~repository:repo.name)
-            in
             let pipeline =
-              pipeline ~dockerfile ~slack_path:None ~repository:repo.name
-                ~owner:repo.owner
+              pipeline ~slack_path:None ~repository:repo.name ~owner:repo.owner
             in
             Github.Api.Ref_map.fold
               (fun key head _ ->
