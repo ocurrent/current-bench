@@ -36,9 +36,17 @@ services:
   frontend:
     build:
       context: ../frontend
-      args:
-        VITE_OCAML_BENCH_PIPELINE_URL: ${OCAML_BENCH_PIPELINE_URL?required}
-        VITE_OCAML_BENCH_GRAPHQL_URL: ${OCAML_BENCH_GRAPHQL_URL?required}
+      target: dev
+    environment:
+      VITE_OCAML_BENCH_PIPELINE_URL: ${OCAML_BENCH_PIPELINE_URL?required}
+      VITE_OCAML_BENCH_GRAPHQL_URL: ${OCAML_BENCH_GRAPHQL_URL?required}
+    volumes:
+      # We want the src changes made in host to reflect in the container. The
+      # container, so that we can use hot-reloading, etc. The container can
+      # also make changes like installing node_modules, etc. So, we use
+      # consistent/default mode instead of cached or delegated modes.
+      - ../frontend:/app/:consistent
+    command: ["./scripts/dev.sh"]
     ports:
       [
         "${OCAML_BENCH_FRONTEND_PORT?required}:${OCAML_BENCH_FRONTEND_PORT?required}",
@@ -90,4 +98,3 @@ services:
 volumes:
   current-bench-data:
     external: true
-
