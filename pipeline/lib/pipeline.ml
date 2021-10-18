@@ -58,37 +58,6 @@ let pool = Current.Pool.create ~label:"docker" 1
 let read_channel_uri p =
   Util.read_fpath p |> String.trim |> Uri.of_string |> Current_slack.channel
 
-(* Generate a Dockerfile for building all the opam packages in the build context. *)
-let dockerfile ~base ~repository =
-  let opam_dependencies =
-    (* FIXME: This should be supported by a custom Dockerfiles. *)
-    if String.equal repository "dune" then
-      "opam install ./dune-bench.opam -y --deps-only  -t"
-    else "opam install -y --deps-only -t ."
-  in
-  let open Dockerfile in
-  from (Docker.Image.hash base)
-  @@ run
-       "sudo apt-get update && sudo apt-get install -qq -yy libffi-dev \
-        liblmdb-dev m4 pkg-config gnuplot-x11 libgmp-dev libssl-dev \
-        libpcre3-dev"
-  @@ copy ~src:[ "--chown=opam:opam ." ] ~dst:"bench-dir" ()
-  @@ workdir "bench-dir"
-  @@ run "opam remote add origin https://opam.ocaml.org"
-  @@ run "%s" opam_dependencies
-  @@ add ~src:[ "--chown=opam ." ] ~dst:"." ()
-  @@ run "eval $(opam env)"
-
-let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
-
-let dockerfile ~src:commit ~repository =
-  let custom_dockerfile = Fpath.v "Dockerfile" in
-  let* existing = Custom_dockerfile.file_exists ~commit custom_dockerfile in
-  if existing then Current.return (`File custom_dockerfile)
-  else
-    let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
-    `Contents (dockerfile ~base ~repository)
-
 let frontend_url = Sys.getenv "OCAML_BENCH_FRONTEND_URL"
 
 (* $server/$repo_owner/$repo_name/pull/$pull_number *)
@@ -132,7 +101,7 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~tmpfs
       | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
       | `Local commit -> commit >>| Git.Commit.hash
     in
-    let dockerfile = dockerfile ~src ~repository in
+    let dockerfile = Custom_dockerfile.dockerfile ~src ~repository in
     let current_image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
     let repo_info = owner ^ "/" ^ repository in
     let run_at = Ptime_clock.now () in
