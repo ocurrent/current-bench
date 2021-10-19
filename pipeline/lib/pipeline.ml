@@ -51,6 +51,35 @@ module Docker_config = struct
   type t = { cpu : string option; numa_node : int option; shm_size : int }
 
   let v ?cpu ?numa_node ~shm_size () = { cpu; numa_node; shm_size }
+
+  let cpuset_cpus t =
+    match t.cpu with Some cpu -> [ "--cpuset-cpus"; cpu ] | None -> []
+
+  let cpuset_mems t =
+    match t.numa_node with
+    | Some i -> [ "--cpuset-mems"; string_of_int i ]
+    | None -> []
+
+  let tmpfs t =
+    match t.numa_node with
+    | Some i ->
+        [
+          "--tmpfs";
+          Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg,mpol=bind:%d" t.shm_size i;
+        ]
+    | None ->
+        [ "--tmpfs"; Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg" t.shm_size ]
+
+  let run_args t =
+    [
+      "--security-opt";
+      "seccomp=./aslr_seccomp.json";
+      "--mount";
+      "type=volume,src=current-bench-data,dst=/home/opam/bench-dir/current-bench-data";
+    ]
+    @ tmpfs t
+    @ cpuset_cpus t
+    @ cpuset_mems t
 end
 
 let pool = Current.Pool.create ~label:"docker" 1
@@ -58,128 +87,102 @@ let pool = Current.Pool.create ~label:"docker" 1
 let read_channel_uri p =
   Util.read_fpath p |> String.trim |> Uri.of_string |> Current_slack.channel
 
-let frontend_url = Sys.getenv "OCAML_BENCH_FRONTEND_URL"
-
-(* $server/$repo_owner/$repo_name/pull/$pull_number *)
-let make_commit_status_url owner repository pull_number =
-  let uri_end =
-    match pull_number with
-    | None -> "/" ^ owner ^ "/" ^ repository
-    | Some number ->
-        "/" ^ owner ^ "/" ^ repository ^ "/pull/" ^ string_of_int number
-  in
-  Uri.of_string (frontend_url ^ uri_end)
-
 let github_status_of_state url = function
   | Ok _ -> Github.Api.Status.v ~url `Success ~description:"Passed"
   | Error (`Active _) -> Github.Api.Status.v ~url `Pending
   | Error (`Msg m) -> Github.Api.Status.v ~url `Failure ~description:m
 
-let pipeline ~slack_path ~conninfo ?branch ?pull_number ~tmpfs
-    ~docker_cpuset_cpus ~docker_cpuset_mems ~head ~repository ~owner () =
-  let repo_id = (owner, repository) in
-  let src =
-    match head with
-    | `Github api_commit ->
-        Git.fetch (Current.return (Github.Api.Commit.id api_commit))
-    | `Local commit -> commit
-  in
-  let s =
-    let run_args =
-      [
-        "--security-opt";
-        "seccomp=./aslr_seccomp.json";
-        "--mount";
-        "type=volume,src=current-bench-data,dst=/home/opam/bench-dir/current-bench-data";
-      ]
-      @ tmpfs
-      @ docker_cpuset_cpus
-      @ docker_cpuset_mems
-    in
-    let* commit =
-      match head with
-      | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
-      | `Local commit -> commit >>| Git.Commit.hash
-    in
-    let dockerfile = Custom_dockerfile.dockerfile ~src ~repository in
-    let current_image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
-    let repo_info = owner ^ "/" ^ repository in
-    let run_at = Ptime_clock.now () in
-    let current_output =
-      Docker_util.pread_log ~pool ~run_args current_image ~repo_info
-        ?pull_number ?branch ~commit
-        ~args:
-          [
-            "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "sh"; "-c"; "eval $(opam env) && make bench";
-          ]
-    in
-    let+ build_job_id = Current_util.get_job_id current_image
-    and+ run_job_id = Current_util.get_job_id current_output
-    and+ output = current_output in
-    let duration = Ptime.diff (Ptime_clock.now ()) run_at in
-    Logs.debug (fun log -> log "Benchmark output:\n%s" output);
-    let () =
-      let db = new Postgresql.connection ~conninfo () in
-      output
-      |> Json_util.parse_many
-      |> validate_json
-      |> Hashtbl.iter (fun benchmark_name results ->
-             results
-             |> List.map
-                  (Benchmark.make ~duration ~run_at ~repo_id ~benchmark_name
-                     ~commit ?pull_number ?build_job_id ?run_job_id ?branch)
-             |> List.iter (Models.Benchmark.Db.insert db));
-      db#finish
-    in
-    match slack_path with Some p -> Some (p, output) | None -> None
-  in
-  s
-  |> Current.option_map (fun p ->
-         Current.component "post"
-         |> let** path, _ = p in
-            let channel = read_channel_uri path in
-            let output = Current.map snd p in
-            Slack.post channel ~key:"output" output)
-  |> Current.state
-  |> fun result ->
+let github_set_status ~repository head result =
   match head with
   | `Local _ -> Current.ignore_value result
   | `Github head ->
-      let status_url = make_commit_status_url owner repository pull_number in
+      let status_url = Repository.commit_status_url repository in
       result
       >>| github_status_of_state status_url
       |> Github.Api.Commit.set_status (Current.return head) "ocaml-benchmarks"
       |> Current.ignore_value
 
+let slack_post ~repository (output : string Current.t) =
+  match Repository.slack_path repository with
+  | None -> Current.ignore_value output
+  | Some path ->
+      Current.component "post"
+      |> let** _ = output in
+         let channel = read_channel_uri path in
+         (* let output = Current.map snd p in *)
+         Slack.post channel ~key:"output" output
+
+let db_save ~conninfo benchmark output =
+  let db = new Postgresql.connection ~conninfo () in
+  output
+  |> Json_util.parse_many
+  |> validate_json
+  |> Hashtbl.iter (fun benchmark_name results ->
+         results
+         |> List.map (benchmark ~benchmark_name)
+         |> List.iter (Models.Benchmark.Db.insert db));
+  db#finish
+
+let docker_make_bench ~run_args ~repository ~commit image =
+  let { Repository.branch; pull_number; _ } = repository in
+  let repo_info = Repository.info repository in
+  Docker_util.pread_log ~pool ~run_args image ~repo_info ?pull_number ?branch
+    ~commit
+    ~args:
+      [ "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "sh"; "-c"; "eval $(opam env) && make bench" ]
+
+let pipeline ~conninfo ~run_args ~repository ~commit =
+  let src = Repository.src repository in
+  let dockerfile = Custom_dockerfile.dockerfile ~pool ~run_args ~repository in
+  let current_image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
+  let run_at = Ptime_clock.now () in
+  let current_output =
+    docker_make_bench ~run_args ~repository ~commit current_image
+  in
+  let+ build_job_id = Current_util.get_job_id current_image
+  and+ run_job_id = Current_util.get_job_id current_output
+  and+ output = current_output in
+  let duration = Ptime.diff (Ptime_clock.now ()) run_at in
+  Logs.debug (fun log -> log "Benchmark output:\n%s" output);
+  let () =
+    db_save ~conninfo
+      (Benchmark.make ~duration ~run_at ~repository ~commit ?build_job_id
+         ?run_job_id)
+      output
+  in
+  output
+
+let fetch = function
+  | `Github api_commit ->
+      Git.fetch (Current.return (Github.Api.Commit.id api_commit))
+  | `Local commit -> commit
+
+let pipeline ~conninfo ~run_args ~slack_path ?branch ?pull_number ~head
+    ~repository ~owner () =
+  let repository =
+    {
+      Repository.owner;
+      name = repository;
+      src = fetch head;
+      pull_number;
+      branch;
+      slack_path;
+    }
+  in
+  let* commit =
+    match head with
+    | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
+    | `Local commit -> commit >>| Git.Commit.hash
+  in
+  pipeline ~conninfo ~run_args ~repository ~commit
+  |> slack_post ~repository
+  |> Current.state
+  |> github_set_status ~repository head
+
 let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
     ~(source : Source.t) () =
-  let docker_cpuset_cpus =
-    match docker_config.cpu with
-    | Some cpu -> [ "--cpuset-cpus"; cpu ]
-    | None -> []
-  in
-  let docker_cpuset_mems =
-    match docker_config.numa_node with
-    | Some i -> [ "--cpuset-mems"; string_of_int i ]
-    | None -> []
-  in
-  let tmpfs =
-    match docker_config.numa_node with
-    | Some i ->
-        [
-          "--tmpfs";
-          Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg,mpol=bind:%d"
-            docker_config.shm_size i;
-        ]
-    | None ->
-        [
-          "--tmpfs";
-          Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg" docker_config.shm_size;
-        ]
-  in
-  let pipeline =
-    pipeline ~conninfo ~tmpfs ~docker_cpuset_cpus ~docker_cpuset_mems
-  in
+  let run_args = Docker_config.run_args docker_config in
+  let pipeline = pipeline ~conninfo ~run_args in
   match source with
   | Github { repo; slack_path; token } ->
       let pipeline =

@@ -13,17 +13,17 @@ module Benchmark = struct
     metrics : Yojson.Safe.t;
   }
 
-  let make ~run_at ~repo_id ~commit ~duration ~benchmark_name ?branch
-      ?pull_number ?build_job_id ?run_job_id data =
+  let make ?build_job_id ?run_job_id ~run_at ~duration ~benchmark_name
+      ~repository ~commit data =
     let test_name = Yojson.Safe.Util.(member "name" data |> to_string) in
     let metrics = Yojson.Safe.Util.(member "metrics" data) in
     {
       run_at;
       duration;
-      repo_id;
+      repo_id = Repository.id repository;
       commit;
-      branch;
-      pull_number;
+      branch = Repository.branch repository;
+      pull_number = Repository.pull_number repository;
       build_job_id;
       run_job_id;
       benchmark_name;
