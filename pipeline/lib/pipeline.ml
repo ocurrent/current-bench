@@ -163,7 +163,7 @@ let fetch = function
       Git.fetch (Current.return (Github.Api.Commit.id api_commit))
   | `Local commit -> commit
 
-let pipeline ~conninfo ~run_args ~slack_path ?branch ?pull_number ~head
+let pipeline ~conninfo ~run_args ?slack_path ?branch ?pull_number ~head
     ~repository ~owner () =
   let repository =
     {
@@ -185,38 +185,42 @@ let pipeline ~conninfo ~run_args ~slack_path ?branch ?pull_number ~head
   |> Current.state
   |> github_set_status ~repository head
 
+let github_pipeline ~conninfo ~run_args ?slack_path repo =
+  let pipeline = pipeline ~conninfo ~run_args in
+  let* refs =
+    Current.component "Get PRs"
+    |> let> api, repo = repo in
+       Github.Api.refs api repo
+  in
+  let default_branch = Github.Api.default_ref refs in
+  let default_branch_name = Util.get_branch_name default_branch in
+  let ref_map = Github.Api.all_refs refs in
+  let* _, repo = repo in
+  let pipeline =
+    pipeline ?slack_path ~repository:repo.name ~owner:repo.owner
+  in
+  Github.Api.Ref_map.fold
+    (fun key head _ ->
+      let head = `Github head in
+      match key with
+      | `Ref branch ->
+          if branch = default_branch then
+            pipeline ~head ~branch:default_branch_name ()
+          else Current.return ()
+      | `PR pull_number -> pipeline ~head ~pull_number ()
+      (* Skip all branches other than master, and check PRs *))
+    ref_map (Current.return ())
+
 let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
     ~(source : Source.t) () =
   let run_args = Docker_config.run_args docker_config in
-  let pipeline = pipeline ~conninfo ~run_args in
   match source with
   | Github { repo; slack_path; token } ->
-      let pipeline =
-        pipeline ~slack_path ~repository:repo.name ~owner:repo.owner
+      let api =
+        token |> Util.read_fpath |> String.trim |> Current_github.Api.of_oauth
       in
-      let* refs =
-        let api =
-          token |> Util.read_fpath |> String.trim |> Current_github.Api.of_oauth
-        in
-        let repo = Current.return (api, repo) in
-        Current.component "Get PRs"
-        |> let> api, repo = repo in
-           Github.Api.refs api repo
-      in
-      let default_branch = Github.Api.default_ref refs in
-      let default_branch_name = Util.get_branch_name default_branch in
-      let ref_map = Github.Api.all_refs refs in
-      Github.Api.Ref_map.fold
-        (fun key head _ ->
-          let head = `Github head in
-          match key with
-          | `Ref branch ->
-              if branch = default_branch then
-                pipeline ~head ~branch:default_branch_name ()
-              else Current.return ()
-          | `PR pull_number -> pipeline ~head ~pull_number ()
-          (* Skip all branches other than master, and check PRs *))
-        ref_map (Current.return ())
+      let repo = Current.return (api, repo) in
+      github_pipeline ~conninfo ~run_args ?slack_path repo
   | Local path ->
       let local = Git.Local.v path in
       let* head = Git.Local.head local in
@@ -232,8 +236,8 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
                     log "Could not extract branch name from: %s" git_ref);
                 None)
       in
-      pipeline ?branch ~head:head_commit ~repository:"local" ~owner:"local"
-        ~slack_path:None ()
+      pipeline ~conninfo ~run_args
+        ?branch ~head:head_commit ~repository:"local" ~owner:"local" ()
   | Github_app app ->
       Github.App.installations app
       |> Current.list_iter (module Github.Installation) @@ fun installation ->
@@ -241,29 +245,7 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
          repos
          |> Current.list_iter ~collapse_key:"repo" (module Github.Api.Repo)
             @@ fun repo ->
-            let* refs =
-              Current.component "Get PRS"
-              |> let> api, repo = repo in
-                 Github.Api.refs api repo
-            in
-            let ref_map = Github.Api.all_refs refs in
-            let default_branch = Github.Api.default_ref refs in
-            let default_branch_name = Util.get_branch_name default_branch in
-            let* _, repo = repo in
-            let pipeline =
-              pipeline ~slack_path:None ~repository:repo.name ~owner:repo.owner
-            in
-            Github.Api.Ref_map.fold
-              (fun key head _ ->
-                let head = `Github head in
-                match key with
-                | `Ref branch ->
-                    if branch = default_branch then
-                      pipeline ~head ~branch:default_branch_name ()
-                    else Current.return ()
-                | `PR pull_number -> pipeline ~head ~pull_number ()
-                (* Skip all branches other than master, and check PRs *))
-              ref_map (Current.return ())
+                 github_pipeline ~conninfo ~run_args repo
 
 let v ~current_config ~docker_config ~server:mode ~(source : Source.t) conninfo
     () =
