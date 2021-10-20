@@ -74,10 +74,11 @@ let minimal_dockerfile ~base =
   base_dockerfile ~base @@ add_workdir
 
 let docker_exec ~pool ~run_args ~repository ~dockerfile args =
-  let { Repository.src; branch; pull_number; _ } = repository in
+  let { Repository.branch; pull_number; _ } = repository in
   let repo_info = Repository.info repository in
+  let src = Repository.src repository in
   let image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
-  let* commit = Repository.commit_hash repository in
+  let commit = Repository.commit_hash repository in
   Current_util.Docker_util.pread_log ~pool ~run_args ~repo_info ?pull_number
     ?branch ~commit ~args image
 
@@ -88,23 +89,24 @@ let opam_install ~repository =
     "opam install ./dune-bench.opam -y --deps-only"
   else "opam install -y --deps-only ."
 
+let with_base f ~base = Current.map (fun base -> `Contents (f ~base)) base
+
 let discover_dependencies ~pool ~run_args ~repository ~base =
   let cmd =
     opam_install ~repository
     ^ " --dry-run | sed -n '/^Installing \\(.*\\).$/{s//\\1/g;p}'"
   in
   let args = [ "/bin/sh"; "-c"; cmd ] in
-  let dockerfile = Current.return (`Contents (minimal_dockerfile ~base)) in
+  let dockerfile = with_base minimal_dockerfile ~base in
   let+ output = docker_exec ~pool ~run_args ~repository ~dockerfile args in
   String.concat " " (String.split_on_char '\n' output)
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
-let dockerfile ~repository ~base static_dependencies =
+let dockerfile ~repository ~base ~dependencies =
   let open Dockerfile in
   let install_static_dependencies =
-    if static_dependencies = "" then empty
-    else run "opam install -y %s" static_dependencies
+    if dependencies = "" then empty else run "opam install -y %s" dependencies
   in
   base_dockerfile ~base
   @@ install_static_dependencies
@@ -112,9 +114,9 @@ let dockerfile ~repository ~base static_dependencies =
   @@ run "%s" (opam_install ~repository)
 
 let dockerfile ~pool ~run_args ~repository =
-  let* base = Docker.pull ~schedule:weekly "ocaml/opam" in
-  let+ dependencies = discover_dependencies ~pool ~run_args ~repository ~base in
-  `Contents (dockerfile ~repository ~base dependencies)
+  let base = Docker.pull ~schedule:weekly "ocaml/opam" in
+  let* dependencies = discover_dependencies ~pool ~run_args ~repository ~base in
+  with_base (dockerfile ~dependencies ~repository) ~base
 
 let dockerfile ~pool ~run_args ~repository =
   let custom_dockerfile = Fpath.v "bench.Dockerfile" in
