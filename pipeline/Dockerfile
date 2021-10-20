@@ -1,4 +1,4 @@
-FROM ocaml/opam:debian-ocaml-4.12 AS build
+FROM ocaml/opam:debian-ocaml-4.13 AS build
 
 RUN sudo apt-get update && \
     sudo apt-get install -qq -yy \
@@ -45,7 +45,7 @@ RUN apt-get update \
     && echo "deb [arch=${TARGET_ARCH} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
         > /etc/apt/sources.list.d/docker.list \
     && apt-get update \
-    && apt-get install docker-ce-cli --assume-yes \
+    && apt-get install docker-ce-cli graphviz --assume-yes \
     && rm -r /var/lib/apt/lists /var/cache/apt
 
 WORKDIR /app
@@ -53,5 +53,5 @@ ENV PATH="/app/bin:${PATH}"
 
 COPY ./aslr_seccomp.json /app/aslr_seccomp.json
 COPY ./db/migrations /app/db/migrations
-COPY --from=build /home/opam/.opam/4.12/bin/omigrate /app/bin/omigrate
+COPY --from=build /home/opam/.opam/4.13/bin/omigrate /app/bin/omigrate
 COPY --from=build /mnt/project/_build/default/bin/main.exe /app/bin/current-bench-pipeline
