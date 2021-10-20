@@ -1,0 +1,15 @@
+opam-version: "2.0"
+synopsis: "Local tests for current-bench"
+maintainer: ["Gargi Sharma <gargi@tarides.com>"]
+authors: ["Gargi Sharma <gargi@tarides.com>"]
+homepage: "https://github.com/ocurrent/current-bench"
+bug-reports: "https://github.com/ocurrent/current-bench/issues"
+depends: [
+  "ocaml" {>= "4.08"}
+  "bheap" {= "1.0.0"}
+  "irmin" {<= "2.6.1"}
+]
+build: [
+  ["dune" "subst"] {pinned}
+]
+dev-repo: "git+https://github.com/ocurrent/current-bench.git"

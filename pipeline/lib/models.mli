@@ -2,15 +2,13 @@ module Benchmark : sig
   type t
 
   val make :
-    run_at:Ptime.t ->
-    repo_id:string * string ->
-    commit:string ->
-    duration:Ptime.span ->
-    benchmark_name:string option ->
-    ?branch:string ->
-    ?pull_number:int ->
     ?build_job_id:string ->
     ?run_job_id:string ->
+    run_at:Ptime.t ->
+    duration:Ptime.span ->
+    benchmark_name:string option ->
+    repository:Repository.t ->
+    commit:string ->
     Yojson.Safe.t ->
     t
 

@@ -49,40 +49,75 @@ module Cache = Current_cache.Make (File_exists)
 
 let pp_commit = Fmt.(string)
 
-let file_exists ~src filename =
+let file_exists ~repository filename =
   Current.component "file-exists %S" (Fpath.to_string filename)
-  |> let> commit = src in
+  |> let> commit = Repository.src repository in
      Cache.get () { File_exists.Key.commit; filename }
 
-(* Generate a Dockerfile for building all the opam packages in the build context. *)
-let dockerfile ~base ~repository =
-  let opam_dependencies =
-    (* FIXME: This should be supported by a custom Dockerfiles. *)
-    if String.equal repository "dune" then
-      "opam install ./dune-bench.opam -y --deps-only  -t"
-    else "opam install -y --deps-only -t ."
-  in
+let base_dockerfile ~base =
   let open Dockerfile in
   from (Docker.Image.hash base)
   @@ run
        "sudo apt-get update && sudo apt-get install -qq -yy libffi-dev \
         liblmdb-dev m4 pkg-config gnuplot-x11 libgmp-dev libssl-dev \
-        libpcre3-dev"
-  @@ copy ~src:[ "--chown=opam:opam ." ] ~dst:"bench-dir" ()
+        libpcre3-dev && opam remote add origin https://opam.ocaml.org && opam \
+        update && eval $(opam env)"
+
+let add_workdir =
+  let open Dockerfile in
+  copy ~src:[ "--chown=opam:opam ." ] ~dst:"bench-dir" ()
   @@ workdir "bench-dir"
-  @@ run "opam remote add origin https://opam.ocaml.org"
-  @@ run "%s" opam_dependencies
   @@ add ~src:[ "--chown=opam ." ] ~dst:"." ()
-  @@ run "eval $(opam env)"
+
+let minimal_dockerfile ~base =
+  let open Dockerfile in
+  base_dockerfile ~base @@ add_workdir
+
+let docker_exec ~pool ~run_args ~repository ~dockerfile args =
+  let { Repository.src; branch; pull_number; _ } = repository in
+  let repo_info = Repository.info repository in
+  let image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
+  let* commit = Repository.commit_hash repository in
+  Current_util.Docker_util.pread_log ~pool ~run_args ~repo_info ?pull_number
+    ?branch ~commit ~args image
+
+let opam_install ~repository =
+  let repository_name = Repository.name repository in
+  (* FIXME: This should be supported by a custom Dockerfiles. *)
+  if String.equal repository_name "dune" then
+    "opam install ./dune-bench.opam -y --deps-only"
+  else "opam install -y --deps-only ."
+
+let discover_dependencies ~pool ~run_args ~repository ~base =
+  let cmd =
+    opam_install ~repository
+    ^ " --dry-run | sed -n '/^Installing \\(.*\\).$/{s//\\1/g;p}'"
+  in
+  let args = [ "/bin/sh"; "-c"; cmd ] in
+  let dockerfile = Current.return (`Contents (minimal_dockerfile ~base)) in
+  let+ output = docker_exec ~pool ~run_args ~repository ~dockerfile args in
+  String.concat " " (String.split_on_char '\n' output)
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
-let dockerfile ~repository =
-  let+ base = Docker.pull ~schedule:weekly "ocaml/opam" in
-  `Contents (dockerfile ~base ~repository)
+let dockerfile ~repository ~base static_dependencies =
+  let open Dockerfile in
+  let install_static_dependencies =
+    if static_dependencies = "" then empty
+    else run "opam install -y %s" static_dependencies
+  in
+  base_dockerfile ~base
+  @@ install_static_dependencies
+  @@ add_workdir
+  @@ run "%s" (opam_install ~repository)
 
-let dockerfile ~src ~repository =
+let dockerfile ~pool ~run_args ~repository =
+  let* base = Docker.pull ~schedule:weekly "ocaml/opam" in
+  let+ dependencies = discover_dependencies ~pool ~run_args ~repository ~base in
+  `Contents (dockerfile ~repository ~base dependencies)
+
+let dockerfile ~pool ~run_args ~repository =
   let custom_dockerfile = Fpath.v "bench.Dockerfile" in
-  let* existing = file_exists ~src custom_dockerfile in
+  let* existing = file_exists ~repository custom_dockerfile in
   if existing then Current.return (`File custom_dockerfile)
-  else dockerfile ~repository
+  else dockerfile ~pool ~run_args ~repository
