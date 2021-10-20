@@ -67,7 +67,7 @@ let dockerfile ~base ~repository =
   @@ run
        "sudo apt-get update && sudo apt-get install -qq -yy libffi-dev \
         liblmdb-dev m4 pkg-config gnuplot-x11 libgmp-dev libssl-dev \
-        libpcre3-dev"
+        libpcre3-dev capnproto libpq-dev graphviz libsqlite3-dev jq"
   @@ copy ~src:[ "--chown=opam:opam ." ] ~dst:"bench-dir" ()
   @@ workdir "bench-dir"
   @@ run "opam remote add origin https://opam.ocaml.org"
