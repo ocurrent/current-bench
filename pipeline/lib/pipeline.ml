@@ -106,10 +106,9 @@ let slack_post ~repository (output : string Current.t) =
   match Repository.slack_path repository with
   | None -> Current.ignore_value output
   | Some path ->
-      Current.component "post"
+      Current.component "slack post"
       |> let** _ = output in
          let channel = read_channel_uri path in
-         (* let output = Current.map snd p in *)
          Slack.post channel ~key:"output" output
 
 let db_save ~conninfo benchmark output =
@@ -129,7 +128,14 @@ let docker_make_bench ~run_args ~repository ~commit image =
   Docker_util.pread_log ~pool ~run_args image ~repo_info ?pull_number ?branch
     ~commit
     ~args:
-      [ "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "sh"; "-c"; "eval $(opam env) && make bench" ]
+      [
+        "/usr/bin/setarch";
+        "x86_64";
+        "--addr-no-randomize";
+        "sh";
+        "-c";
+        "eval $(opam env) && make bench";
+      ]
 
 let pipeline ~conninfo ~run_args ~repository ~commit =
   let src = Repository.src repository in
