@@ -51,4 +51,4 @@ endef
 export BENCH_DATA_1
 export BENCH_DATA_2
 bench:
-	@echo "$$BENCH_DATA_1"
+	@echo "$$BENCH_DATA_1" | jq -M .
