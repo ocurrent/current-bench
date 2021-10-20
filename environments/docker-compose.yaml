@@ -27,14 +27,14 @@ services:
     volumes:
       - ../hasura-server/metadata:/hasura-metadata
   frontend:
-    image: ocurrent/current-bench-frontend:live
+    image: ocurrent/current-bench-frontend:latest
     ports:
       - "${OCAML_BENCH_FRONTEND_PORT?required}:${OCAML_BENCH_FRONTEND_PORT?required}"
     environment:
       VITE_OCAML_BENCH_GRAPHQL_URL: ${OCAML_BENCH_GRAPHQL_URL?required}
       VITE_OCAML_BENCH_PIPELINE_URL: ${OCAML_BENCH_PIPELINE_URL?required}
   pipeline:
-    image: ocurrent/current-bench-pipeline:live
+    image: ocurrent/current-bench-pipeline:latest
     volumes:
       - current-bench-data:/app/current-bench-data:ro
       - pipeline_var:/app/var
