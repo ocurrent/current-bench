@@ -82,7 +82,7 @@ let dockerfile ~repository =
   `Contents (dockerfile ~base ~repository)
 
 let dockerfile ~src ~repository =
-  let custom_dockerfile = Fpath.v "bench.dockerfile" in
+  let custom_dockerfile = Fpath.v "bench.Dockerfile" in
   let* existing = file_exists ~src custom_dockerfile in
   if existing then Current.return (`File custom_dockerfile)
   else dockerfile ~repository
