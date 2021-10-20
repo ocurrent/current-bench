@@ -24,14 +24,10 @@ Your app is ready to be deployed!
 
 ## Updating the GraphQL schema
 
-Make sure that you have [graphqurl](https://github.com/hasura/graphqurl) installed and run:
+You can update the GraphQL schema using the `update-graphql-schema` make
+target.  Run the following command at the root of this repository.
 
-```
-$ gq http://localhost:8080/v1/graphql \
-    -H "X-Hasura-Admin-Secret: $REACT_APP_GRAPHQL_KEY" \
-    --introspect \
-    --format=json \
-    > graphql_schema.json
-```
 
-Where `$REACT_APP_GRAPHQL_KEY` is the secret key for the GraphQL API.
+```sh
+$ make update-graphql-schema`
+```
