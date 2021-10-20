@@ -60,10 +60,8 @@ let base_dockerfile ~base =
   @@ run
        "sudo apt-get update && sudo apt-get install -qq -yy libffi-dev \
         liblmdb-dev m4 pkg-config gnuplot-x11 libgmp-dev libssl-dev \
-        libpcre3-dev \
-        && opam remote add origin https://opam.ocaml.org \
-        && opam update \
-        && eval $(opam env)"
+        libpcre3-dev && opam remote add origin https://opam.ocaml.org && opam \
+        update && eval $(opam env)"
 
 let add_workdir =
   let open Dockerfile in
@@ -104,8 +102,12 @@ let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
 let dockerfile ~repository ~base static_dependencies =
   let open Dockerfile in
+  let install_static_dependencies =
+    if static_dependencies = "" then empty
+    else run "opam install -y %s" static_dependencies
+  in
   base_dockerfile ~base
-  @@ run "opam install -y %s" static_dependencies
+  @@ install_static_dependencies
   @@ add_workdir
   @@ run "%s" (opam_install ~repository)
 
