@@ -92,10 +92,10 @@ let github_status_of_state url = function
   | Error (`Active _) -> Github.Api.Status.v ~url `Pending
   | Error (`Msg m) -> Github.Api.Status.v ~url `Failure ~description:m
 
-let github_set_status ~repository head result =
-  match head with
-  | `Local _ -> Current.ignore_value result
-  | `Github head ->
+let github_set_status ~repository result =
+  match Repository.github_head repository with
+  | None -> Current.ignore_value result
+  | Some head ->
       let status_url = Repository.commit_status_url repository in
       result
       >>| github_status_of_state status_url
@@ -122,9 +122,10 @@ let db_save ~conninfo benchmark output =
          |> List.iter (Models.Benchmark.Db.insert db));
   db#finish
 
-let docker_make_bench ~run_args ~repository ~commit image =
-  let { Repository.branch; pull_number; _ } = repository in
-  let repo_info = Repository.info repository in
+let docker_make_bench ~run_args ~repository image =
+  let { Repository.branch; pull_number; _ } = repository
+  and repo_info = Repository.info repository
+  and commit = Repository.commit_hash repository in
   Docker_util.pread_log ~pool ~run_args image ~repo_info ?pull_number ?branch
     ~commit
     ~args:
@@ -137,14 +138,12 @@ let docker_make_bench ~run_args ~repository ~commit image =
         "eval $(opam env) && make bench";
       ]
 
-let pipeline ~conninfo ~run_args ~repository ~commit =
+let pipeline ~conninfo ~run_args ~repository =
   let src = Repository.src repository in
   let dockerfile = Custom_dockerfile.dockerfile ~pool ~run_args ~repository in
   let current_image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
   let run_at = Ptime_clock.now () in
-  let current_output =
-    docker_make_bench ~run_args ~repository ~commit current_image
-  in
+  let current_output = docker_make_bench ~run_args ~repository current_image in
   let+ build_job_id = Current_util.get_job_id current_image
   and+ run_job_id = Current_util.get_job_id current_output
   and+ output = current_output in
@@ -152,75 +151,45 @@ let pipeline ~conninfo ~run_args ~repository ~commit =
   Logs.debug (fun log -> log "Benchmark output:\n%s" output);
   let () =
     db_save ~conninfo
-      (Benchmark.make ~duration ~run_at ~repository ~commit ?build_job_id
-         ?run_job_id)
+      (Benchmark.make ~duration ~run_at ~repository ?build_job_id ?run_job_id)
       output
   in
   output
 
-let fetch = function
-  | `Github api_commit ->
-      Git.fetch (Current.return (Github.Api.Commit.id api_commit))
-  | `Local commit -> commit
-
-let pipeline ~conninfo ~run_args ~slack_path ?branch ?pull_number ~head
-    ~repository ~owner () =
-  let repository =
-    {
-      Repository.owner;
-      name = repository;
-      src = fetch head;
-      pull_number;
-      branch;
-      slack_path;
-    }
-  in
-  let* commit =
-    match head with
-    | `Github api_commit -> Current.return (Github.Api.Commit.hash api_commit)
-    | `Local commit -> commit >>| Git.Commit.hash
-  in
-  pipeline ~conninfo ~run_args ~repository ~commit
+let pipeline ~conninfo ~run_args repository =
+  pipeline ~conninfo ~run_args ~repository
   |> slack_post ~repository
   |> Current.state
-  |> github_set_status ~repository head
+  |> github_set_status ~repository
 
-let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
-    ~(source : Source.t) () =
-  let run_args = Docker_config.run_args docker_config in
-  let pipeline = pipeline ~conninfo ~run_args in
-  match source with
-  | Github { repo; slack_path; token } ->
-      let pipeline =
-        pipeline ~slack_path ~repository:repo.name ~owner:repo.owner
-      in
-      let* refs =
-        let api =
-          token |> Util.read_fpath |> String.trim |> Current_github.Api.of_oauth
-        in
-        let repo = Current.return (api, repo) in
-        Current.component "Get PRs"
-        |> let> api, repo = repo in
-           Github.Api.refs api repo
-      in
-      let default_branch = Github.Api.default_ref refs in
-      let default_branch_name = Util.get_branch_name default_branch in
-      let ref_map = Github.Api.all_refs refs in
-      Github.Api.Ref_map.fold
-        (fun key head _ ->
-          let head = `Github head in
-          match key with
-          | `Ref branch ->
-              if branch = default_branch then
-                pipeline ~head ~branch:default_branch_name ()
-              else Current.return ()
-          | `PR pull_number -> pipeline ~head ~pull_number ()
-          (* Skip all branches other than master, and check PRs *))
-        ref_map (Current.return ())
-  | Local path ->
+let github_repositories ?slack_path repo =
+  let* refs =
+    Current.component "Get PRs"
+    |> let> api, repo = repo in
+       Github.Api.refs api repo
+  in
+  let default_branch = Github.Api.default_ref refs in
+  let default_branch_name = Util.get_branch_name default_branch in
+  let ref_map = Github.Api.all_refs refs in
+  let+ _, repo = repo in
+  let repository = Repository.v ?slack_path ~name:repo.name ~owner:repo.owner in
+  Github.Api.Ref_map.fold
+    (fun key head lst ->
+      let commit = Github.Api.Commit.id head in
+      let repository = repository ~commit in
+      match key with
+      (* Skip all branches other than master, and check PRs *)
+      | `Ref branch when branch = default_branch ->
+          repository ~branch:default_branch_name () :: lst
+      | `Ref _ -> lst
+      | `PR pull_number -> repository ~pull_number () :: lst)
+    ref_map []
+
+let repositories = function
+  | Source.Local path ->
       let local = Git.Local.v path in
-      let* head = Git.Local.head local in
-      let head_commit = `Local (Git.Local.head_commit local) in
+      let src = Git.Local.head_commit local in
+      let+ head = Git.Local.head local and+ commit = src >>| Git.Commit.id in
       let branch =
         match head with
         | `Commit _ -> None
@@ -232,38 +201,33 @@ let process_pipeline ~(docker_config : Docker_config.t) ~conninfo
                     log "Could not extract branch name from: %s" git_ref);
                 None)
       in
-      pipeline ?branch ~head:head_commit ~repository:"local" ~owner:"local"
-        ~slack_path:None ()
+      [ Repository.v ?branch ~src ~commit ~name:"local" ~owner:"local" () ]
+  | Github { repo; slack_path; token } ->
+      let api =
+        token |> Util.read_fpath |> String.trim |> Current_github.Api.of_oauth
+      in
+      let repo = Current.return (api, repo) in
+      github_repositories ?slack_path repo
   | Github_app app ->
-      Github.App.installations app
-      |> Current.list_iter (module Github.Installation) @@ fun installation ->
-         let repos = Github.Installation.repositories installation in
-         repos
-         |> Current.list_iter ~collapse_key:"repo" (module Github.Api.Repo)
-            @@ fun repo ->
-            let* refs =
-              Current.component "Get PRS"
-              |> let> api, repo = repo in
-                 Github.Api.refs api repo
-            in
-            let ref_map = Github.Api.all_refs refs in
-            let default_branch = Github.Api.default_ref refs in
-            let default_branch_name = Util.get_branch_name default_branch in
-            let* _, repo = repo in
-            let pipeline =
-              pipeline ~slack_path:None ~repository:repo.name ~owner:repo.owner
-            in
-            Github.Api.Ref_map.fold
-              (fun key head _ ->
-                let head = `Github head in
-                match key with
-                | `Ref branch ->
-                    if branch = default_branch then
-                      pipeline ~head ~branch:default_branch_name ()
-                    else Current.return ()
-                | `PR pull_number -> pipeline ~head ~pull_number ()
-                (* Skip all branches other than master, and check PRs *))
-              ref_map (Current.return ())
+      let+ repos =
+        Github.App.installations app
+        |> Current.list_map (module Github.Installation) @@ fun installation ->
+           let repos = Github.Installation.repositories installation in
+           repos
+           |> Current.list_map ~collapse_key:"repo"
+                (module Github.Api.Repo)
+                github_repositories
+      in
+      List.concat (List.concat repos)
+
+let process_pipeline ~docker_config ~conninfo ~source () =
+  let run_args = Docker_config.run_args docker_config in
+  Current.list_iter
+    (module Repository)
+    (fun repository ->
+      let* repository = repository in
+      pipeline ~conninfo ~run_args repository)
+    (repositories source)
 
 let v ~current_config ~docker_config ~server:mode ~(source : Source.t) conninfo
     () =

@@ -8,7 +8,6 @@ module Benchmark : sig
     duration:Ptime.span ->
     benchmark_name:string option ->
     repository:Repository.t ->
-    commit:string ->
     Yojson.Safe.t ->
     t
 
