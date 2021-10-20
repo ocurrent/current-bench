@@ -57,11 +57,11 @@ Start the docker-compose environment:
 ```
 $ make start-development
 docker-compose \
-		--project-name="current-bench" \
-		--file=./environments/development.docker-compose.yaml \
-		--env-file=development.env \
-		up \
-		--remove-orphans
+        --project-name="current-bench" \
+        --file=./environments/development.docker-compose.yaml \
+        --env-file=development.env \
+        up \
+        --remove-orphans
 Starting current-bench_db_1 ... done
 Starting current-bench_db-migrate_1 ... done
 Recreating current-bench_pipeline_1 ... done
@@ -90,6 +90,15 @@ For more details and setup instructions for the `pipeline` and the `frontend` se
 
 For more details on Hasura see: <https://hasura.io/docs/1.0/graphql/manual/deployment/docker/index.html>.
 
+### Running commands in the docker containers
+
+The `scripts/` directory has a helper script `dc.sh` that makes it easy to run
+`docker-compose` commands without having to manually provide the `--file`,
+`--env` and `--project-name` arguments.
+
+```sh
+./scripts/dc.sh exec db psql -U docker
+```
 
 ## Inspecting the benchmark results in the database
 
@@ -104,7 +113,7 @@ Type "help" for help.
 
 docker=# \dt
               List of relations
- Schema |       Name        | Type  | Owner  
+ Schema |       Name        | Type  | Owner
 --------+-------------------+-------+--------
  public | benchmarks        | table | docker
  public | schema_migrations | table | docker
@@ -159,13 +168,13 @@ The `pipeline` logs should show something like:
 pipeline_1    |    current.git [INFO] Detected change in "master"
 pipeline_1    |        current [INFO] Created new log file at
 pipeline_1    |                       /app/var/job/2021-03-15/161926-docker-build-e82ec6.log
-pipeline_1    |        current [INFO] Exec: "cp" "-a" "--" "/app/local-test-repo/.git" 
+pipeline_1    |        current [INFO] Exec: "cp" "-a" "--" "/app/local-test-repo/.git"
 pipeline_1    |                             "/tmp/git-checkout3219a5b2"
-pipeline_1    |        current [INFO] Exec: "git" "-C" "/tmp/git-checkout3219a5b2" "reset" 
+pipeline_1    |        current [INFO] Exec: "git" "-C" "/tmp/git-checkout3219a5b2" "reset"
 pipeline_1    |                             "--hard" "706782c82741a89b8d9c982860787ec10b1b95f7"
-pipeline_1    |        current [INFO] Exec: "git" "-C" "/tmp/git-checkout3219a5b2" "submodule" 
+pipeline_1    |        current [INFO] Exec: "git" "-C" "/tmp/git-checkout3219a5b2" "submodule"
 pipeline_1    |                             "update" "--init" "--recursive"
-pipeline_1    |        current [INFO] Exec: "docker" "build" "--iidfile" "/tmp/git-checkout3219a5b2/docker-iid" 
+pipeline_1    |        current [INFO] Exec: "docker" "build" "--iidfile" "/tmp/git-checkout3219a5b2/docker-iid"
 pipeline_1    |                             "--" "/tmp/git-checkout3219a5b2"
 ...
 ```
@@ -228,11 +237,11 @@ Start the docker-compose environment:
 ```
 $ make start-production
 docker-compose \
-		--project-name="current-bench" \
-		--file=./environments/production.docker-compose.yaml \
-		--env-file=production.env \
-		up \
-		--detach
+        --project-name="current-bench" \
+        --file=./environments/production.docker-compose.yaml \
+        --env-file=production.env \
+        up \
+        --detach
 Starting current-bench_db_1 ... done
 Starting current-bench_db-migrate_1 ... done
 Recreating current-bench_pipeline_1 ... done
@@ -250,5 +259,4 @@ ERROR: for current-bench_db_1  Cannot start service db: driver failed programmin
 ```
 You have a postgres server running on your machine, kill the postgres process and run the make command again.
 
-4. If the database isn't getting populated, it is most likely that the `make bench` command that the pipeline runs failed. You can look for the logs in`var/job/<date>/<-docker-pread-.log>` to find out why the command failed. Once you fix it, the pipeline should start populating the database. 
-
+4. If the database isn't getting populated, it is most likely that the `make bench` command that the pipeline runs failed. You can look for the logs in`var/job/<date>/<-docker-pread-.log>` to find out why the command failed. Once you fix it, the pipeline should start populating the database.
