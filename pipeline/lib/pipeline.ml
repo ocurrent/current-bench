@@ -110,7 +110,7 @@ let pipeline ~slack_path ~conninfo ?branch ?pull_number ~tmpfs
         ?pull_number ?branch ~commit
         ~args:
           [
-            "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "make"; "bench";
+            "/usr/bin/setarch"; "x86_64"; "--addr-no-randomize"; "sh"; "-c"; "eval $(opam env) && make bench";
           ]
     in
     let+ build_job_id = Current_util.get_job_id current_image
