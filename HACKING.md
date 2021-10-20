@@ -127,6 +127,16 @@ omigrate: [INFO] Version 20210202135643 has already been applied
 ...
 ```
 
+### Creating new migrations
+
+New migrations can be created using the `omigrate create` command, when the
+pipeline container is running.
+
+
+```
+$ docker exec -it current-bench_pipeline_1 omigrate create --verbose --dir=/app/db/migrations add_version_column_to_benchmarks
+```
+
 ## Testing benchmarks locally
 
 Testing the OCaml Benchmarks project can be tricky because it operates as GitHub App in production. For local testing convenience the development environment includes a "shadow" git repository that can be used to trigger benchmark jobs.

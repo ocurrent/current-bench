@@ -66,6 +66,7 @@ services:
       - current-bench-data:/app/current-bench-data
       - ../local-test-repo:/app/local-test-repo
       - /var/run/docker.sock:/var/run/docker.sock
+      - ../pipeline/db/migrations:/app/db/migrations
     ports: ["${OCAML_BENCH_PIPELINE_PORT?required}:${OCAML_BENCH_PIPELINE_PORT?required}"]
     command:
       - "current-bench-pipeline"
