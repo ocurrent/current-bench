@@ -100,6 +100,18 @@ The `scripts/` directory has a helper script `dc.sh` that makes it easy to run
 ./scripts/dc.sh exec db psql -U docker
 ```
 
+### Restarting services upon source code changes
+
+The frontend has hot-reloading configured and any changes made to the frontend
+files are automatically detected and reflected in the browser.
+
+Changes made to the pipeline source will need a rebuild and restart of the
+pipeline container. This can be achieved by running the following command:
+
+```sh
+./scripts/dc.sh up --detach --build pipeline
+```
+
 ## Inspecting the benchmark results in the database
 
 The raw benchmark results (as produced by user projects) are stored in the PostgreSQL database.
