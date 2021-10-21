@@ -5,6 +5,7 @@
   - role: public
     permission:
       columns:
+      - version
       - run_at
       - repo_id
       - commit
