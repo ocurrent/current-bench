@@ -59,11 +59,10 @@ let deltaToString = n =>
   }
 
 let renderMetricOverviewRow = (
-  ~repoId,
   ~comparison as (comparisonTimeseries: array<LineGraph.DataRow.t>, _comparisonMetadata)=([], []),
   ~testName,
   ~metricName,
-  (timeseries, metadata),
+  (timeseries, _),
 ) => {
   if Belt.Array.length(timeseries) == 0 {
     React.null
@@ -137,7 +136,6 @@ let make = (
             ([], []),
           )
           renderMetricOverviewRow(
-            ~repoId,
             ~comparison=(comparisonTimeseries, comparisonMetadata),
             ~testName,
             ~metricName,
