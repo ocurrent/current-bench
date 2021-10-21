@@ -176,7 +176,7 @@ let github_repositories ?slack_path repo =
   Github.Api.Ref_map.fold
     (fun key head lst ->
       let commit = Github.Api.Commit.id head in
-      let repository = repository ~commit in
+      let repository = repository ~commit ~github_head:head in
       match key with
       (* Skip all branches other than master, and check PRs *)
       | `Ref branch when branch = default_branch ->
