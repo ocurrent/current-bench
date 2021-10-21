@@ -223,6 +223,7 @@ let repositories = function
 let process_pipeline ~docker_config ~conninfo ~source () =
   let run_args = Docker_config.run_args docker_config in
   Current.list_iter
+    ~collapse_key:"pipeline"
     (module Repository)
     (fun repository ->
       let* repository = repository in
