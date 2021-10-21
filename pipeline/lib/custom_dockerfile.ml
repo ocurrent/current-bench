@@ -89,19 +89,21 @@ let opam_install ~repository =
     "opam install ./dune-bench.opam -y --deps-only"
   else "opam install -y --deps-only ."
 
-let with_base f ~base = Current.map (fun base -> `Contents (f ~base)) base
+let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
-let discover_dependencies ~pool ~run_args ~repository ~base =
+let base = Docker.pull ~schedule:weekly "ocaml/opam"
+
+let with_base f = Current.map (fun base -> `Contents (f ~base)) base
+
+let discover_dependencies ~pool ~run_args ~repository =
   let cmd =
     opam_install ~repository
     ^ " --dry-run | sed -n '/^Installing \\(.*\\).$/{s//\\1/g;p}'"
   in
   let args = [ "/bin/sh"; "-c"; cmd ] in
-  let dockerfile = with_base minimal_dockerfile ~base in
+  let dockerfile = with_base minimal_dockerfile in
   let+ output = docker_exec ~pool ~run_args ~repository ~dockerfile args in
   String.concat " " (String.split_on_char '\n' output)
-
-let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
 let dockerfile ~repository ~base ~dependencies =
   let open Dockerfile in
@@ -114,9 +116,8 @@ let dockerfile ~repository ~base ~dependencies =
   @@ run "%s" (opam_install ~repository)
 
 let dockerfile ~pool ~run_args ~repository =
-  let base = Docker.pull ~schedule:weekly "ocaml/opam" in
-  let* dependencies = discover_dependencies ~pool ~run_args ~repository ~base in
-  with_base (dockerfile ~dependencies ~repository) ~base
+  let* dependencies = discover_dependencies ~pool ~run_args ~repository in
+  with_base (dockerfile ~dependencies ~repository)
 
 let dockerfile ~pool ~run_args ~repository =
   let custom_dockerfile = Fpath.v "bench.Dockerfile" in
