@@ -1,4 +1,3 @@
-
 .PHONY: start-production
 start-production:
 	docker-compose \
@@ -45,10 +44,7 @@ update-graphql-schema: ./local-test-repo/.git
 		--project-name="current-bench" \
 		--file=./environments/development.docker-compose.yaml \
 		--env-file=./environments/development.env \
-		exec frontend bash -c '\
-URL=$$(echo "$${VITE_OCAML_BENCH_GRAPHQL_URL/localhost/graphql-engine}"); \
-yarn -s gq "$${URL}" -H "X-Hasura-Admin-Secret: $${HASURA_GRAPHQL_ADMIN_SECRET}" --introspect --format=json > graphql_schema.json'
-
+		exec frontend /app/scripts/update-graphql-schema.sh
 
 .PHONY: bench
 bench:
