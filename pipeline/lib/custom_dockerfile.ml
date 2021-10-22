@@ -21,10 +21,10 @@ module Get_files = struct
     type t = string list
 
     (* convert string list to string *)
-    let marshal t = String.concat "; " t
+    let marshal t = String.concat "\n" t
 
     (* convert string to string list *)
-    let unmarshal t = String.split_on_char ';' t
+    let unmarshal t = String.split_on_char '\n' t
   end
 
   open Lwt.Infix
@@ -79,7 +79,9 @@ let docker_exec ~label ~pool ~run_args ~repository ~dockerfile args =
     ?pull_number ?branch ~commit ~args image
 
 let opam_install ~opam_file =
-  Format.sprintf "opam install ./%s -y --deps-only ." opam_file
+  match String.compare opam_file "" with
+  | 0 -> Format.sprintf "opam install -y --deps-only ."
+  | _ -> Format.sprintf "opam install %s -y --deps-only" opam_file
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
@@ -128,7 +130,7 @@ let dockerfile ~pool ~run_args ~repository =
   let acc = "" in
   let opam_file =
     List.fold_left
-      (fun v acc -> if Str.string_match r v 0 then acc ^ v else "")
+      (fun acc v -> if Str.string_match r v 0 then acc ^ " ./" ^ v else acc)
       acc file_list
   in
   if dockerfile_exists then Current.return (`File custom_dockerfile)
