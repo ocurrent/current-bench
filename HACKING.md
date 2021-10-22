@@ -109,7 +109,7 @@ Changes made to the pipeline source will need a rebuild and restart of the
 pipeline container. This can be achieved by running the following command:
 
 ```sh
-./scripts/dc.sh up --detach --build pipeline
+make rebuild-pipeline
 ```
 
 ## Inspecting the benchmark results in the database
