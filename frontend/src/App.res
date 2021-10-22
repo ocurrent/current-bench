@@ -14,6 +14,7 @@ query {
 
 module BenchmarkMetrics = %graphql(`
 fragment BenchmarkMetrics on benchmarks {
+  version
   run_at
   commit
   test_name
