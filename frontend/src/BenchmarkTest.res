@@ -9,17 +9,6 @@ type testMetrics = {
 
 @module("../icons/branch.svg") external branchIcon: string = "default"
 
-let groupByTestName = (acc, item: testMetrics, idx) => {
-  let go = vOpt => {
-    let idxs = switch vOpt {
-    | Some(idxs) => idxs
-    | None => Belt.Set.Int.empty
-    }
-    Some(Belt.Set.Int.add(idxs, idx))
-  }
-  Belt.Map.String.update(acc, item.name, go)
-}
-
 let decodeMetricValue = (json): LineGraph.DataRow.value => {
   switch Js.Json.classify(json) {
   | JSONNumber(n) => LineGraph.DataRow.single(n)
