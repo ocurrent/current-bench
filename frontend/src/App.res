@@ -1,7 +1,6 @@
 %%raw(`import './App.css';`)
 
 open! Prelude
-open JsHelpers
 open Components
 
 module GetAllRepos = %graphql(`
@@ -83,23 +82,47 @@ module Benchmark = {
   let decodeMetrics = metrics =>
     metrics
     ->Belt.Option.getExn
-    ->Js.Json.decodeObject
+    ->Js.Json.decodeArray
     ->Belt.Option.getExn
-    ->jsDictToMap
-    ->Belt.Map.String.map(v => BenchmarkTest.decodeMetricValue(v))
+    ->Belt.Array.map(v => v->Js.Json.decodeObject->Belt.Option.getExn->BenchmarkTest.decodeMetric)
+
+  let migrateVersions = (benchmarks: array<BenchmarkMetrics.t>): array<BenchmarkMetrics.t> => {
+    // Convert metrics from an object to an array of objects
+    let version1To2 = (benchmark: BenchmarkMetrics.t): BenchmarkMetrics.t => {
+      let metricsToArray = metrics =>
+        metrics
+        ->Belt.Option.getExn
+        ->Js.Json.decodeObject
+        ->Belt.Option.getExn
+        ->Js.Dict.entries
+        ->Belt.Array.map(((key, value)) => {"name": key, "value": value}->Obj.magic)
+        ->Js.Json.array
+        ->Some
+
+      switch benchmark.version {
+      | 1 => {...benchmark, version: 2, metrics: metricsToArray(benchmark.metrics)}
+      | _ => benchmark
+      }
+    }
+    // New functions to migrate from previous latest version to next version can be added here. 
+    // For instance, define a function version2To3 and append `->Belt.Array.map(version2To3)` to the expression below
+    benchmarks->Belt.Array.map(version1To2)
+  }
 
   let makeBenchmarkData = (benchmarks: array<BenchmarkMetrics.t>) => {
-    benchmarks->Belt.Array.reduce(BenchmarkData.empty, (acc, item) => {
+    benchmarks
+    ->migrateVersions
+    ->Belt.Array.reduce(BenchmarkData.empty, (acc, item) => {
       item.metrics
       ->decodeMetrics
-      ->Belt.Map.String.reduce(acc, (acc, metricName, value: LineGraph.DataRow.value) => {
+      ->Belt.Array.reduce(acc, (acc, metric: LineGraph.DataRow.metric) => {
         BenchmarkData.add(
           acc,
           ~testName=item.test_name,
-          ~metricName,
+          ~metricName=metric.name,
           ~runAt=item.run_at->decodeRunAt->Belt.Option.getExn,
           ~commit=item.commit,
-          ~value,
+          ~value=metric.value,
         )
       })
     })

@@ -1,24 +1,42 @@
-
-
 define BENCH_DATA_1
 {
-  "config": {  },
+  "config": {
+  },
+  "version": 2,
   "results": [
     {
       "name": "bench_1_test_1",
-      "metrics": {
-        "time": 4.02,
-        "ops_per_sec": 690.0,
-        "mbs_per_sec": 199.0
-      }
+      "metrics": [
+	{
+	  "name": "time",
+	  "value": 4.02
+	},
+	{
+	  "name": "ops_per_sec",
+	  "value": 690.0
+	},
+	{
+	  "name": "mbs_per_sec",
+	  "value": 199
+	}
+      ]
     },
     {
       "name": "bench_1_test_2",
-      "metrics": {
-        "time": 10.04,
-        "ops_per_sec": 1455.0,
-        "mbs_per_sec": 17.0
-      }
+      "metrics": [
+	{
+	  "name": "time",
+	  "value": 10.04
+	},
+	{
+	  "name": "ops_per_sec",
+	  "value": 1455.0
+	},
+	{
+	  "name": "mbs_per_sec",
+	  "value": 17.0
+	}
+      ]
     }
   ]
 }
@@ -30,19 +48,37 @@ define BENCH_DATA_2
   "results": [
     {
       "name": "bench_2_test_1",
-      "metrics": {
-        "time": 0.01,
-        "ops_per_sec": 50.0,
-        "mbs_per_sec": 3.0
-      }
+      "metrics": [
+	{
+	  "name": "time",
+	  "value": 0.01
+	},
+	{
+	  "name": "ops_per_sec",
+	  "value": 50.0
+	},
+	{
+	  "name": "mbs_per_sec",
+	  "value": 3.0
+	}
+      ]
     },
     {
       "name": "bench_2_test_2",
-      "metrics": {
-        "time": 0.07,
-        "ops_per_sec": 877.0,
-        "mbs_per_sec": 23.0
-      }
+      "metrics": [
+	{
+	  "name": "time",
+	  "value": 0.07
+	},
+	{
+	  "name": "ops_per_sec",
+	  "value": 877.0
+	},
+	{
+	  "name": "mbs_per_sec",
+	  "value": 23.0
+	}
+      ]
     }
   ]
 }

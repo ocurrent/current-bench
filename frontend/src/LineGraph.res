@@ -46,7 +46,9 @@ let computeStats = xs => {
 }
 
 module DataRow = {
+  type name = string
   type value
+  type metric = {name, value}
   type t = array<value>
 
   let single = (x: float): value =>

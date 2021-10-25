@@ -4,7 +4,7 @@ open Components
 type testMetrics = {
   name: string,
   commit: string,
-  metrics: Belt.Map.String.t<LineGraph.DataRow.value>,
+  metrics: array<LineGraph.DataRow.metric>
 }
 
 @module("../icons/branch.svg") external branchIcon: string = "default"
@@ -28,6 +28,10 @@ let decodeMetricValue = (json): LineGraph.DataRow.value => {
   }
   // ->ignore
   // LineGraph.DataRow.many([Random.float(10.0), 5. +. Random.float(10.0), 10. +. Random.float(10.0)])
+}
+
+let decodeMetric = (data): LineGraph.DataRow.metric => {
+  {name: Obj.magic(Js.Dict.unsafeGet(data, "name")), value: decodeMetricValue(Js.Dict.unsafeGet(data, "value"))}
 }
 
 let calcDelta = (a, b) => {
