@@ -4,7 +4,7 @@ open Components
 type testMetrics = {
   name: string,
   commit: string,
-  metrics: array<LineGraph.DataRow.metric>
+  metrics: array<LineGraph.DataRow.metric>,
 }
 
 @module("../icons/branch.svg") external branchIcon: string = "default"
@@ -31,7 +31,11 @@ let decodeMetricValue = (json): LineGraph.DataRow.value => {
 }
 
 let decodeMetric = (data): LineGraph.DataRow.metric => {
-  {name: Obj.magic(Js.Dict.unsafeGet(data, "name")), value: decodeMetricValue(Js.Dict.unsafeGet(data, "value"))}
+  {
+    name: Js.Dict.unsafeGet(data, "name")->Obj.magic,
+    value: decodeMetricValue(Js.Dict.unsafeGet(data, "value")),
+    units: Js.Dict.unsafeGet(data, "units")->Obj.magic,
+  }
 }
 
 let calcDelta = (a, b) => {
@@ -207,6 +211,7 @@ let make = (
           subTitle=?delta
           xTicks
           data={timeseries->Belt.Array.sliceToEnd(-20)}
+          units={(metadata->BeltHelpers.Array.lastExn)["units"]}
           annotations
           labels=["idx", "value"]
         />

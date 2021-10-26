@@ -9,15 +9,18 @@ define BENCH_DATA_1
       "metrics": [
 	{
 	  "name": "time",
-	  "value": 4.02
+	  "value": 4.02,
+	  "units": "secs"
 	},
 	{
 	  "name": "ops_per_sec",
-	  "value": 690.0
+	  "value": 690.0,
+	  "units": "num/sec"
 	},
 	{
 	  "name": "mbs_per_sec",
-	  "value": 199
+	  "value": 199,
+	  "units": "mbps"
 	}
       ]
     },
@@ -26,15 +29,18 @@ define BENCH_DATA_1
       "metrics": [
 	{
 	  "name": "time",
-	  "value": 10.04
+	  "value": 10.04,
+	  "units": "secs"
 	},
 	{
 	  "name": "ops_per_sec",
-	  "value": 1455.0
+	  "value": 1455.0,
+	  "units": "num/sec"
 	},
 	{
 	  "name": "mbs_per_sec",
-	  "value": 17.0
+	  "value": 17.0,
+	  "units": "mbps"
 	}
       ]
     }
@@ -51,15 +57,18 @@ define BENCH_DATA_2
       "metrics": [
 	{
 	  "name": "time",
-	  "value": 0.01
+	  "value": 0.01,
+	  "units": "secs"
 	},
 	{
 	  "name": "ops_per_sec",
-	  "value": 50.0
+	  "value": 50.0,
+	  "units": "num/sec"
 	},
 	{
 	  "name": "mbs_per_sec",
-	  "value": 3.0
+	  "value": 3.0,
+	  "units": "mbps"
 	}
       ]
     },
@@ -68,15 +77,18 @@ define BENCH_DATA_2
       "metrics": [
 	{
 	  "name": "time",
-	  "value": 0.07
+	  "value": 0.07,
+	  "units": "secs"
 	},
 	{
 	  "name": "ops_per_sec",
-	  "value": 877.0
+	  "value": 877.0,
+	  "units": "num/sec"
 	},
 	{
 	  "name": "mbs_per_sec",
-	  "value": 23.0
+	  "value": 23.0,
+	  "units": "mbps"
 	}
       ]
     }
