@@ -4,6 +4,11 @@ FROM node:lts AS dev
 ARG VITE_OCAML_BENCH_GRAPHQL_URL
 ARG VITE_OCAML_BENCH_PIPELINE_URL
 
+RUN apt-get update \
+    && apt-get install --no-install-recommends --assume-yes \
+        screen \
+    && rm -r /var/lib/apt/lists /var/cache/apt
+
 # set working directory
 WORKDIR /app
 
