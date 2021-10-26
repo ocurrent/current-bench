@@ -63,7 +63,6 @@ module DataRow = {
     Obj.magic([Obj.magic(low), Obj.magic(mid), Obj.magic(high)])
   }
 
-  let with_index = (index: int, value): t => [Obj.magic(index), value]
   let with_date = (date: Js.Date.t, value): t => [Obj.magic(date), value]
 
   let set_index = (index: int, row: t): unit => {
