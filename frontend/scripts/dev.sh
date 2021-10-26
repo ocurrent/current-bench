@@ -9,10 +9,9 @@ echo "VITE_OCAML_BENCH_PIPELINE_URL=${VITE_OCAML_BENCH_PIPELINE_URL}" >> /app/.e
 echo "starting watch"
 rm -f .bsb.lock  # Remove any watcher locks, if the shutdown was not clean
 # NOTE: This is a workaround to avoid the watcher from exiting after compiling,
-# instead of watching.  The workaround of redirecting < /dev/zero to the
-# watcher is from the GH comment here:
-# https://github.com/rescript-lang/rescript-compiler/issues/2750#issuecomment-657402249
-yarn watch < /dev/zero &
+# instead of watching.
+screen -L /tmp/watch.log -dm yarn watch
+tail -F /tmp/watch.log &
 
 echo "starting serve"
 yarn serve
