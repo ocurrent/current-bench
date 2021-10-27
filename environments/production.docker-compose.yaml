@@ -69,6 +69,7 @@ services:
       - "--github-app-id=${OCAML_BENCH_GITHUB_APP_ID}"
       - "--github-account-allowlist=${OCAML_BENCH_GITHUB_ACCOUNT_ALLOW_LIST?required}"
       - "--github-private-key-file=${OCAML_BENCH_GITHUB_PRIVATE_KEY_FILE?required}"
+      - "--github-webhook-secret-file=${OCAML_BENCH_GITHUB_WEBHOOK_SECRET_FILE?required}"
     restart: always
     depends_on:
       db:

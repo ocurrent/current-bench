@@ -16,6 +16,12 @@ module Source = struct
       @@ Arg.info ~doc:"A file containing the GitHub OAuth token." ~docv:"PATH"
            [ "github-token-file" ]
     in
+    let github_webhook_secret =
+      Arg.required
+      @@ Arg.opt Arg.(some string) (Some "")
+      @@ Arg.info ~doc:"The GitHub secret to secure webhooks."
+           [ "github-webhook-secret" ]
+    in
     let slack_path =
       let doc =
         "File containing the Slack endpoint URI to use for result \
@@ -24,12 +30,13 @@ module Source = struct
       Arg.(value & opt (some file) None & info [ "s"; "slack" ] ~doc)
     in
     Term.(
-      const (fun repo token slack_path ->
+      const (fun repo token webhook_secret slack_path ->
           let token = Fpath.v token in
           let slack_path = Option.map Fpath.v slack_path in
-          Pipeline.Source.github ~repo ~token ~slack_path)
+          Pipeline.Source.github ~repo ~token ~webhook_secret ~slack_path)
       $ repo
       $ github_token_path
+      $ github_webhook_secret
       $ slack_path)
 
   let local =
