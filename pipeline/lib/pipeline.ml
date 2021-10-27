@@ -97,7 +97,7 @@ let github_set_status ~repository result =
   | None -> Current.ignore_value result
   | Some head ->
       let status_url = Repository.commit_status_url repository in
-      result
+      Current.state result
       >>| github_status_of_state status_url
       |> Github.Api.Commit.set_status (Current.return head) "ocaml-benchmarks"
       |> Current.ignore_value
@@ -157,10 +157,9 @@ let pipeline ~conninfo ~run_args ~repository =
   output
 
 let pipeline ~conninfo ~run_args repository =
-  pipeline ~conninfo ~run_args ~repository
-  |> slack_post ~repository
-  |> Current.state
-  |> github_set_status ~repository
+  let p = pipeline ~conninfo ~run_args ~repository in
+  let* () = p |> slack_post ~repository |> github_set_status ~repository in
+  Current.ignore_value p
 
 let github_repositories ?slack_path repo =
   let* refs =
