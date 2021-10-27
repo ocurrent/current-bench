@@ -11,7 +11,8 @@ RUN sudo apt-get update && \
     graphviz \
     capnproto \
     libsqlite3-dev \
-    libcapnp-dev
+    libcapnp-dev \
+    libev-dev
 
 WORKDIR /mnt/project
 
@@ -41,6 +42,7 @@ RUN apt-get update \
         git \
         libpq-dev \
         libsqlite3-dev \
+        libev-dev \
     && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
     && echo "deb [arch=${TARGET_ARCH} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
         > /etc/apt/sources.list.d/docker.list \

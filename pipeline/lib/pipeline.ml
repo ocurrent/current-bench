@@ -34,17 +34,24 @@ let validate_json json_list =
 module Source = struct
   type github = {
     token : Fpath.t;
+    webhook_secret : string;
     slack_path : Fpath.t option;
     repo : Github.Repo_id.t;
   }
 
   type t = Github of github | Local of Fpath.t | Github_app of Github.App.t
 
-  let github ~token ~slack_path ~repo = Github { token; slack_path; repo }
+  let github ~token ~webhook_secret ~slack_path ~repo =
+    Github { token; webhook_secret; slack_path; repo }
 
   let local path = Local path
 
   let github_app t = Github_app t
+
+  let webhook_secret = function
+    | Local _ -> None
+    | Github g -> Some g.webhook_secret
+    | Github_app g -> Some (Github.App.webhook_secret g)
 end
 
 module Docker_config = struct
@@ -202,10 +209,9 @@ let repositories = function
                 None)
       in
       [ Repository.v ?branch ~src ~commit ~name:"local" ~owner:"local" () ]
-  | Github { repo; slack_path; token } ->
-      let api =
-        token |> Util.read_fpath |> String.trim |> Current_github.Api.of_oauth
-      in
+  | Github { repo; slack_path; token; webhook_secret } ->
+      let token = token |> Util.read_fpath |> String.trim in
+      let api = Current_github.Api.of_oauth ~token ~webhook_secret in
       let repo = Current.return (api, repo) in
       github_repositories ?slack_path repo
   | Github_app app ->
@@ -234,10 +240,17 @@ let v ~current_config ~docker_config ~server:mode ~(source : Source.t) conninfo
   Db_util.check_connection ~conninfo;
   let pipeline = process_pipeline ~docker_config ~conninfo ~source in
   let engine = Current.Engine.create ~config:current_config pipeline in
-  let routes =
-    Routes.((s "webhooks" / s "github" /? nil) @--> Github.webhook)
-    :: Current_web.routes engine
+  let webhook =
+    match Source.webhook_secret source with
+    | None -> []
+    | Some webhook_secret ->
+        let webhook =
+          Github.webhook ~engine ~webhook_secret
+            ~has_role:Current_web.Site.allow_all
+        in
+        [ Routes.((s "webhooks" / s "github" /? nil) @--> webhook) ]
   in
+  let routes = webhook @ Current_web.routes engine in
   let site =
     Current_web.Site.(v ~has_role:allow_all) ~name:"Benchmarks" routes
   in

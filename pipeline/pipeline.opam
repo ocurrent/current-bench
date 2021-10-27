@@ -12,15 +12,15 @@ depends: [
   "bos"
   "capnp-rpc-unix"
   "cmdliner"
-  "current" {>= "0.5"}
-  "current_ansi"
-  "current_docker" {>= "0.5"}
-  "current_git" {>= "0.5"}
-  "current_github" {>= "0.5"}
+  "current"        {= "dev"}
+  "current_docker" {= "dev"}
+  "current_git"    {= "dev"}
+  "current_github" {= "dev"}
+  "current_rpc"    {= "dev"}
+  "current_slack"  {= "dev"}
+  "current_web"    {= "dev"}
   "current_incr" {>= "0.5"}
-  "current_rpc" {>= "0.5"}
-  "current_slack" {>= "0.5"}
-  "current_web" {>= "0.5"}
+  "current_ansi"
   "curly"
   "duration"
   "fpath"
@@ -30,7 +30,15 @@ depends: [
   "rresult"
   "omigrate"
 ]
-
+pin-depends: [
+  [ "current.dev"        "git+https://github.com/ocurrent/ocurrent.git#739c80bfda5290e6b0b854372db60789ac83ec97"]
+  [ "current_docker.dev" "git+https://github.com/ocurrent/ocurrent.git#739c80bfda5290e6b0b854372db60789ac83ec97"]
+  [ "current_github.dev" "git+https://github.com/ocurrent/ocurrent.git#739c80bfda5290e6b0b854372db60789ac83ec97"]
+  [ "current_git.dev"    "git+https://github.com/ocurrent/ocurrent.git#739c80bfda5290e6b0b854372db60789ac83ec97"]
+  [ "current_rpc.dev"    "git+https://github.com/ocurrent/ocurrent.git#739c80bfda5290e6b0b854372db60789ac83ec97"]
+  [ "current_slack.dev"  "git+https://github.com/ocurrent/ocurrent.git#739c80bfda5290e6b0b854372db60789ac83ec97"]
+  [ "current_web.dev"    "git+https://github.com/ocurrent/ocurrent.git#739c80bfda5290e6b0b854372db60789ac83ec97"]
+]
 build: [
   ["dune" "subst"] {pinned}
   [
