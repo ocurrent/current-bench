@@ -84,7 +84,13 @@ module Benchmark = {
     ->Belt.Option.getExn
     ->Js.Json.decodeArray
     ->Belt.Option.getExn
-    ->Belt.Array.map(v => v->Js.Json.decodeObject->Belt.Option.getExn->BenchmarkTest.decodeMetric)
+    ->Belt.Array.keepMap(v => {
+        try {
+          Some(v->Js.Json.decodeObject->Belt.Option.getExn->BenchmarkTest.decodeMetric)
+        } catch {
+          | _ => None
+        }
+      })
 
   let migrateVersions = (benchmarks: array<BenchmarkMetrics.t>): array<BenchmarkMetrics.t> => {
     // Convert metrics from an object to an array of objects and add units
@@ -95,7 +101,13 @@ module Benchmark = {
         ->Js.Json.decodeObject
         ->Belt.Option.getExn
         ->Js.Dict.entries
-        ->Belt.Array.map(((key, value)) => {"name": key, "value": value, "units": ""}->Obj.magic)
+        ->Belt.Array.map(((key, value)) => {
+            Js.Json.object_(Js.Dict.fromList(list{
+              ("name", Js.Json.string(key)),
+              ("value", value),
+              ("units", Js.Json.string("")),
+            }))
+          })
         ->Js.Json.array
         ->Some
 

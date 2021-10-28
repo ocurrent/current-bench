@@ -69,8 +69,7 @@ module Column = {
     | #between => Sx.justify.between
     | #around => Sx.justify.around
     | #even => Sx.justify.evenly
-    | len =>
-      let len: Css.Types.Length.t = Obj.magic(len)
+    | (#...Css.Types.Length.t) as len =>
       Sx.selector("> * + *", [[Css.marginTop(len)]])
     }
 

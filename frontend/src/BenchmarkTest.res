@@ -32,9 +32,9 @@ let decodeMetricValue = (json): LineGraph.DataRow.value => {
 
 let decodeMetric = (data): LineGraph.DataRow.metric => {
   {
-    name: Js.Dict.unsafeGet(data, "name")->Obj.magic,
-    value: decodeMetricValue(Js.Dict.unsafeGet(data, "value")),
-    units: Js.Dict.unsafeGet(data, "units")->Obj.magic,
+    name: (Js.Dict.get(data, "name")->Belt.Option.getExn->Js.Json.decodeString->Belt.Option.getExn),
+    value: decodeMetricValue(Js.Dict.get(data, "value")->Belt.Option.getExn),
+    units: (Js.Dict.get(data, "units")->Belt.Option.getExn->Js.Json.decodeString->Belt.Option.getExn),
   }
 }
 
