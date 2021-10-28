@@ -4,21 +4,10 @@ open Components
 type testMetrics = {
   name: string,
   commit: string,
-  metrics: Belt.Map.String.t<LineGraph.DataRow.value>,
+  metrics: array<LineGraph.DataRow.metric>,
 }
 
 @module("../icons/branch.svg") external branchIcon: string = "default"
-
-let groupByTestName = (acc, item: testMetrics, idx) => {
-  let go = vOpt => {
-    let idxs = switch vOpt {
-    | Some(idxs) => idxs
-    | None => Belt.Set.Int.empty
-    }
-    Some(Belt.Set.Int.add(idxs, idx))
-  }
-  Belt.Map.String.update(acc, item.name, go)
-}
 
 let decodeMetricValue = (json): LineGraph.DataRow.value => {
   switch Js.Json.classify(json) {
@@ -28,17 +17,25 @@ let decodeMetricValue = (json): LineGraph.DataRow.value => {
     let xs = xs->Belt.Array.map(x => x->Js.Json.decodeNumber->Belt.Option.getExn)
     LineGraph.DataRow.many(xs)
   | JSONString(val) =>
-  switch Js.String2.match_(val, %re("/^([0-9]+)min([0-9]+)s$/")) {
-   | Some([_, minutes, seconds]) => {
-       let n = Js.Float.fromString(minutes) *. 60.0 +. Js.Float.fromString(seconds)
-       LineGraph.DataRow.single(n)
-     }
-   | _ => invalid_arg("Invalid metric value:" ++ Js.Json.stringify(json))
-}
+    switch Js.String2.match_(val, %re("/^([0-9]+)min([0-9]+)s$/")) {
+    | Some([_, minutes, seconds]) => {
+        let n = Js.Float.fromString(minutes) *. 60.0 +. Js.Float.fromString(seconds)
+        LineGraph.DataRow.single(n)
+      }
+    | _ => invalid_arg("Invalid metric value:" ++ Js.Json.stringify(json))
+    }
   | _ => invalid_arg("Invalid metric value: " ++ Js.Json.stringify(json))
   }
   // ->ignore
   // LineGraph.DataRow.many([Random.float(10.0), 5. +. Random.float(10.0), 10. +. Random.float(10.0)])
+}
+
+let decodeMetric = (data): LineGraph.DataRow.metric => {
+  {
+    name: Js.Dict.unsafeGet(data, "name")->Obj.magic,
+    value: decodeMetricValue(Js.Dict.unsafeGet(data, "value")),
+    units: Js.Dict.unsafeGet(data, "units")->Obj.magic,
+  }
 }
 
 let calcDelta = (a, b) => {
@@ -59,11 +56,10 @@ let deltaToString = n =>
   }
 
 let renderMetricOverviewRow = (
-  ~repoId,
   ~comparison as (comparisonTimeseries: array<LineGraph.DataRow.t>, _comparisonMetadata)=([], []),
   ~testName,
   ~metricName,
-  (timeseries, metadata),
+  (timeseries, _),
 ) => {
   if Belt.Array.length(timeseries) == 0 {
     React.null
@@ -137,7 +133,6 @@ let make = (
             ([], []),
           )
           renderMetricOverviewRow(
-            ~repoId,
             ~comparison=(comparisonTimeseries, comparisonMetadata),
             ~testName,
             ~metricName,
@@ -216,6 +211,7 @@ let make = (
           subTitle=?delta
           xTicks
           data={timeseries->Belt.Array.sliceToEnd(-20)}
+          units={(metadata->BeltHelpers.Array.lastExn)["units"]}
           annotations
           labels=["idx", "value"]
         />

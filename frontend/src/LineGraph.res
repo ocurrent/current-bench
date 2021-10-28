@@ -46,7 +46,10 @@ let computeStats = xs => {
 }
 
 module DataRow = {
+  type name = string
+  type units = string
   type value
+  type metric = {name, value, units}
   type t = array<value>
 
   let single = (x: float): value =>
@@ -63,7 +66,6 @@ module DataRow = {
     Obj.magic([Obj.magic(low), Obj.magic(mid), Obj.magic(high)])
   }
 
-  let with_index = (index: int, value): t => [Obj.magic(index), value]
   let with_date = (date: Js.Date.t, value): t => [Obj.magic(date), value]
 
   let set_index = (index: int, row: t): unit => {
@@ -292,6 +294,7 @@ let make = React.memo((
     "x": int,
   }>=[],
   ~data,
+  ~units: DataRow.units,
 ) => {
   let graphDivRef = React.useRef(Js.Nullable.null)
   let graphRef = React.useRef(None)
@@ -425,7 +428,7 @@ let make = React.memo((
           Js.Float.toPrecisionWithPrecision(~digits=4, DataRow.toFloat(value))
         )}
       </Text>
-      <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray500)]> {""} </Text> // TODO: unit needs to be added to the metrics
+      <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray500)]>units</Text>
     </Row>
 
   let sx = Array.append(uSx, containerSx)

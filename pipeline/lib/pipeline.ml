@@ -12,6 +12,10 @@ let ( >>| ) x f = Current.map f x
 let get_benchmark_name json =
   json |> Yojson.Safe.Util.(member "name") |> Yojson.Safe.Util.to_string_option
 
+let get_benchmark_version json =
+  json |> Yojson.Safe.Util.(member "version") |> Yojson.Safe.Util.to_int_option
+  |> fun version -> match version with None -> 1 | Some i -> i
+
 let get_result_list json =
   json |> Yojson.Safe.Util.(member "results") |> Yojson.Safe.Util.to_list
 
@@ -20,6 +24,7 @@ let validate_json json_list =
   List.iter
     (fun json ->
       let benchmark_name = get_benchmark_name json in
+      let version = get_benchmark_version json in
       match Hashtbl.find_opt tbl benchmark_name with
       | Some _ ->
           raise
@@ -27,7 +32,7 @@ let validate_json json_list =
                "This benchmark name already exists, please create a unique name"
       | None ->
           let results = get_result_list json in
-          Hashtbl.add tbl benchmark_name results)
+          Hashtbl.add tbl benchmark_name (version, results))
     json_list;
   tbl
 
@@ -116,9 +121,9 @@ let db_save ~conninfo benchmark output =
   output
   |> Json_util.parse_many
   |> validate_json
-  |> Hashtbl.iter (fun benchmark_name results ->
+  |> Hashtbl.iter (fun benchmark_name (version, results) ->
          results
-         |> List.map (benchmark ~benchmark_name)
+         |> List.map (benchmark ~version ~benchmark_name)
          |> List.iter (Models.Benchmark.Db.insert db));
   db#finish
 

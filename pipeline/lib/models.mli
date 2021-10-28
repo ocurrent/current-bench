@@ -2,6 +2,7 @@ module Benchmark : sig
   type t
 
   val make :
+    version:int ->
     ?build_job_id:string ->
     ?run_job_id:string ->
     run_at:Ptime.t ->
@@ -10,6 +11,8 @@ module Benchmark : sig
     repository:Repository.t ->
     Yojson.Safe.t ->
     t
+
+  val version : t -> int
 
   val run_at : t -> Ptime.t
 

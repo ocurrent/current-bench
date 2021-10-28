@@ -1,5 +1,6 @@
 module Benchmark = struct
   type t = {
+    version : int;
     run_at : Ptime.t;
     duration : Ptime.span;
     repo_id : string * string;
@@ -13,11 +14,12 @@ module Benchmark = struct
     metrics : Yojson.Safe.t;
   }
 
-  let make ?build_job_id ?run_job_id ~run_at ~duration ~benchmark_name
+  let make ~version ?build_job_id ?run_job_id ~run_at ~duration ~benchmark_name
       ~repository data =
     let test_name = Yojson.Safe.Util.(member "name" data |> to_string) in
     let metrics = Yojson.Safe.Util.(member "metrics" data) in
     {
+      version;
       run_at;
       duration;
       repo_id = Repository.id repository;
@@ -30,6 +32,8 @@ module Benchmark = struct
       test_name;
       metrics;
     }
+
+  let version self = self.version
 
   let run_at self = self.run_at
 
@@ -57,6 +61,7 @@ module Benchmark = struct
     let open Fmt.Dump in
     record
       [
+        field "version" version Fmt.int;
         field "run_at" run_at Ptime.pp;
         field "duration" duration Ptime.Span.pp;
         field "repo_id" repo_id Fmt.(pair ~sep:(Fmt.any "/") string string);
@@ -72,6 +77,7 @@ module Benchmark = struct
 
   module Db = struct
     let insert_query self =
+      let version = Sql_util.int self.version in
       let run_at = Sql_util.time self.run_at in
       let duration = Sql_util.span self.duration in
       let repository =
@@ -88,13 +94,13 @@ module Benchmark = struct
       Fmt.str
         {|
 INSERT INTO
-  benchmarks(run_at, duration, repo_id, commit, branch, pull_number, build_job_id, run_job_id, benchmark_name, test_name,  metrics)
+  benchmarks(version, run_at, duration, repo_id, commit, branch, pull_number, build_job_id, run_job_id, benchmark_name, test_name,  metrics)
 VALUES
-  (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
   ON CONFLICT (commit, test_name, run_job_id) DO NOTHING
 |}
-        run_at duration repository commit branch pull_number build_job_id
-        run_job_id benchmark_name test_name metrics
+        version run_at duration repository commit branch pull_number
+        build_job_id run_job_id benchmark_name test_name metrics
 
     let insert (db : Postgresql.connection) self =
       let query = insert_query self in
