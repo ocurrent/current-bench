@@ -17,8 +17,15 @@ let decodeMetricValue = (json): LineGraph.DataRow.value => {
     let xs = xs->Belt.Array.map(x => x->Js.Json.decodeNumber->Belt.Option.getExn)
     LineGraph.DataRow.many(xs)
   | JSONString(val) =>
-    switch Js.String2.match_(val, %re("/^([0-9]+)min([0-9]+)s$/")) {
-    | Some([_, minutes, seconds]) => {
+    switch Js.String2.match_(
+      val,
+      %re("/^([0-9]+\.*[0-9]*)min([0-9]+\.*[0-9]*)s|([0-9]+\.*[0-9]*)s$/"),
+    ) {
+    | Some([_, minutes, seconds]) =>
+      if minutes == "" {
+        let n = Js.Float.fromString(seconds)
+        LineGraph.DataRow.single(n)
+      } else {
         let n = Js.Float.fromString(minutes) *. 60.0 +. Js.Float.fromString(seconds)
         LineGraph.DataRow.single(n)
       }
@@ -26,8 +33,6 @@ let decodeMetricValue = (json): LineGraph.DataRow.value => {
     }
   | _ => invalid_arg("Invalid metric value: " ++ Js.Json.stringify(json))
   }
-  // ->ignore
-  // LineGraph.DataRow.many([Random.float(10.0), 5. +. Random.float(10.0), 10. +. Random.float(10.0)])
 }
 
 let decodeMetric = (data): LineGraph.DataRow.metric => {
