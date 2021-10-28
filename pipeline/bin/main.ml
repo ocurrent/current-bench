@@ -16,21 +16,12 @@ module Source = struct
       @@ Arg.info ~doc:"A file containing the GitHub OAuth token." ~docv:"PATH"
            [ "github-token-file" ]
     in
-    let slack_path =
-      let doc =
-        "File containing the Slack endpoint URI to use for result \
-         notifications."
-      in
-      Arg.(value & opt (some file) None & info [ "s"; "slack" ] ~doc)
-    in
     Term.(
-      const (fun repo token slack_path ->
+      const (fun repo token ->
           let token = Fpath.v token in
-          let slack_path = Option.map Fpath.v slack_path in
-          Pipeline.Source.github ~repo ~token ~slack_path)
+          Pipeline.Source.github ~repo ~token)
       $ repo
-      $ github_token_path
-      $ slack_path)
+      $ github_token_path)
 
   let local =
     let path =

@@ -1,46 +1,18 @@
-open Current.Syntax
 module Git = Current_git
 module Github = Current_github
 module Docker = Current_docker.Default
-module Docker_util = Current_util.Docker_util
-module Slack = Current_slack
 module Logging = Logging
-module Benchmark = Models.Benchmark
+module Config = Config
+open Current.Syntax
 
 let ( >>| ) x f = Current.map f x
 
-let get_benchmark_name json =
-  json |> Yojson.Safe.Util.(member "name") |> Yojson.Safe.Util.to_string_option
-
-let get_result_list json =
-  json |> Yojson.Safe.Util.(member "results") |> Yojson.Safe.Util.to_list
-
-let validate_json json_list =
-  let tbl = Hashtbl.create 1000 in
-  List.iter
-    (fun json ->
-      let benchmark_name = get_benchmark_name json in
-      match Hashtbl.find_opt tbl benchmark_name with
-      | Some _ ->
-          raise
-          @@ Failure
-               "This benchmark name already exists, please create a unique name"
-      | None ->
-          let results = get_result_list json in
-          Hashtbl.add tbl benchmark_name results)
-    json_list;
-  tbl
-
 module Source = struct
-  type github = {
-    token : Fpath.t;
-    slack_path : Fpath.t option;
-    repo : Github.Repo_id.t;
-  }
+  type github = { token : Fpath.t; repo : Github.Repo_id.t }
 
   type t = Github of github | Local of Fpath.t | Github_app of Github.App.t
 
-  let github ~token ~slack_path ~repo = Github { token; slack_path; repo }
+  let github ~token ~repo = Github { token; repo }
 
   let local path = Local path
 
@@ -84,155 +56,156 @@ end
 
 let pool = Current.Pool.create ~label:"docker" 1
 
-let read_channel_uri p =
-  Util.read_fpath p |> String.trim |> Uri.of_string |> Current_slack.channel
+let log_commit_info job commit_context =
+  let repo_owner, repo_name = Repository.id commit_context in
+  let branch = Repository.branch commit_context in
+  let commit = Repository.commit_hash commit_context in
+  Current.Job.log job "repo=%S/%S branch=(%a) commit=%S" repo_owner repo_name
+    Fmt.Dump.(option string)
+    branch commit
 
-let github_status_of_state url = function
-  | Ok _ -> Github.Api.Status.v ~url `Success ~description:"Passed"
-  | Error (`Active _) -> Github.Api.Status.v ~url `Pending
-  | Error (`Msg m) -> Github.Api.Status.v ~url `Failure ~description:m
+let string_of_output output =
+  String.concat "\n" (List.map Yojson.Safe.pretty_to_string output)
 
-let github_set_status ~repository result =
-  match Repository.github_head repository with
-  | None -> Current.ignore_value result
-  | Some head ->
-      let status_url = Repository.commit_status_url repository in
-      result
-      >>| github_status_of_state status_url
-      |> Github.Api.Commit.set_status (Current.return head) "ocaml-benchmarks"
-      |> Current.ignore_value
+let build_commit ~db repository =
+  Current.component "build"
+  |> let** repository = repository in
+     let img = Engine.Docker_engine.build ~pool ~repository in
+     let current_job_id_opt = Current_util.get_job_id img in
+     let* job_id_opt = current_job_id_opt in
+     match job_id_opt with
+     | None ->
+         Fmt.epr "build job id not ready@.";
+         Current.pair img current_job_id_opt
+     | Some build_job_id ->
+         let () =
+           match Current.Job.lookup_running build_job_id with
+           | None -> Fmt.epr "build job %s is not running@." build_job_id
+           | Some job -> log_commit_info job repository
+         in
+         Storage.record_build_start ~repository ~build_job_id db;
+         Current.pair img current_job_id_opt
 
-let slack_post ~repository (output : string Current.t) =
-  match Repository.slack_path repository with
-  | None -> Current.ignore_value output
-  | Some path ->
-      Current.component "slack post"
-      |> let** _ = output in
-         let channel = read_channel_uri path in
-         Slack.post channel ~key:"output" output
+let run_commit ~db ~(repository : Repository.t Current.t) ~build_job_id
+    ~run_args img =
+  Current.component "build"
+  |> let** repository = repository in
+     let info = Repository.show repository in
+     let output = Engine.Docker_engine.run ~info ~pool ~run_args img in
+     let* run_job_id_opt = Current_util.get_job_id output in
+     match run_job_id_opt with
+     | None ->
+         Fmt.epr "run job id not ready@.";
+         Current.return None
+     | Some run_job_id ->
+         let repo_id_string = Repository.info repository in
+         let* output = Current.map Json_util.parse_many output in
+         Storage.record_run_finish ~repo_id_string ~build_job_id ~run_job_id
+           ~output db;
+         Current.return (Some output)
 
-let db_save ~conninfo benchmark output =
-  let db = new Postgresql.connection ~conninfo () in
-  output
-  |> Json_util.parse_many
-  |> validate_json
-  |> Hashtbl.iter (fun benchmark_name results ->
-         results
-         |> List.map (benchmark ~benchmark_name)
-         |> List.iter (Models.Benchmark.Db.insert db));
-  db#finish
-
-let docker_make_bench ~run_args ~repository image =
-  let { Repository.branch; pull_number; _ } = repository
-  and repo_info = Repository.info repository
-  and commit = Repository.commit_hash repository in
-  Docker_util.pread_log ~pool ~run_args image ~repo_info ?pull_number ?branch
-    ~commit
-    ~args:
-      [
-        "/usr/bin/setarch";
-        "x86_64";
-        "--addr-no-randomize";
-        "sh";
-        "-c";
-        "eval $(opam env) && make bench";
-      ]
-
-let pipeline ~conninfo ~run_args ~repository =
-  let src = Repository.src repository in
-  let dockerfile = Custom_dockerfile.dockerfile ~pool ~run_args ~repository in
-  let current_image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
-  let run_at = Ptime_clock.now () in
-  let current_output = docker_make_bench ~run_args ~repository current_image in
-  let+ build_job_id = Current_util.get_job_id current_image
-  and+ run_job_id = Current_util.get_job_id current_output
-  and+ output = current_output in
-  let duration = Ptime.diff (Ptime_clock.now ()) run_at in
-  Logs.debug (fun log -> log "Benchmark output:\n%s" output);
-  let () =
-    db_save ~conninfo
-      (Benchmark.make ~duration ~run_at ~repository ?build_job_id ?run_job_id)
-      output
+let monitor_commit ~db ~run_args repository =
+  let build_state = build_commit ~db repository in
+  let img = Current.map fst build_state in
+  let* build_job_id_opt = Current.map snd build_state in
+  let* output =
+    match build_job_id_opt with
+    | None ->
+        Fmt.epr "build job id not ready@.";
+        Current.return None
+    | Some build_job_id ->
+        run_commit ~db ~repository ~build_job_id ~run_args img
   in
-  output
-
-let pipeline ~conninfo ~run_args repository =
-  pipeline ~conninfo ~run_args ~repository
-  |> slack_post ~repository
-  |> Current.state
-  |> github_set_status ~repository
-
-let github_repositories ?slack_path repo =
-  let* refs =
-    Current.component "Get PRs"
-    |> let> api, repo = repo in
-       Github.Api.refs api repo
-  in
-  let default_branch = Github.Api.default_ref refs in
-  let default_branch_name = Util.get_branch_name default_branch in
-  let ref_map = Github.Api.all_refs refs in
-  let+ _, repo = repo in
-  let repository = Repository.v ?slack_path ~name:repo.name ~owner:repo.owner in
-  Github.Api.Ref_map.fold
-    (fun key head lst ->
-      let commit = Github.Api.Commit.id head in
-      let repository = repository ~commit ~github_head:head in
-      match key with
-      (* Skip all branches other than master, and check PRs *)
-      | `Ref branch when branch = default_branch ->
-          repository ~branch:default_branch_name () :: lst
-      | `Ref _ -> lst
-      | `PR pull_number -> repository ~pull_number () :: lst)
-    ref_map []
-
-let repositories = function
-  | Source.Local path ->
-      let local = Git.Local.v path in
-      let src = Git.Local.head_commit local in
-      let+ head = Git.Local.head local and+ commit = src >>| Git.Commit.id in
-      let branch =
-        match head with
-        | `Commit _ -> None
-        | `Ref git_ref -> (
-            match String.split_on_char '/' git_ref with
-            | [ _; _; branch ] -> Some branch
-            | _ ->
-                Logs.warn (fun log ->
-                    log "Could not extract branch name from: %s" git_ref);
-                None)
+  match output with
+  | None -> Current.return ()
+  | Some output ->
+      let* () =
+        let* repository = repository in
+        Reporting.Slack.post
+          ~path:(Repository.slack_path repository)
+          (Current.return (string_of_output output))
       in
-      [ Repository.v ?branch ~src ~commit ~name:"local" ~owner:"local" () ]
-  | Github { repo; slack_path; token } ->
-      let api =
-        token |> Util.read_fpath |> String.trim |> Current_github.Api.of_oauth
-      in
+      let* () = Reporting.Github.post repository (Current.return output) in
+      Current.return ()
+
+module Github_pipeline = struct
+  let github_api_of_oauth_file token =
+    token |> Util.read_fpath |> String.trim |> Current_github.Api.of_oauth
+
+  let collect_commits repo =
+    let* refs =
+      Current.component "get-github-refs"
+      |> let> api, repo_id = repo in
+         Github.Api.refs api repo_id
+    in
+    let all_refs = Github.Api.all_refs refs in
+    let+ _, repo_id = repo in
+    let default_ref = Github.Api.default_ref refs in
+    let repository = Repository.v ~name:repo_id.name ~owner:repo_id.owner in
+    Github.Api.Ref_map.fold
+      (fun key head acc ->
+        let commit = Github.Api.Commit.id head in
+        let repository = repository ~commit ~github_head:head in
+        match key with
+        | `PR pull_number -> repository ~pull_number () :: acc
+        | `Ref ref when String.equal ref default_ref ->
+            repository ~branch:default_ref () :: acc
+        | `Ref _ -> acc)
+      all_refs []
+
+  let monitor_repo ~db ~run_args repo =
+    repo
+    |> collect_commits
+    |> Current.list_iter (module Repository) (monitor_commit ~db ~run_args)
+
+  let monitor_installation ~db ~run_args installation =
+    installation
+    |> Github.Installation.repositories
+    |> Current.list_iter (module Github.Api.Repo) (monitor_repo ~db ~run_args)
+
+  let monitor_app ~db ~run_args app =
+    app
+    |> Github.App.installations
+    |> Current.list_iter
+         (module Github.Installation)
+         (monitor_installation ~db ~run_args)
+end
+
+module Local_pipeline = struct
+  let branch_of_head head =
+    match head with
+    | `Commit _ -> None
+    | `Ref git_ref -> (
+        match String.split_on_char '/' git_ref with
+        | [ _; _; branch ] -> Some branch
+        | _ -> None)
+
+  let make_commit_context repo_path =
+    let local = Git.Local.v repo_path in
+    let src = Git.Local.head_commit local in
+    let+ head = Git.Local.head local and+ commit = src >>| Git.Commit.id in
+    let branch = branch_of_head head in
+    Repository.v ?branch ~src ~commit ~name:"local" ~owner:"local" ()
+
+  let monitor_repo ~db ~run_args repo_path =
+    let commit_context = make_commit_context repo_path in
+    monitor_commit ~db ~run_args commit_context
+end
+
+let monitor ~db (source : Source.t) ~run_args =
+  match source with
+  | Github { repo; token } ->
+      let api = Github_pipeline.github_api_of_oauth_file token in
       let repo = Current.return (api, repo) in
-      github_repositories ?slack_path repo
-  | Github_app app ->
-      let+ repos =
-        Github.App.installations app
-        |> Current.list_map (module Github.Installation) @@ fun installation ->
-           let repos = Github.Installation.repositories installation in
-           repos
-           |> Current.list_map ~collapse_key:"repo"
-                (module Github.Api.Repo)
-                github_repositories
-      in
-      List.concat (List.concat repos)
-
-let process_pipeline ~docker_config ~conninfo ~source () =
-  let run_args = Docker_config.run_args docker_config in
-  Current.list_iter ~collapse_key:"pipeline"
-    (module Repository)
-    (fun repository ->
-      let* repository = repository in
-      pipeline ~conninfo ~run_args repository)
-    (repositories source)
+      Github_pipeline.monitor_repo ~db ~run_args repo
+  | Local repo_path -> Local_pipeline.monitor_repo ~db ~run_args repo_path
+  | Github_app app -> Github_pipeline.monitor_app ~db ~run_args app
 
 let v ~current_config ~docker_config ~server:mode ~(source : Source.t) conninfo
     () =
-  Db_util.check_connection ~conninfo;
-  let pipeline = process_pipeline ~docker_config ~conninfo ~source in
+  let db = new Postgresql.connection ~conninfo () in
+  let run_args = Docker_config.run_args docker_config in
+  let pipeline () = monitor ~db ~run_args source in
   let engine = Current.Engine.create ~config:current_config pipeline in
   let routes =
     Routes.((s "webhooks" / s "github" /? nil) @--> Github.webhook)

@@ -1,13 +1,14 @@
 type t = {
   owner : string;
   name : string;
-  src : Current_git.Commit.t Current.t;
-  commit : Current_git.Commit_id.t;
+  src : Current_git.Commit.t Current.t; [@opaque]
+  commit : Current_git.Commit_id.t; [@opaque]
   pull_number : int option;
   branch : string option;
   slack_path : Fpath.t option;
-  github_head : Current_github.Api.Commit.t option;
+  github_head : Current_github.Api.Commit.t option; [@opaque]
 }
+[@@deriving show]
 
 let default_src ?src commit =
   match src with
@@ -49,7 +50,9 @@ let id t = (t.owner, t.name)
 
 let info t = t.owner ^ "/" ^ t.name
 
-let frontend_url = Sys.getenv "OCAML_BENCH_FRONTEND_URL"
+let frontend_url =
+  try Sys.getenv "OCAML_BENCH_FRONTEND_URL"
+  with Not_found -> "http:://localhost:8080"
 
 (* $server/$repo_owner/$repo_name/pull/$pull_number *)
 let commit_status_url { owner; name; pull_number; _ } =

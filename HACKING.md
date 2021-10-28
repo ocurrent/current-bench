@@ -203,17 +203,15 @@ The following files define the production environment:
 * `./environments/production.env`
 * `./environments/production.docker-compose.yaml`
 
-
 ### Configuring the production environment
 
 Create a file with variables for the production environment:
 
-```
-$ cp ./environments/production.env.template ./environments/production.env
+```bash
+cp ./environments/production.env.template ./environments/production.env
 ```
 
 Edit the `./environments/production.env` file and adjust the configurations variables to your liking.
-
 
 #### Copy the production GitHub private key
 
@@ -226,6 +224,7 @@ $ docker run -it --rm -v $PWD/ocaml-bench-github-key:/mnt/ocaml-bench-github-key
 ```
 
 #### Adding a docker volume for data dependencies
+
 `current-bench` supports benchmarks that have data dependency. You can add the dependencies to a
 docker volume which is then mounted to the pipeline container in `docker-compose`.
 
@@ -260,6 +259,38 @@ Recreating current-bench_pipeline_1 ... done
 Attaching to current-bench_db_1, current-bench_db-migrate_1, current-bench_pipeline_1
 ...
 ```
+
+## Database schema
+
+The benchmark results are stored in a single SQL table. Conceptually, the table is used as a key-value storage. With the key being the information needed to identify a single benchmark execution.
+
+The benchmark results are identified by:
+
+- Repository identifier (owner/name).
+- Benchmark build timestamp.
+- Current commit, PR and branch information.
+- OCurrent's image build job identifier.
+- OCurrent's container run job identifier.
+
+The payload contains:
+
+- JSON value with the results.
+
+### Benchmark status encoding
+
+The status of the benchmarking jobs is tracked in the database as a JSON value.
+
+The following table lists the possible status codes:
+
+| Status               | Description                         |
+|----------------------|-------------------------------------|
+| "Building"           | The build job started.              |
+| "Running"            | The run job started.                |
+| "Done"               | The run job completed successfully. |
+| ["Build_error", msg] | The build job failed.               |
+| ["Run_error", msg]   | The run job failed.                 |
+
+The errors will be written to the job's log when possible.
 
 ### Some errors you might run into
 

@@ -48,6 +48,7 @@ let init ?style_renderer ?level () =
         if
           name = "handshake"
           || name = "tls.tracing"
+          || name = "irw-polling"
           || name = "x509"
           || name = "cohttp.lwt.io"
           || name = "x509.private_key"

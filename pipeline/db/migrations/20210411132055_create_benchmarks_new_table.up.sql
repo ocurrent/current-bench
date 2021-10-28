@@ -1,0 +1,16 @@
+
+
+CREATE TABLE benchmarks_new (
+  started_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  repo_id CHARACTER VARYING(256) NOT NULL,
+  commit CHARACTER VARYING(50) NOT NULL,
+  branch CHARACTER VARYING(256) DEFAULT NULL,
+  pull_number INTEGER DEFAULT NULL,
+  build_job_id CHARACTER VARYING(256) NOT NULL,
+  run_job_id CHARACTER VARYING(256) DEFAULT NULL,
+  status json DEFAULT NULL,
+
+  output json,
+
+  PRIMARY KEY (repo_id, build_job_id)
+);

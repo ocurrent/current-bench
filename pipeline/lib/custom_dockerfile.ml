@@ -69,14 +69,11 @@ let minimal_dockerfile ~base =
   let open Dockerfile in
   base_dockerfile ~base @@ add_workdir
 
-let docker_exec ~label ~pool ~run_args ~repository ~dockerfile args =
-  let { Repository.branch; pull_number; _ } = repository in
-  let repo_info = Repository.info repository in
+let docker_exec ~label ~pool ~repository ~dockerfile args =
+  let info = Repository.info repository in
   let src = Repository.src repository in
   let image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
-  let commit = Repository.commit_hash repository in
-  Current_util.Docker_util.pread_log ~label ~pool ~run_args ~repo_info
-    ?pull_number ?branch ~commit ~args image
+  Current_util.Docker.pread_log ~label ~pool ~info ~args image
 
 let opam_install ~opam_file =
   match String.compare opam_file "" with
@@ -89,7 +86,7 @@ let base = Docker.pull ~schedule:weekly "ocaml/opam"
 
 let with_base f = Current.map (fun base -> `Contents (f ~base)) base
 
-let discover_dependencies ~pool ~run_args ~repository ~opam_file =
+let discover_dependencies ~pool ~repository ~opam_file =
   let cmd =
     opam_install ~opam_file
     ^ " --dry-run | sed -n '/^Installing \\(.*\\).$/{s//\\1/g;p}'"
@@ -97,8 +94,8 @@ let discover_dependencies ~pool ~run_args ~repository ~opam_file =
   let args = [ "/bin/sh"; "-c"; cmd ] in
   let dockerfile = with_base minimal_dockerfile in
   let+ output =
-    docker_exec ~label:"discover-dependencies" ~pool ~run_args ~repository
-      ~dockerfile args
+    docker_exec ~label:"discover-dependencies" ~pool ~repository ~dockerfile
+      args
   in
   String.concat " " (String.split_on_char '\n' output)
 
@@ -112,13 +109,11 @@ let dockerfile ~base ~dependencies ~opam_file =
   @@ add_workdir
   @@ run "%s" (opam_install ~opam_file)
 
-let dockerfile ~pool ~run_args ~repository ~opam_file =
-  let* dependencies =
-    discover_dependencies ~pool ~run_args ~repository ~opam_file
-  in
+let dockerfile ~pool ~repository ~opam_file =
+  let* dependencies = discover_dependencies ~pool ~repository ~opam_file in
   with_base (dockerfile ~dependencies ~opam_file)
 
-let dockerfile ~pool ~run_args ~repository =
+let dockerfile ~pool ~repository =
   let custom_dockerfile = Fpath.v "bench.Dockerfile" in
   let* file_list = get_all_files ~repository in
   Logs.info (fun logs ->
@@ -134,4 +129,4 @@ let dockerfile ~pool ~run_args ~repository =
       acc file_list
   in
   if dockerfile_exists then Current.return (`File custom_dockerfile)
-  else dockerfile ~pool ~run_args ~repository ~opam_file
+  else dockerfile ~pool ~repository ~opam_file

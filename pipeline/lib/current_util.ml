@@ -4,7 +4,7 @@ let get_job_id x =
   let+ md = Current.Analysis.metadata x in
   match md with Some { Current.Metadata.job_id; _ } -> job_id | None -> None
 
-module Docker_util = struct
+module Docker = struct
   module Docker = Current_docker.Default
   module Image = Current_docker.Raw.Image
   module Cmd = Current_docker.Raw.Cmd
@@ -22,23 +22,10 @@ module Docker_util = struct
         args : string list;
         docker_context : string option;
         run_args : string list;
-        repo_info : string;
-        branch : string option;
-        pull_number : int option;
-        commit : string;
+        info : string option; (* arbitrary user info to be logged *)
       }
 
-      let cmd
-          {
-            image;
-            args;
-            docker_context;
-            run_args;
-            repo_info = _;
-            branch = _;
-            pull_number = _;
-            commit = _;
-          } =
+      let cmd { image; args; docker_context; run_args; _ } =
         Cmd.docker ~docker_context
         @@ [ "run" ]
         @ run_args
@@ -47,55 +34,23 @@ module Docker_util = struct
 
       let pp f t = Cmd.pp f (cmd t)
 
-      let digest
-          {
-            image;
-            args;
-            docker_context;
-            run_args;
-            repo_info;
-            branch;
-            pull_number;
-            commit;
-          } =
+      let digest { image; args; docker_context; run_args; _ } =
         Yojson.Safe.to_string
         @@ `Assoc
              [
                ("image", `String (Image.hash image));
-               ("repo", `String repo_info);
-               ( "branch",
-                 branch
-                 |> Option.map (fun x -> `String x)
-                 |> Option.value ~default:`Null );
-               ( "pull_number",
-                 pull_number
-                 |> Option.map (fun x -> `Int x)
-                 |> Option.value ~default:`Null );
-               ("commit", `String commit);
-               ("args", `List (List.map (fun arg -> `String arg) args));
+               ("args", [%derive.to_yojson: string list] args);
                ( "docker_context",
-                 docker_context
-                 |> Option.map (fun x -> `String x)
-                 |> Option.value ~default:`Null );
-               ("run_args", `List (List.map (fun arg -> `String arg) run_args));
+                 [%derive.to_yojson: string option] docker_context );
+               ("run_args", [%derive.to_yojson: string list] run_args);
              ]
     end
 
     module Value = Current.String
 
     let build { pool } job key =
-      let repo_info = Key.(key.repo_info) in
-      let branch = Key.(key.branch) |> Option.value ~default:"None" in
-      let pull_number =
-        match Key.(key.pull_number) with
-        | Some pull_number -> string_of_int pull_number
-        | None -> "None"
-      in
-      Current.Job.log job "Repo: %s - Branch: %s - PR: %s - Commit: %s"
-        repo_info branch pull_number
-        Key.(key.commit);
-      Current.Job.start job ?pool ~level:Current.Level.Above_average
-      >>= fun () ->
+      Option.iter (Current.Job.log job "Info: %s") Key.(key.info);
+      Current.Job.start job ?pool ~level:Current.Level.Average >>= fun () ->
       Current.Process.check_output ~cancellable:true ~job (Key.cmd key)
       >>= fun output_result ->
       match output_result with
@@ -114,31 +69,20 @@ module Docker_util = struct
   module Pread_log = Current_cache.Make (Pread_log_builder)
 
   module Raw = struct
-    let pread_log ~docker_context ?pool ?(run_args = []) ~repo_info ?branch
-        ?pull_number image ~commit ~args =
+    let pread_log ~docker_context ?info ?pool ?(run_args = []) image ~args =
       let image =
         Current_docker.Default.Image.hash image
         |> Current_docker.Raw.Image.of_hash
       in
       Pread_log.get { Pread_log_builder.pool }
-        {
-          Pread_log_builder.Key.image;
-          args;
-          docker_context;
-          run_args;
-          repo_info;
-          branch;
-          pull_number;
-          commit;
-        }
+        { Pread_log_builder.Key.image; args; docker_context; run_args; info }
   end
 
   let pp_sp_label = Fmt.(option (sp ++ string))
 
-  let pread_log ?label ?pool ?run_args ~repo_info ?branch ?pull_number ~commit
-      ~args image =
-    Current.component "pread_log%a" pp_sp_label label
+  let pread_log ?info ?label ?pool ?run_args image ~args =
+    Current.component "pread%a" pp_sp_label label
     |> let> image = image in
-       Raw.pread_log ~docker_context:Docker.docker_context ?pool ?run_args image
-         ~repo_info ?branch ?pull_number ~commit ~args
+       Raw.pread_log ~docker_context:Docker.docker_context ?info ?pool ?run_args
+         image ~args
 end

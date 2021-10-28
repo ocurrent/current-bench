@@ -4,8 +4,7 @@ module Github = Current_github
 module Source : sig
   type t
 
-  val github :
-    token:Fpath.t -> slack_path:Fpath.t option -> repo:Github.Repo_id.t -> t
+  val github : token:Fpath.t -> repo:Github.Repo_id.t -> t
 
   val local : Fpath.t -> t
 

@@ -1,17 +1,14 @@
 val get_job_id : 'a Current.t -> string option Current.t
 
-module Docker_util : sig
+module Docker : sig
   val pread_log :
+    ?info:string ->
     ?label:string ->
     ?pool:unit Current.Pool.t ->
     ?run_args:string list ->
-    repo_info:string ->
-    ?branch:string ->
-    ?pull_number:int ->
-    commit:string ->
-    args:string list ->
     Current_docker.Default.Image.t Current.t ->
+    args:string list ->
     string Current.t
-  (** Similar to {!val:Current_docker.Default.pred} but includes the output in
-      the job's logs. *)
+  (** Similar to {!val:Current_docker.Default.pread} but includes the output in
+      the job's logs and allows passing a custom [info] string *)
 end

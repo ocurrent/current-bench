@@ -2,6 +2,8 @@ type value = string
 
 val option : ('a -> value) -> 'a option -> value
 
+val null : value
+
 val json : Yojson.Safe.t -> value
 
 val string : string -> value
