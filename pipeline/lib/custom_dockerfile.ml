@@ -112,7 +112,7 @@ let dockerfile ~base ~dependencies ~opam_file =
   base_dockerfile ~base
   @@ install_static_dependencies
   @@ add_workdir
-  @@ run "opam exec -- opam pin ."
+  @@ run "opam exec -- opam pin -n ."
   @@ run "%s" (opam_install ~opam_file)
 
 let dockerfile ~pool ~run_args ~repository ~opam_file =
