@@ -35,7 +35,8 @@ services:
     cpuset: "${OCAML_BENCH_PLATFORM_CPUSET}"
   frontend:
     build:
-      context: ../frontend
+      context: ..
+      dockerfile: ./frontend/Dockerfile
       target: dev
     environment:
       VITE_OCAML_BENCH_PIPELINE_URL: ${OCAML_BENCH_PIPELINE_URL?required}
