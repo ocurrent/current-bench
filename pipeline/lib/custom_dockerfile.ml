@@ -106,13 +106,14 @@ let discover_dependencies ~pool ~run_args ~repository ~opam_file =
 let dockerfile ~base ~dependencies ~opam_file =
   let open Dockerfile in
   let install_static_dependencies =
-    if dependencies = "" then empty else run "opam install -y %s" dependencies
+    if dependencies = "" then empty
+    else run "opam install -y %s || exit 0" dependencies
   in
   base_dockerfile ~base
   @@ install_static_dependencies
   @@ add_workdir
-  @@ run "%s" (opam_install ~opam_file)
   @@ run "opam exec -- opam pin ."
+  @@ run "%s" (opam_install ~opam_file)
 
 let dockerfile ~pool ~run_args ~repository ~opam_file =
   let* dependencies =
