@@ -57,7 +57,7 @@ let base_dockerfile ~base =
        "sudo apt-get update && sudo apt-get install -qq -yy libffi-dev \
         liblmdb-dev m4 pkg-config gnuplot-x11 libgmp-dev libssl-dev \
         libpcre3-dev && opam remote add origin https://opam.ocaml.org && opam \
-        update && eval $(opam env)"
+        update"
 
 let add_workdir =
   let open Dockerfile in
@@ -80,8 +80,9 @@ let docker_exec ~label ~pool ~run_args ~repository ~dockerfile args =
 
 let opam_install ~opam_file =
   match String.compare opam_file "" with
-  | 0 -> Format.sprintf "opam install -y --deps-only ."
-  | _ -> Format.sprintf "opam install %s -y --deps-only" opam_file
+  | 0 -> Format.sprintf "opam exec -- opam install -y --deps-only ."
+  | _ ->
+      Format.sprintf "opam exec -- opam install %s -y --deps-only ." opam_file
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
@@ -111,6 +112,7 @@ let dockerfile ~base ~dependencies ~opam_file =
   @@ install_static_dependencies
   @@ add_workdir
   @@ run "%s" (opam_install ~opam_file)
+  @@ run "opam exec -- opam pin ."
 
 let dockerfile ~pool ~run_args ~repository ~opam_file =
   let* dependencies =
