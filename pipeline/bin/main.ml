@@ -58,7 +58,10 @@ module Docker = struct
        hyphen-separated range of CPUs a container can use, if you have more \
        than one CPU"
     in
-    Arg.(value & opt (some string) None & info [ "docker-cpu" ] ~doc)
+    Arg.(
+      value
+      & opt (some (list ~sep:',' string)) None
+      & info [ "docker-cpu" ] ~doc)
 
   let numa_node =
     let doc =
