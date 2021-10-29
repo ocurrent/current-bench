@@ -147,7 +147,7 @@ let docker_make_bench ~run_args ~repository image =
         "--addr-no-randomize";
         "sh";
         "-c";
-        "eval $(opam env) && make bench";
+        "opam exec -- make bench";
       ]
 
 let pipeline ~conninfo ~run_args ~repository =
