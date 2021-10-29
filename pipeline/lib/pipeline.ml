@@ -230,13 +230,20 @@ let repositories = function
       in
       List.concat (List.concat repos)
 
+let exists ~conninfo repository =
+  let db = new Postgresql.connection ~conninfo () in
+  let exists = Benchmark.Db.exists db repository in
+  db#finish;
+  exists
+
 let process_pipeline ~docker_config ~conninfo ~source () =
   let run_args = Docker_config.run_args docker_config in
   Current.list_iter ~collapse_key:"pipeline"
     (module Repository)
-    (fun repository ->
-      let* repository = repository in
-      pipeline ~conninfo ~run_args repository)
+    (fun repo ->
+      let* repository = repo in
+      if exists ~conninfo repository then Current.ignore_value repo
+      else pipeline ~conninfo ~run_args repository)
     (repositories source)
 
 let v ~current_config ~docker_config ~server:mode ~(source : Source.t) conninfo

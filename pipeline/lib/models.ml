@@ -111,5 +111,36 @@ VALUES
                 (Postgresql.string_of_error err))
       | exn ->
           Logs.err (fun log -> log "Could not insert results:\n%a" Fmt.exn exn)
+
+    let exists_query ~repository =
+      let repo_id = Repository.info repository
+      and commit = Repository.commit_hash repository in
+      Fmt.str
+        {|SELECT COUNT(*) FROM benchmarks WHERE repo_id='%s' AND commit='%s'|}
+        repo_id commit
+
+    let exists (db : Postgresql.connection) repository =
+      let query = exists_query ~repository in
+      try
+        let result = db#exec query in
+        match result#get_all with
+        | [| [| count_str |] |] ->
+            let count = int_of_string count_str in
+            count >= 1
+        | result ->
+            Logs.err (fun log ->
+                log "Unexpected result for Db.exists %s:%s\n%a"
+                  (Repository.info repository)
+                  (Repository.commit_hash repository)
+                  (Fmt.array (Fmt.array Fmt.string))
+                  result);
+            true
+      with exn ->
+        Logs.err (fun log ->
+            log "Error for Db.exists %s:%s\n%a"
+              (Repository.info repository)
+              (Repository.commit_hash repository)
+              Fmt.exn exn);
+        true
   end
 end
