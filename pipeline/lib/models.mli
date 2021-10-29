@@ -40,5 +40,7 @@ module Benchmark : sig
 
   module Db : sig
     val insert : Postgresql.connection -> t -> unit
+
+    val exists : Postgresql.connection -> Repository.t -> bool
   end
 end
