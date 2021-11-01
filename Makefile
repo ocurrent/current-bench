@@ -20,6 +20,12 @@ stop-production:
 ./local-test-repo/.git:
 	cd ./local-test-repo/ && git init && git add . && git commit -m "Initial commit."
 
+.PHONY: run-migrations
+run-migrations:
+	docker exec -it current-bench_pipeline_1 omigrate up \
+		--verbose --source=/app/db/migrations \
+		--database=postgresql://docker:docker@db:5432/docker
+
 .PHONY: start-development
 start-development: ./local-test-repo/.git
 	docker-compose \
