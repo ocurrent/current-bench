@@ -1349,6 +1349,22 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "test_index",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "test_name",
             "type": {
               "kind": "NON_NULL",
@@ -1808,6 +1824,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "test_index",
+            "type": {
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "version",
             "type": {
               "kind": "SCALAR",
@@ -1822,6 +1850,16 @@
         "inputFields": [
           {
             "name": "pull_number",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "test_index",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -1990,6 +2028,16 @@
             "description": null
           },
           {
+            "name": "test_index",
+            "defaultValue": null,
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "Int_comparison_exp",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
             "name": "test_name",
             "defaultValue": null,
             "type": {
@@ -2115,6 +2163,16 @@
             "description": null
           },
           {
+            "name": "test_index",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
             "name": "version",
             "defaultValue": null,
             "type": {
@@ -2231,6 +2289,16 @@
             "type": {
               "kind": "SCALAR",
               "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "test_index",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
               "ofType": null
             },
             "description": null
@@ -2373,6 +2441,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "test_index",
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "test_name",
             "type": {
               "kind": "SCALAR",
@@ -2469,6 +2549,16 @@
           },
           {
             "name": "run_job_id",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "test_index",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -2615,6 +2705,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "test_index",
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "test_name",
             "type": {
               "kind": "SCALAR",
@@ -2711,6 +2813,16 @@
           },
           {
             "name": "run_job_id",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "test_index",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -2994,6 +3106,16 @@
             "description": null
           },
           {
+            "name": "test_index",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
             "name": "test_name",
             "defaultValue": null,
             "type": {
@@ -3108,6 +3230,12 @@
             "isDeprecated": false,
             "deprecationReason": null,
             "name": "run_job_id",
+            "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "test_index",
             "description": "column name"
           },
           {
@@ -3229,6 +3357,16 @@
             "description": null
           },
           {
+            "name": "test_index",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
             "name": "test_name",
             "defaultValue": null,
             "type": {
@@ -3282,6 +3420,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "test_index",
+            "type": {
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "version",
             "type": {
               "kind": "SCALAR",
@@ -3296,6 +3446,16 @@
         "inputFields": [
           {
             "name": "pull_number",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "test_index",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -3348,6 +3508,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "test_index",
+            "type": {
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "version",
             "type": {
               "kind": "SCALAR",
@@ -3362,6 +3534,16 @@
         "inputFields": [
           {
             "name": "pull_number",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "test_index",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -3414,6 +3596,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "test_index",
+            "type": {
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "version",
             "type": {
               "kind": "SCALAR",
@@ -3428,6 +3622,16 @@
         "inputFields": [
           {
             "name": "pull_number",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "test_index",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -3480,6 +3684,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "test_index",
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "version",
             "type": {
               "kind": "SCALAR",
@@ -3494,6 +3710,16 @@
         "inputFields": [
           {
             "name": "pull_number",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "test_index",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -3591,6 +3817,12 @@
           {
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "test_index",
+            "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "test_name",
             "description": "column name"
           },
@@ -3629,6 +3861,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "test_index",
+            "type": {
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "version",
             "type": {
               "kind": "SCALAR",
@@ -3643,6 +3887,16 @@
         "inputFields": [
           {
             "name": "pull_number",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "test_index",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -3695,6 +3949,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "test_index",
+            "type": {
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "version",
             "type": {
               "kind": "SCALAR",
@@ -3709,6 +3975,16 @@
         "inputFields": [
           {
             "name": "pull_number",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "test_index",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -3761,6 +4037,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "test_index",
+            "type": {
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "version",
             "type": {
               "kind": "SCALAR",
@@ -3775,6 +4063,16 @@
         "inputFields": [
           {
             "name": "pull_number",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "test_index",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
