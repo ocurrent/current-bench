@@ -24,6 +24,13 @@ stop-production:
 		--env-file=./environments/production.env \
 		down
 
+.PHONY: redeploy-production
+redeploy-production: \
+	build-production \
+	run-migrations \
+	stop-production \
+	start-production
+
 # Make sure the fake testing repo is initialised.
 ./local-test-repo/.git:
 	cd ./local-test-repo/ && git init && git add . && git commit -m "Initial commit."
