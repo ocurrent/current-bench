@@ -17,6 +17,7 @@ fragment BenchmarkMetrics on benchmarks {
   run_at
   commit
   test_name
+  test_index
   metrics
 }
 `)
@@ -131,6 +132,7 @@ module Benchmark = {
         BenchmarkData.add(
           acc,
           ~testName=item.test_name,
+          ~testIndex=item.test_index,
           ~metricName=metric.name,
           ~runAt=item.run_at->decodeRunAt->Belt.Option.getExn,
           ~commit=item.commit,
@@ -152,20 +154,23 @@ module Benchmark = {
 
     let graphsData = React.useMemo1(() => {
       benchmarkDataByTestName
-      ->Belt.Map.String.mapWithKey((testName, dataByMetricName) => {
-        let comparison = Belt.Map.String.getWithDefault(
+      ->Belt.Map.String.mapWithKey((testName, (testIndex, dataByMetricName)) => {
+        let (_, comparison) = Belt.Map.String.getWithDefault(
           comparisonBenchmarkDataByTestName,
           testName,
-          Belt.Map.String.empty,
+          (0, Belt.Map.String.empty),
         )
-        (dataByMetricName, comparison, testName)
+        (dataByMetricName, comparison, testName, testIndex)
       })
       ->Belt.Map.String.valuesToArray
     }, [benchmarkDataByTestName])
 
     <Column spacing=Sx.xl>
       {graphsData
-      ->Belt.Array.map(((dataByMetricName, comparison, testName)) =>
+      ->Belt.List.fromArray
+      ->Belt.List.sort(((_, _, _, idx1), (_, _, _, idx2)) => idx1 - idx2)
+      ->Belt.List.toArray
+      ->Belt.Array.map(((dataByMetricName, comparison, testName, _)) =>
         <BenchmarkTest repoId pullNumber key={testName} testName dataByMetricName comparison />
       )
       ->Rx.array(~empty=<Message text="No data for selected interval." />)}
