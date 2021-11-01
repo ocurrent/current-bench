@@ -8,6 +8,14 @@ start-production:
 		--detach \
 		--build
 
+.PHONY: build-production
+build-production:
+	docker-compose \
+		--project-name="current-bench" \
+		--file=./environments/production.docker-compose.yaml \
+		--env-file=./environments/production.env \
+		build
+
 .PHONY: stop-production
 stop-production:
 	docker-compose \
