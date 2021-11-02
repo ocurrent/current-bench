@@ -112,6 +112,14 @@ pipeline container. This can be achieved by running the following command:
 make rebuild-pipeline
 ```
 
+### Starting only the database and the frontend
+
+It is possible to start just the database and the front-end without starting the `pipeline` that watches repositories and runs benchmarks. This is useful to visualize benchmarks run elsewhere using current-bench's frontend. To run only the db, frontend and graphq-engine containers, run the following command:
+
+```sh
+./scripts/dc.sh up --build frontend db graphql-engine db-migrate
+```
+
 ## Inspecting the benchmark results in the database
 
 The raw benchmark results (as produced by user projects) are stored in the PostgreSQL database.
