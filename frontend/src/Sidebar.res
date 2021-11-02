@@ -102,10 +102,14 @@ module SidebarMenu = {
     | Fetching => Rx.text("Loading...")
     | Data({benchmarksMenuData, pullsMenuData})
     | PartialData({benchmarksMenuData, pullsMenuData}, _) => <>
-        <Column>
-          <Text color=Sx.gray700 weight=#bold uppercase=true size=#sm> "Benchmarks" </Text>
-          <BenchmarksMenu repoId benchmarksMenuData ?selectedPull ?selectedBenchmarkName />
-        </Column>
+        {switch Js.Array.length(benchmarksMenuData) > 1 {
+        | true =>
+          <Column>
+            <Text color=Sx.gray700 weight=#bold uppercase=true size=#sm> "Benchmarks" </Text>
+            <BenchmarksMenu repoId benchmarksMenuData ?selectedPull ?selectedBenchmarkName />
+          </Column>
+        | false => Rx.null
+        }}
         <Column>
           <Text color=Sx.gray700 weight=#bold uppercase=true size=#sm> "Pull Requests" </Text>
           <PullsMenu repoId pullsMenuData ?selectedPull ?selectedBenchmarkName />
