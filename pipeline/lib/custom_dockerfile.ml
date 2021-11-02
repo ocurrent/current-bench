@@ -61,8 +61,13 @@ let base_dockerfile ~base =
 
 let add_workdir =
   let open Dockerfile in
-  copy ~src:[ "--chown=opam:opam ." ] ~dst:"bench-dir" ()
-  @@ workdir "bench-dir"
+  (* If the package's directory name doesn't contain a dot then opam will default to
+     using the last known version, which is usually wrong. In particular, if a multi-project
+     repostory adds a new package with a constraint "{ =version }" on an existing one,
+     this will fail because opam will pin the new package as "dev" but the old one with
+     the version of its last release, which is why we add .dev to the directory name. *)
+  copy ~src:[ "--chown=opam:opam ." ] ~dst:"bench-dir.dev" ()
+  @@ workdir "bench-dir.dev"
   @@ add ~src:[ "--chown=opam ." ] ~dst:"." ()
 
 let minimal_dockerfile ~base =
