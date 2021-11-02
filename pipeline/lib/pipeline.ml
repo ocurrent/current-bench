@@ -130,7 +130,8 @@ let db_save ~conninfo benchmark output =
   |> validate_json
   |> Hashtbl.iter (fun benchmark_name (version, results) ->
          results
-         |> List.map (benchmark ~version ~benchmark_name)
+         |> List.mapi (fun test_index res ->
+                benchmark ~version ~benchmark_name ~test_index res)
          |> List.iter (Models.Benchmark.Db.insert db));
   db#finish
 

@@ -8,6 +8,7 @@ module Benchmark : sig
     run_at:Ptime.t ->
     duration:Ptime.span ->
     benchmark_name:string option ->
+    test_index:int ->
     repository:Repository.t ->
     Yojson.Safe.t ->
     t
@@ -33,6 +34,8 @@ module Benchmark : sig
   val test_name : t -> string
 
   val benchmark_name : t -> string option
+
+  val test_index : t -> int
 
   val metrics : t -> Yojson.Safe.t
 
