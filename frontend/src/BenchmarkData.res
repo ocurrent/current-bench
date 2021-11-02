@@ -30,11 +30,3 @@ let add = (
   let byTestName = Map.String.set(byTestName, testName, byMetricName)
   byTestName
 }
-
-let forTestName = (byTestName: byTestName, testName) => {
-  Map.String.getWithDefault(byTestName, testName, Map.String.empty)
-}
-
-let forMetricName = (byMetricName: byMetricName, metricName) => {
-  Map.String.getWithDefault(byMetricName, metricName, ([], []))
-}
