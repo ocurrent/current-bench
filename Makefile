@@ -8,6 +8,14 @@ start-production:
 		--detach \
 		--build
 
+.PHONY: build-production
+build-production:
+	docker-compose \
+		--project-name="current-bench" \
+		--file=./environments/production.docker-compose.yaml \
+		--env-file=./environments/production.env \
+		build
+
 .PHONY: stop-production
 stop-production:
 	docker-compose \
@@ -16,9 +24,22 @@ stop-production:
 		--env-file=./environments/production.env \
 		down
 
+.PHONY: redeploy-production
+redeploy-production: \
+	build-production \
+	run-migrations \
+	stop-production \
+	start-production
+
 # Make sure the fake testing repo is initialised.
 ./local-test-repo/.git:
 	cd ./local-test-repo/ && git init && git add . && git commit -m "Initial commit."
+
+.PHONY: run-migrations
+run-migrations:
+	docker exec -it current-bench_pipeline_1 omigrate up \
+		--verbose --source=/app/db/migrations \
+		--database=postgresql://docker:docker@db:5432/docker
 
 .PHONY: start-development
 start-development: ./local-test-repo/.git
