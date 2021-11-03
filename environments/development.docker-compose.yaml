@@ -76,6 +76,7 @@ services:
       - "--verbose"
       - "--port=${OCAML_BENCH_PIPELINE_PORT?required}"
       - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU?required}"
+      - "--multicore-repositories=${OCAML_BENCH_MULTICORE_REPOSITORIES}"
       - "--conn-info=host=db user=docker port=5432 dbname=docker password=${OCAML_BENCH_DB_PASSWORD?required}"
     restart: always
     depends_on:

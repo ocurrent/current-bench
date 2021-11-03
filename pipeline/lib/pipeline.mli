@@ -19,7 +19,13 @@ end
 module Docker_config : sig
   type t
 
-  val v : ?cpu:string list -> ?numa_node:int -> shm_size:int -> unit -> t
+  val v :
+    ?cpu:string list ->
+    ?numa_node:int ->
+    shm_size:int ->
+    multicore_repositories:string list ->
+    unit ->
+    t
 end
 
 val v :

@@ -60,15 +60,26 @@ module Source = struct
 end
 
 module Docker_config = struct
-  type t = { cpu : string list; numa_node : int option; shm_size : int }
+  type t = {
+    cpu : string list;
+    numa_node : int option;
+    shm_size : int;
+    multicore_repositories : string list;
+  }
 
-  let v ?(cpu = []) ?numa_node ~shm_size () = { cpu; numa_node; shm_size }
+  let v ?(cpu = []) ?numa_node ~shm_size ~multicore_repositories () =
+    { cpu; numa_node; shm_size; multicore_repositories }
 
-  let cpuset_cpus ~multicore t =
+  let is_multicore ~repository t =
+    List.mem (Repository.info repository) t.multicore_repositories
+
+  let cpuset_cpus ~repository t =
     match t.cpu with
     | [] -> []
     | first :: _ ->
-        let cpus = if multicore then String.concat "," t.cpu else first in
+        let cpus =
+          if is_multicore ~repository t then String.concat "," t.cpu else first
+        in
         [ "--cpuset-cpus"; cpus ]
 
   let cpuset_mems t =
@@ -86,7 +97,7 @@ module Docker_config = struct
     | None ->
         [ "--tmpfs"; Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg" t.shm_size ]
 
-  let run_args ~multicore t =
+  let run_args ~repository t =
     [
       "--security-opt";
       "seccomp=./aslr_seccomp.json";
@@ -94,7 +105,7 @@ module Docker_config = struct
       "type=volume,src=current-bench-data,dst=/home/opam/bench-dir/current-bench-data";
     ]
     @ tmpfs t
-    @ cpuset_cpus ~multicore t
+    @ cpuset_cpus ~repository t
     @ cpuset_mems t
 end
 
@@ -163,14 +174,10 @@ let record_pipeline_stage ~stage ~serial_id ~conninfo image =
       Storage.record_stage_start ~stage ~job_id ~serial_id ~conninfo
   | _ -> ()
 
-let is_multicore repository =
-  List.mem (Repository.info repository) [ "art-w/ocaml"; "local/local" ]
-
 let pipeline ~conninfo ~docker_config ~repository =
   let serial_id = Storage.setup_metadata ~repository ~conninfo in
   let src = Repository.src repository in
-  let multicore = is_multicore repository in
-  let run_args = Docker_config.run_args ~multicore docker_config in
+  let run_args = Docker_config.run_args ~repository docker_config in
   let dockerfile = Custom_dockerfile.dockerfile ~pool ~run_args ~repository in
   let current_image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
   let* () =
