@@ -293,7 +293,7 @@ module RepoView = {
               <Text weight=#semibold> "/" </Text>
               {
                 let href = AppRouter.Repo({repoId: repoId, benchmarkName: None})->AppRouter.path
-                <Link href text="master" />
+                <Link href text="main" />
               }
               {pullNumber->Rx.onSome(pullNumber => {
                 let href = AppRouter.RepoPull({

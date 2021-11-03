@@ -125,7 +125,7 @@ let make = (
         <tr className={Sx.make([Sx.h.xl2])}>
           <th> {React.string("Metric")} </th>
           <th> {React.string("Last PR value")} </th>
-          <th> {React.string("Last master value")} </th>
+          <th> {React.string("Last main value")} </th>
           <th> {React.string("Delta")} </th>
         </tr>
       </thead>
@@ -205,7 +205,7 @@ let make = (
         (timeseries, metadata),
       )
       let delta = Belt.Option.map(delta, delta =>
-        delta == 0.0 ? "Same as master" : deltaToString(delta) ++ " vs master"
+        delta == 0.0 ? "Same as main" : deltaToString(delta) ++ " vs main"
       )
 
       <div key=metricName>
