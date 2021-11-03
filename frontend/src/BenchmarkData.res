@@ -2,7 +2,7 @@ open Belt
 
 type timeseries = array<LineGraph.DataRow.t>
 type byMetricName = Map.String.t<(timeseries, array<{"commit": string, "runAt": Js.Date.t, "units": LineGraph.DataRow.units}>)>
-type byTestName = Map.String.t<byMetricName>
+type byTestName = Map.String.t<(int, byMetricName)>
 type t = byTestName
 
 let empty: t = Map.String.empty
@@ -10,6 +10,7 @@ let empty: t = Map.String.empty
 let add = (
   byTestName: t,
   ~testName,
+  ~testIndex,
   ~metricName,
   ~runAt: Js.Date.t,
   ~commit,
@@ -17,7 +18,7 @@ let add = (
   ~units: LineGraph.DataRow.units
 ) => {
   // Unwrap
-  let byMetricName = Map.String.getWithDefault(byTestName, testName, Map.String.empty)
+  let (_, byMetricName) = Map.String.getWithDefault(byTestName, testName, (0, Map.String.empty))
   let (timeseries, metadata) = Map.String.getWithDefault(byMetricName, metricName, ([], []))
 
   // Update
@@ -27,14 +28,6 @@ let add = (
 
   // Wrap
   let byMetricName = Map.String.set(byMetricName, metricName, (timeseries, metadata))
-  let byTestName = Map.String.set(byTestName, testName, byMetricName)
+  let byTestName = Map.String.set(byTestName, testName, (testIndex, byMetricName))
   byTestName
-}
-
-let forTestName = (byTestName: byTestName, testName) => {
-  Map.String.getWithDefault(byTestName, testName, Map.String.empty)
-}
-
-let forMetricName = (byMetricName: byMetricName, metricName) => {
-  Map.String.getWithDefault(byMetricName, metricName, ([], []))
 }
