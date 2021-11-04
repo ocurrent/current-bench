@@ -67,8 +67,8 @@ let add_workdir =
      repository adds a new package with a constraint "{ =version }" on an existing one,
      this will fail because opam will pin the new package as "~dev" but the old one with
      the version of its last release, which is why we add .dev to the directory name. *)
-  copy ~src:[ "--chown=opam:opam ." ] ~dst:"bench-dir.dev" ()
-  @@ workdir "bench-dir.dev"
+  copy ~src:[ "--chown=opam:opam ." ] ~dst:"bench-dir" ()
+  @@ workdir "bench-dir"
   @@ add ~src:[ "--chown=opam ." ] ~dst:"." ()
   @@ run "opam exec -- opam pin -y -n --with-version=dev ."
 
