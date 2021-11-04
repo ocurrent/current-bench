@@ -58,6 +58,7 @@ let base_dockerfile ~base =
         liblmdb-dev m4 pkg-config gnuplot-x11 libgmp-dev libssl-dev \
         libpcre3-dev && opam remote add origin https://opam.ocaml.org && opam \
         update"
+  @@ run "mv /usr/bin/opam-2.1 /usr/bin/opam"
 
 let add_workdir =
   let open Dockerfile in
