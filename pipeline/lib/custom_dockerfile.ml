@@ -58,15 +58,10 @@ let base_dockerfile ~base =
         liblmdb-dev m4 pkg-config gnuplot-x11 libgmp-dev libssl-dev \
         libpcre3-dev && opam remote add origin https://opam.ocaml.org && opam \
         update"
-  @@ run "mv /usr/bin/opam-2.1 /usr/bin/opam"
+  @@ run "sudo mv /usr/bin/opam-2.1 /usr/bin/opam"
 
 let add_workdir =
   let open Dockerfile in
-  (* If the package's directory name doesn't contain a dot then opam will default to
-     using the last known version, which is usually wrong. In particular, if a multi-project
-     repository adds a new package with a constraint "{ =version }" on an existing one,
-     this will fail because opam will pin the new package as "~dev" but the old one with
-     the version of its last release, which is why we add .dev to the directory name. *)
   copy ~src:[ "--chown=opam:opam ." ] ~dst:"bench-dir" ()
   @@ workdir "bench-dir"
   @@ add ~src:[ "--chown=opam ." ] ~dst:"." ()
