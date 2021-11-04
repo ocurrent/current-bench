@@ -87,7 +87,7 @@ module Docker_config = struct
       "--security-opt";
       "seccomp=./aslr_seccomp.json";
       "--mount";
-      "type=volume,src=current-bench-data,dst=/home/opam/bench-dir.dev/current-bench-data";
+      "type=volume,src=current-bench-data,dst=/home/opam/bench-dir/current-bench-data";
     ]
     @ tmpfs t
     @ cpuset_cpus t
