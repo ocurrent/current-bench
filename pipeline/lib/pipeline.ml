@@ -123,7 +123,8 @@ let slack_post ~repository (output : string Current.t) =
          let channel = read_channel_uri path in
          Slack.post channel ~key:"output" output
 
-let db_save ~db benchmark output =
+let db_save ~conninfo benchmark output =
+  let db = new Postgresql.connection ~conninfo () in
   output
   |> Json_util.parse_many
   |> validate_json
@@ -150,26 +151,28 @@ let docker_make_bench ~run_args ~repository image =
         "opam exec -- make bench";
       ]
 
-let record_pipeline_stage ~stage ~serial_id ~db image =
+let record_pipeline_stage ~stage ~serial_id ~conninfo image =
   let+ job_id = Current_util.get_job_id image
   and+ state = Current.state image in
   match (job_id, state) with
   | Some job_id, Error (`Active _) ->
-      Storage.record_stage_start ~stage ~job_id ~serial_id db
+      Storage.record_stage_start ~stage ~job_id ~serial_id ~conninfo
   | _ -> ()
 
-let pipeline ~db ~run_args ~repository =
-  let serial_id = Storage.setup_metadata ~repository db in
+let pipeline ~conninfo ~run_args ~repository =
+  let serial_id = Storage.setup_metadata ~repository ~conninfo in
   let src = Repository.src repository in
   let dockerfile = Custom_dockerfile.dockerfile ~pool ~run_args ~repository in
   let current_image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
   let* () =
-    record_pipeline_stage ~stage:"build_job_id" ~serial_id ~db current_image
+    record_pipeline_stage ~stage:"build_job_id" ~serial_id ~conninfo
+      current_image
   in
   let run_at = Ptime_clock.now () in
   let current_output = docker_make_bench ~run_args ~repository current_image in
   let* () =
-    record_pipeline_stage ~stage:"run_job_id" ~serial_id ~db current_output
+    record_pipeline_stage ~stage:"run_job_id" ~serial_id ~conninfo
+      current_output
   in
   let+ build_job_id = Current_util.get_job_id current_image
   and+ run_job_id = Current_util.get_job_id current_output
@@ -177,14 +180,14 @@ let pipeline ~db ~run_args ~repository =
   let duration = Ptime.diff (Ptime_clock.now ()) run_at in
   Logs.debug (fun log -> log "Benchmark output:\n%s" output);
   let () =
-    db_save ~db
+    db_save ~conninfo
       (Benchmark.make ~duration ~run_at ~repository ?build_job_id ?run_job_id)
       output
   in
   output
 
-let pipeline ~db ~run_args repository =
-  let p = pipeline ~db ~run_args ~repository in
+let pipeline ~conninfo ~run_args repository =
+  let p = pipeline ~conninfo ~run_args ~repository in
   let* () = p |> slack_post ~repository |> github_set_status ~repository in
   Current.ignore_value p
 
@@ -245,22 +248,26 @@ let repositories = function
       in
       List.concat (List.concat repos)
 
-let exists ~db repository = Benchmark.Db.exists db repository
+let exists ~conninfo repository =
+  let db = new Postgresql.connection ~conninfo () in
+  let exists = Benchmark.Db.exists db repository in
+  db#finish;
+  exists
 
-let process_pipeline ~docker_config ~db ~source () =
+let process_pipeline ~docker_config ~conninfo ~source () =
   let run_args = Docker_config.run_args docker_config in
   Current.list_iter ~collapse_key:"pipeline"
     (module Repository)
     (fun repo ->
       let* repository = repo in
-      if exists ~db repository then Current.ignore_value repo
-      else pipeline ~db ~run_args repository)
+      if exists ~conninfo repository then Current.ignore_value repo
+      else pipeline ~conninfo ~run_args repository)
     (repositories source)
 
 let v ~current_config ~docker_config ~server:mode ~(source : Source.t) conninfo
     () =
-  let db = new Postgresql.connection ~conninfo () in
-  let pipeline = process_pipeline ~docker_config ~db ~source in
+  Db_util.check_connection ~conninfo;
+  let pipeline = process_pipeline ~docker_config ~conninfo ~source in
   let engine = Current.Engine.create ~config:current_config pipeline in
   let webhook =
     match Source.webhook_secret source with

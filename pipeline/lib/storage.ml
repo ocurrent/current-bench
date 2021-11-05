@@ -1,5 +1,6 @@
-let setup_metadata ~repository (db : Postgresql.connection) =
+let setup_metadata ~repository ~conninfo =
   Logs.debug (fun log -> log "Inserting metada....");
+  let db = new Postgresql.connection ~conninfo () in
   let run_at = Sql_util.time (Ptime_clock.now ()) in
   let repo_id = Sql_util.string (Repository.info repository) in
   let commit = Sql_util.string (Repository.commit_hash repository) in
@@ -26,6 +27,7 @@ let setup_metadata ~repository (db : Postgresql.connection) =
   in
   try
     let result = db#exec query in
+    db#finish;
     match result#get_all with
     | [| [| id |] |] -> int_of_string id
     | result ->
@@ -44,8 +46,9 @@ let setup_metadata ~repository (db : Postgresql.connection) =
           Fmt.exn exn);
     -1
 
-let record_stage_start ~stage ~job_id ~serial_id (db : Postgresql.connection) =
+let record_stage_start ~stage ~job_id ~serial_id ~conninfo =
   Logs.debug (fun log -> log "Recording build start...");
+  let db = new Postgresql.connection ~conninfo () in
   let job_id = Sql_util.string job_id in
   let serial_id = Sql_util.int serial_id in
   let query =
@@ -59,8 +62,9 @@ UPDATE
 |}
       stage job_id serial_id
   in
-  try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
+  (try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
   | Postgresql.Error err ->
       Logs.err (fun log ->
           log "Database error: %s" (Postgresql.string_of_error err))
-  | exn -> Logs.err (fun log -> log "Unknown error:\n%a" Fmt.exn exn)
+  | exn -> Logs.err (fun log -> log "Unknown error:\n%a" Fmt.exn exn));
+  db#finish
