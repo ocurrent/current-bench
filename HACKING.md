@@ -269,6 +269,25 @@ Attaching to current-bench_db_1, current-bench_db-migrate_1, current-bench_pipel
 ...
 ```
 
+## Database schema
+
+Currently, we have two tables. We want to eventually phase out to have 
+two separate tables, one that stores the metadata and one that stores the
+metrics.
+
+The metadata table contains:
+
+- Serial id that we use as the key.
+- Repository identifier (owner/name).
+- Benchmark run_at timestamp.
+- Current commit, PR and branch information.
+- OCurrent's image build job identifier.
+- OCurrent's container run job identifier.
+
+The payload contains, which currently is stored in the `benchmarks` table.
+
+- JSON value with the results.
+
 ### Some errors you might run into
 
 1. If docker cannot find the environment file, you have to provide the full path to the env file in the Makefile for the specific make target.
