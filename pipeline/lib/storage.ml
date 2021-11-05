@@ -6,13 +6,20 @@ let setup_metadata ~repository (db : Postgresql.connection) =
   let branch = Sql_util.(option string) (Repository.branch repository) in
   let pull_number = Sql_util.(option int) (Repository.pull_number repository) in
   let query =
+    (*
+      When setting up metadata, we are only insert the details that we know at th
+      beginning. If we see a conflict here, that means we have started running the
+      benchmarks again for this repo and commit, so we reset the build_job_id
+      and the run_job_id.
+    *)
     Fmt.str
       {|
     INSERT INTO
     benchmark_metadata(run_at, repo_id, commit, branch, pull_number)
     VALUES
     (%s, %s, %s, %s, %s)
-    ON CONFLICT DO NOTHING
+    ON CONFLICT(repo_id, commit) DO UPDATE
+    set build_job_id=NULL, run_job_id=NULL
     RETURNING id;
     |}
       run_at repo_id commit branch pull_number
