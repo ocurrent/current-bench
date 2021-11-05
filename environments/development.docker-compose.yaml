@@ -85,6 +85,20 @@ services:
         condition: service_healthy
     environment:
       OCAML_BENCH_FRONTEND_URL: ${OCAML_BENCH_FRONTEND_URL?required}
+  cluster:
+    build:
+      context: ../cluster
+    command:
+      - "--capnp-secret-key-file=./capnp-secrets/key.pem"
+      - "--capnp-listen-address=tcp:0.0.0.0:${OCAML_BENCH_CLUSTER_PORT?required}"
+      - "--capnp-public-address=tcp:127.0.0.1:${OCAML_BENCH_CLUSTER_PORT?required}"
+      - "--state-dir=/var/lib/ocluster-scheduler"
+      - "--pools=${OCAML_BENCH_CLUSTER_POOLS}"
+      - "--verbose"
+    ports: ["${OCAML_BENCH_CLUSTER_PORT?required}:${OCAML_BENCH_CLUSTER_PORT?required}"]
+    volumes:
+      # Allow access to capnp secrets required by client and workers
+      - ../capnp-secrets:/var/lib/ocluster-scheduler/capnp-secrets
   # Apply database migrations. To be used only in development!
   db-migrate:
     image: current-bench_pipeline:latest
