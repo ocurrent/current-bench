@@ -1,6 +1,11 @@
-let setup_metadata ~repository ~conninfo =
-  Logs.debug (fun log -> log "Inserting metada....");
+let with_db ~conninfo fn =
   let db = new Postgresql.connection ~conninfo () in
+  let ret_val = fn db in
+  db#finish;
+  ret_val
+
+let setup_metadata ~repository (db : Postgresql.connection) =
+  Logs.debug (fun log -> log "Inserting metada....");
   let run_at = Sql_util.time (Ptime_clock.now ()) in
   let repo_id = Sql_util.string (Repository.info repository) in
   let commit = Sql_util.string (Repository.commit_hash repository) in
@@ -27,12 +32,11 @@ let setup_metadata ~repository ~conninfo =
   in
   try
     let result = db#exec query in
-    db#finish;
     match result#get_all with
     | [| [| id |] |] -> int_of_string id
     | result ->
         Logs.err (fun log ->
-            log "Unexpected result for Db.exists %s:%s\n%a"
+            log "Unexpected result while setting up metadata %s:%s\n%a"
               (Repository.info repository)
               (Repository.commit_hash repository)
               (Fmt.array (Fmt.array Fmt.string))
@@ -40,15 +44,17 @@ let setup_metadata ~repository ~conninfo =
         -1
   with exn ->
     Logs.err (fun log ->
-        log "Error for Db.exists %s:%s\n%a"
+        log "Error while setting up metadata %s:%s\n%a"
           (Repository.info repository)
           (Repository.commit_hash repository)
           Fmt.exn exn);
     -1
 
-let record_stage_start ~stage ~job_id ~serial_id ~conninfo =
+let setup_metadata ~repository ~conninfo =
+  with_db ~conninfo (setup_metadata ~repository)
+
+let record_stage_start ~stage ~job_id ~serial_id (db : Postgresql.connection) =
   Logs.debug (fun log -> log "Recording build start...");
-  let db = new Postgresql.connection ~conninfo () in
   let job_id = Sql_util.string job_id in
   let serial_id = Sql_util.int serial_id in
   let query =
@@ -62,9 +68,14 @@ UPDATE
 |}
       stage job_id serial_id
   in
-  (try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
+  try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
   | Postgresql.Error err ->
       Logs.err (fun log ->
-          log "Database error: %s" (Postgresql.string_of_error err))
-  | exn -> Logs.err (fun log -> log "Unknown error:\n%a" Fmt.exn exn));
-  db#finish
+          log "Database error while recording stage %s: %s" stage
+            (Postgresql.string_of_error err))
+  | exn ->
+      Logs.err (fun log ->
+          log "Unknown error while recording stage %s:\n%a" stage Fmt.exn exn)
+
+let record_stage_start ~stage ~job_id ~serial_id ~conninfo =
+  with_db ~conninfo (record_stage_start ~stage ~job_id ~serial_id)
