@@ -2,7 +2,7 @@ open Components
 
 module GetLastCommitInfo = %graphql(`
 query ($repoId: String!, $pullNumber: Int, $isMaster: Boolean!) {
-  lastCommitInfo: benchmarks(limit: 1, where: {_and: [{pull_number: {_eq: $pullNumber}}, {pull_number: {_is_null: $isMaster}}, {repo_id: {_eq: $repoId}}]}, order_by: [{run_at: desc_nulls_last}]) {
+  lastCommitInfo: benchmark_metadata(limit: 1, where: {_and: [{pull_number: {_eq: $pullNumber}}, {pull_number: {_is_null: $isMaster}}, {repo_id: {_eq: $repoId}}]}, order_by: [{run_at: desc_nulls_last}]) {
     run_at
     pull_number
     branch
