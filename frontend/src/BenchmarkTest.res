@@ -9,13 +9,72 @@ type testMetrics = {
 
 @module("../icons/branch.svg") external branchIcon: string = "default"
 
-let decodeMetricValue = (json): LineGraph.DataRow.value => {
+let isSize = (x) => Js.Re.exec_(%re("/(gb|mb|kb|bytes)\w*/i"), x)
+  ->Belt.Option.isSome
+
+let formatSize = (value, units) => {
+  let str = Js.Float.toExponential(value)
+
+  // separate exponent into integral and exponent
+  // For example if the number is 314.00 then the exponential looks like
+  // 314.00 -> 3.14e+2
+  // where exp_ == 2
+  // and integral == 3.14
+  // the unit only rolls over if ceiling(n / 3) > 0
+  // so 3.14e+2 would clearly not have any change in units 
+  // as ceiling(2 / 3) == 0
+  // multiply integral (3.14) with 10^(mod(exp_, 3))
+  // in order to maintain correctness with the unit
+
+  let exp_ = Js.String.split("e", str) -> Belt.Array.getExn(1)
+  let sign = Js.String.get(exp_, 0)
+  let exp_ = (Js.String.get(exp_, 1)
+      ->Belt.Int.fromString
+      ->Belt.Option.getExn)
+  let exp = exp_ / 3
+  let integral = Js.String.split("e", str) 
+    -> Belt.Array.getExn(0)
+    -> Belt.Float.fromString
+    -> Belt.Option.map((x) => x *. (Js.Math.pow_float(~base=10.0, ~exp=mod(exp_,3)->Belt.Int.toFloat)))
+    -> Belt.Option.getExn
+  Js.log(integral)
+  let newValue = integral
+
+  let unitArr = ["bytes", "kb", "mb", "gb", "tb", "pb", "eb", "zb", "yb"]
+  let startIndex = Js.Re.exec_(%re("/(gb|mb|kb|bytes)\w*/i"), units)
+    ->Belt.Option.getExn
+    ->Js.Re.index
+  let endIndex = startIndex + 2
+  let oldStr = Js.String.substring(~from=startIndex, ~to_=endIndex, units)
+  let newUnit = switch sign {
+    | "+" => {
+      let index_ = Js.Array.findIndex(x => x == oldStr, unitArr)
+      let newStr = Belt.Array.getExn(unitArr, index_ + exp)
+      Js.String.replace(oldStr, newStr, units)
+    }
+    | "-" => {
+      let index_ = Js.Array.findIndex(x => x == oldStr, unitArr)
+      let newStr = Belt.Array.getExn(unitArr, index_ - exp)
+      Js.String.replace(oldStr, newStr, units)
+    }
+  }
+  (newValue, newUnit)
+}
+
+let decodeMetricValue = (json, units): (LineGraph.DataRow.value, Js.String.t) => {
   switch Js.Json.classify(json) {
-  | JSONNumber(n) => LineGraph.DataRow.single(n)
-  | JSONArray([]) => LineGraph.DataRow.single(nan)
+  | JSONNumber(n) => {
+    if isSize(units) {
+      let (v, u) = formatSize(n, units)
+      (LineGraph.DataRow.single(v), u)
+    } else {
+      (LineGraph.DataRow.single(n), units)
+    }
+  }
+  | JSONArray([]) => (LineGraph.DataRow.single(nan), units)
   | JSONArray(xs) =>
     let xs = xs->Belt.Array.map(x => x->Js.Json.decodeNumber->Belt.Option.getExn)
-    LineGraph.DataRow.many(xs)
+    (LineGraph.DataRow.many(xs), units)
   | JSONString(val) =>
     switch Js.String2.match_(
       val,
@@ -24,10 +83,10 @@ let decodeMetricValue = (json): LineGraph.DataRow.value => {
     | Some([_, minutes, seconds]) =>
       if minutes == "" {
         let n = Js.Float.fromString(seconds)
-        LineGraph.DataRow.single(n)
+        (LineGraph.DataRow.single(n), units)
       } else {
         let n = Js.Float.fromString(minutes) *. 60.0 +. Js.Float.fromString(seconds)
-        LineGraph.DataRow.single(n)
+        (LineGraph.DataRow.single(n), units)
       }
     | _ => invalid_arg("Invalid metric value:" ++ Js.Json.stringify(json))
     }
@@ -36,10 +95,13 @@ let decodeMetricValue = (json): LineGraph.DataRow.value => {
 }
 
 let decodeMetric = (data): LineGraph.DataRow.metric => {
+    let name = (Js.Dict.get(data, "name")->Belt.Option.getExn->Js.Json.decodeString->Belt.Option.getExn)
+    let units_ = (Js.Dict.get(data, "units")->Belt.Option.getExn->Js.Json.decodeString->Belt.Option.getExn)
+    let (value, units) = decodeMetricValue(Js.Dict.get(data, "value")->Belt.Option.getExn, units_)
   {
-    name: (Js.Dict.get(data, "name")->Belt.Option.getExn->Js.Json.decodeString->Belt.Option.getExn),
-    value: decodeMetricValue(Js.Dict.get(data, "value")->Belt.Option.getExn),
-    units: (Js.Dict.get(data, "units")->Belt.Option.getExn->Js.Json.decodeString->Belt.Option.getExn),
+    name: name,
+    units: units,
+    value: value,
   }
 }
 
