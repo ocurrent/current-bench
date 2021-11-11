@@ -13,51 +13,40 @@ let isSize = (x) => Js.Re.exec_(%re("/(gb|mb|kb|bytes)\w*/i"), x)
   ->Belt.Option.isSome
 
 let formatSize = (value, units) => {
-  let str = Js.Float.toExponential(value)
-
-  // separate exponent into integral and exponent
-  // For example if the number is 314.00 then the exponential looks like
-  // 314.00 -> 3.14e+2
-  // where exp_ == 2
-  // and integral == 3.14
-  // the unit only rolls over if ceiling(n / 3) > 0
-  // so 3.14e+2 would clearly not have any change in units 
-  // as ceiling(2 / 3) == 0
-  // multiply integral (3.14) with 10^(mod(exp_, 3))
-  // in order to maintain correctness with the unit
-
-  let exp_ = Js.String.split("e", str) -> Belt.Array.getExn(1)
-  let sign = Js.String.get(exp_, 0)
-  let exp_ = (Js.String.get(exp_, 1)
-      ->Belt.Int.fromString
-      ->Belt.Option.getExn)
-  let exp = exp_ / 3
-  let integral = Js.String.split("e", str) 
-    -> Belt.Array.getExn(0)
-    -> Belt.Float.fromString
-    -> Belt.Option.map((x) => x *. (Js.Math.pow_float(~base=10.0, ~exp=mod(exp_,3)->Belt.Int.toFloat)))
-    -> Belt.Option.getExn
-  Js.log(integral)
-  let newValue = integral
-
   let unitArr = ["bytes", "kb", "mb", "gb", "tb", "pb", "eb", "zb", "yb"]
-  let startIndex = Js.Re.exec_(%re("/(gb|mb|kb|bytes)\w*/i"), units)
+  // exp_ is the exponent value derived from value
+  // exp tracks the unit change (which is a factor of 3)
+  // mod_exp is the value tracking exp_ % 3 which is multiplied to fractional part
+  let exp_ = Js.Math.log10(value)
+    ->Js.Math.floor_int
+  let exp  = exp_ / 3
+  let mod_exp = mod(exp_, 3)->Belt.Int.toFloat
+  let newValue = Js.Math.pow_float(
+    ~base=10.0,
+    ~exp=(Js.Math.log10(value) -. Js.Int.toFloat(exp_))
+  )
+  ->(x => x *. (Js.Math.pow_float(~base=10.0, ~exp=mod_exp)))
+  ->Js.Float.toFixedWithPrecision(~digits=2)
+  ->Belt.Float.fromString
+  ->Belt.Option.getExn
+
+  let reMatch = Js.Re.exec_(%re("/(gb|mb|kb|bytes)\w*/i"), units)
+  let startIndex = reMatch
     ->Belt.Option.getExn
     ->Js.Re.index
-  let endIndex = startIndex + 2
+  let endIndex = startIndex + 
+    (reMatch
+    ->Belt.Option.getExn
+    ->Js.Re.captures
+    ->Belt.Array.getExn(1)
+    ->Js.String.make
+    ->Js.String.length)
   let oldStr = Js.String.substring(~from=startIndex, ~to_=endIndex, units)
-  let newUnit = switch sign {
-    | "+" => {
-      let index_ = Js.Array.findIndex(x => x == oldStr, unitArr)
-      let newStr = Belt.Array.getExn(unitArr, index_ + exp)
-      Js.String.replace(oldStr, newStr, units)
-    }
-    | "-" => {
-      let index_ = Js.Array.findIndex(x => x == oldStr, unitArr)
-      let newStr = Belt.Array.getExn(unitArr, index_ - exp)
-      Js.String.replace(oldStr, newStr, units)
-    }
-  }
+  // unitArrIndex <- index of the regex match in unitArr
+  let unitArrIndex = Js.Array.findIndex(x => x == oldStr, unitArr)
+  let newStr = Belt.Array.getExn(unitArr, unitArrIndex + exp)
+  let newUnit = Js.String.replace(oldStr, newStr, units) 
+
   (newValue, newUnit)
 }
 
