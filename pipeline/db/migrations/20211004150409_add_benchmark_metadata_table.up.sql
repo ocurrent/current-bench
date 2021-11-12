@@ -6,5 +6,6 @@ CREATE TABLE benchmark_metadata(
   branch VARCHAR(256) DEFAULT NULL,
   pull_number INTEGER DEFAULT NULL,
   build_job_id VARCHAR(256) DEFAULT NULL,
-  run_job_id VARCHAR(256) DEFAULT NULL
+  run_job_id VARCHAR(256) DEFAULT NULL,
+  UNIQUE(repo_id, commit)
 );
