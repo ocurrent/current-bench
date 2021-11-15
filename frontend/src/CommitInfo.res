@@ -37,8 +37,10 @@ let containerSx = [
   Sx.mb.xl2,
 ]
 
-let renderExternalLink = (~href, text) => {
-  let sx = Array.concat(list{Link.sx_base, [Sx.text.bold, Sx.text.lg, Sx.p.zero]})
+let linkStyle = [Sx.text.bold, Sx.text.lg, Sx.p.zero]
+
+let renderExternalLink = (~style=linkStyle, ~href, text) => {
+  let sx = Array.concat(list{Link.sx_base, style})
   <a target="_blank" className={Sx.make(sx)} href> {Rx.text(text)} </a>
 }
 
@@ -55,18 +57,16 @@ let renderJobIdLink = jobId => {
   renderExternalLink(~href, shortJobId)
 }
 
-let renderCommitLink = (repoId, commit) =>
-  renderExternalLink(~href=AppHelpers.commitUrl(~repoId, commit), DataHelpers.trimCommit(commit))
+let renderCommitLink = (~style=linkStyle, repoId, commit) =>
+  renderExternalLink(
+    ~style,
+    ~href=AppHelpers.commitUrl(~repoId, commit),
+    DataHelpers.trimCommit(commit),
+  )
 
 type status = Fail | Pass | Running
 
-let buildStatus = (lastCommitInfo: GetLastCommitInfo.t_lastCommitInfo, data: GetBenchmarks.t) => {
-  let lastBenchmark = Belt.Array.get(data.benchmarks, Belt.Array.length(data.benchmarks) - 1)
-  let noCommitMetrics = switch lastBenchmark {
-  | None => true
-  | Some(benchmark) => benchmark.commit != lastCommitInfo.commit
-  }
-
+let buildStatus = (lastCommitInfo: GetLastCommitInfo.t_lastCommitInfo, noCommitMetrics) => {
   if lastCommitInfo.failed->Belt.Option.getWithDefault(false) {
     Fail
   } else if noCommitMetrics {
@@ -95,36 +95,69 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t) => {
   | Data(data)
   | PartialData(data, _) =>
     let lastCommitInfo = data.lastCommitInfo[0]
-    let status = buildStatus(lastCommitInfo, benchmarks)
-    <Row sx=containerSx spacing=#between alignY=#bottom>
-      <Column spacing=Sx.sm>
-        <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Last Commit" </Text>
-        {renderCommitLink(repoId, lastCommitInfo.commit)}
-      </Column>
-      <Column spacing=Sx.sm>
-        <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Build logs" </Text>
-        {switch lastCommitInfo.build_job_id {
-        | Some(jobId) => renderJobIdLink(jobId)
-        | None => <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray700)]> "No data" </Text>
-        }}
-      </Column>
-      <Column spacing=Sx.sm>
-        <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Execution logs" </Text>
-        {switch lastCommitInfo.run_job_id {
-        | Some(jobId) => renderJobIdLink(jobId)
-        | None => <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray700)]> "No data" </Text>
-        }}
-      </Column>
-      <Column spacing=Sx.sm>
-        <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Status" </Text>
-        {switch status {
-        | Fail => <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.red300)]> "Failed" </Text>
-        | Pass => <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.green300)]> "Passed" </Text>
-        | Running =>
-          <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.yellow600)]> "Running" </Text>
-        }}
-      </Column>
-    </Row>
-  // FIXME: Add notice about benchmarks being for older commit if fail/running
+    let lastBenchmark = Belt.Array.get(
+      benchmarks.benchmarks,
+      Belt.Array.length(benchmarks.benchmarks) - 1,
+    )
+    let noCommitMetrics = switch lastBenchmark {
+    | None => true
+    | Some(benchmark) => benchmark.commit != lastCommitInfo.commit
+    }
+    let status = buildStatus(lastCommitInfo, noCommitMetrics)
+    <>
+      <Row sx=containerSx spacing=#between alignY=#bottom>
+        <Column spacing=Sx.sm>
+          <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Last Commit" </Text>
+          {renderCommitLink(repoId, lastCommitInfo.commit)}
+        </Column>
+        <Column spacing=Sx.sm>
+          <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Build logs" </Text>
+          {switch lastCommitInfo.build_job_id {
+          | Some(jobId) => renderJobIdLink(jobId)
+          | None =>
+            <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray700)]> "No data" </Text>
+          }}
+        </Column>
+        <Column spacing=Sx.sm>
+          <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Execution logs" </Text>
+          {switch lastCommitInfo.run_job_id {
+          | Some(jobId) => renderJobIdLink(jobId)
+          | None =>
+            <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray700)]> "No data" </Text>
+          }}
+        </Column>
+        <Column spacing=Sx.sm>
+          <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Status" </Text>
+          {switch status {
+          | Fail => <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.red300)]> "Failed" </Text>
+          | Pass =>
+            <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.green300)]> "Passed" </Text>
+          | Running =>
+            <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.yellow600)]> "Running" </Text>
+          }}
+        </Column>
+      </Row>
+      {switch status {
+      | Fail
+      | Running =>
+        switch lastBenchmark {
+        | None => Rx.null
+        | Some(benchmark) => <>
+            <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.yellow600)]>
+              "Metrics for an older commit "
+            </Text>
+            {renderCommitLink(
+              ~style=[Sx.text.bold, Sx.text.xs, Sx.p.zero],
+              repoId,
+              benchmark.commit,
+            )}
+            <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.yellow600)]>
+              " are shown below"
+            </Text>
+          </>
+        }
+      | _ => Rx.null
+      }}
+    </>
   }
 }
