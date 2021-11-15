@@ -34,4 +34,5 @@
       - pull_number
       - build_job_id
       - run_job_id
+      - failed
       filter: {}

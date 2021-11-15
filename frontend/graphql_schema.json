@@ -70,6 +70,123 @@
         "fields": null
       },
       {
+        "inputFields": [
+          {
+            "name": "_eq",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "_gt",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "_gte",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "_in",
+            "defaultValue": null,
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Boolean",
+                  "ofType": null
+                }
+              }
+            },
+            "description": null
+          },
+          {
+            "name": "_is_null",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "_lt",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "_lte",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "_neq",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "_nin",
+            "defaultValue": null,
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Boolean",
+                  "ofType": null
+                }
+              }
+            },
+            "description": null
+          }
+        ],
+        "kind": "INPUT_OBJECT",
+        "possibleTypes": null,
+        "interfaces": null,
+        "name": "Boolean_comparison_exp",
+        "enumValues": null,
+        "description": "expression to compare columns of type Boolean. All fields are combined with logical 'AND'.",
+        "fields": null
+      },
+      {
         "inputFields": null,
         "kind": "SCALAR",
         "possibleTypes": null,
@@ -1246,6 +1363,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "failed",
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "id",
             "type": {
               "kind": "NON_NULL",
@@ -1836,6 +1965,16 @@
             "description": null
           },
           {
+            "name": "failed",
+            "defaultValue": null,
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "Boolean_comparison_exp",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
             "name": "id",
             "defaultValue": null,
             "type": {
@@ -1906,6 +2045,12 @@
             "deprecationReason": null,
             "name": "benchmark_metadata_pkey",
             "description": "unique or primary key constraint"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "benchmark_metadata_repo_id_commit_key",
+            "description": "unique or primary key constraint"
           }
         ],
         "description": "unique or primary key constraints on table \"benchmark_metadata\"",
@@ -1970,6 +2115,16 @@
             "type": {
               "kind": "SCALAR",
               "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "failed",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
               "ofType": null
             },
             "description": null
@@ -2605,6 +2760,16 @@
             "description": null
           },
           {
+            "name": "failed",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
             "name": "id",
             "defaultValue": null,
             "type": {
@@ -2716,6 +2881,12 @@
           {
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "failed",
+            "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "id",
             "description": "column name"
           },
@@ -2775,6 +2946,16 @@
             "type": {
               "kind": "SCALAR",
               "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "failed",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
               "ofType": null
             },
             "description": null
@@ -3125,6 +3306,12 @@
             "isDeprecated": false,
             "deprecationReason": null,
             "name": "commit",
+            "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "failed",
             "description": "column name"
           },
           {
