@@ -151,12 +151,29 @@ let docker_make_bench ~run_args ~repository image =
         "opam exec -- make bench";
       ]
 
+let record_pipeline_stage ~stage ~serial_id ~conninfo image =
+  let+ job_id = Current_util.get_job_id image
+  and+ state = Current.state image in
+  match (job_id, state) with
+  | Some job_id, Error (`Active _) ->
+      Storage.record_stage_start ~stage ~job_id ~serial_id ~conninfo
+  | _ -> ()
+
 let pipeline ~conninfo ~run_args ~repository =
+  let serial_id = Storage.setup_metadata ~repository ~conninfo in
   let src = Repository.src repository in
   let dockerfile = Custom_dockerfile.dockerfile ~pool ~run_args ~repository in
   let current_image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
+  let* () =
+    record_pipeline_stage ~stage:"build_job_id" ~serial_id ~conninfo
+      current_image
+  in
   let run_at = Ptime_clock.now () in
   let current_output = docker_make_bench ~run_args ~repository current_image in
+  let* () =
+    record_pipeline_stage ~stage:"run_job_id" ~serial_id ~conninfo
+      current_output
+  in
   let+ build_job_id = Current_util.get_job_id current_image
   and+ run_job_id = Current_util.get_job_id current_output
   and+ output = current_output in
