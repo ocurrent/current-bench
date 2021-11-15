@@ -55,6 +55,9 @@ let renderJobIdLink = jobId => {
   renderExternalLink(~href, shortJobId)
 }
 
+let renderCommitLink = (repoId, commit) =>
+  renderExternalLink(~href=AppHelpers.commitUrl(~repoId, commit), DataHelpers.trimCommit(commit))
+
 type status = Fail | Pass | Running
 
 let buildStatus = (lastCommitInfo: GetLastCommitInfo.t_lastCommitInfo, data: GetBenchmarks.t) => {
@@ -96,10 +99,7 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t) => {
     <Row sx=containerSx spacing=#between alignY=#bottom>
       <Column spacing=Sx.sm>
         <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Last Commit" </Text>
-        {renderExternalLink(
-          ~href=AppHelpers.commitUrl(~repoId, lastCommitInfo.commit),
-          DataHelpers.trimCommit(lastCommitInfo.commit),
-        )}
+        {renderCommitLink(repoId, lastCommitInfo.commit)}
       </Column>
       <Column spacing=Sx.sm>
         <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Build logs" </Text>
