@@ -79,3 +79,30 @@ UPDATE
 
 let record_stage_start ~stage ~job_id ~serial_id ~conninfo =
   with_db ~conninfo (record_stage_start ~stage ~job_id ~serial_id)
+
+let record_stage_failure ~stage ~serial_id (db : Postgresql.connection) =
+  Logs.debug (fun log -> log "Recording stage failure...");
+  let serial_id = Sql_util.int serial_id in
+  let query =
+    Fmt.str
+      {|
+UPDATE
+  benchmark_metadata
+  SET
+    failed = true
+    WHERE id = %s
+|}
+      serial_id
+  in
+  try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
+  | Postgresql.Error err ->
+      Logs.err (fun log ->
+          log "Database error while recording stage failure %s: %s" stage
+            (Postgresql.string_of_error err))
+  | exn ->
+      Logs.err (fun log ->
+          log "Unknown error while recording stage failure %s:\n%a" stage
+            Fmt.exn exn)
+
+let record_stage_failure ~stage ~serial_id ~conninfo =
+  with_db ~conninfo (record_stage_failure ~stage ~serial_id)
