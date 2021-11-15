@@ -1,4 +1,5 @@
 open Components
+open BenchmarkQueryHelpers
 
 module GetLastCommitInfo = %graphql(`
 query ($repoId: String!, $pullNumber: Int, $isMaster: Boolean!) {
@@ -9,6 +10,7 @@ query ($repoId: String!, $pullNumber: Int, $isMaster: Boolean!) {
     commit
     build_job_id
     run_job_id
+    failed
   }
 }
 `)
@@ -53,8 +55,26 @@ let renderJobIdLink = jobId => {
   renderExternalLink(~href, shortJobId)
 }
 
+type status = Fail | Pass | Running
+
+let buildStatus = (lastCommitInfo: GetLastCommitInfo.t_lastCommitInfo, data: GetBenchmarks.t) => {
+  let lastBenchmark = Belt.Array.get(data.benchmarks, Belt.Array.length(data.benchmarks) - 1)
+  let noCommitMetrics = switch lastBenchmark {
+  | None => true
+  | Some(benchmark) => benchmark.commit != lastCommitInfo.commit
+  }
+
+  if lastCommitInfo.failed->Belt.Option.getWithDefault(false) {
+    Fail
+  } else if noCommitMetrics {
+    Running
+  } else {
+    Pass
+  }
+}
+
 @react.component
-let make = (~repoId, ~pullNumber=?) => {
+let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t) => {
   let ({ReScriptUrql.Hooks.response: response}, _) = {
     ReScriptUrql.Hooks.useQuery(
       ~query=module(GetLastCommitInfo),
@@ -72,6 +92,7 @@ let make = (~repoId, ~pullNumber=?) => {
   | Data(data)
   | PartialData(data, _) =>
     let lastCommitInfo = data.lastCommitInfo[0]
+    let status = buildStatus(lastCommitInfo, benchmarks)
     <Row sx=containerSx spacing=#between alignY=#bottom>
       <Column spacing=Sx.sm>
         <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Last Commit" </Text>
@@ -94,6 +115,16 @@ let make = (~repoId, ~pullNumber=?) => {
         | None => <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray700)]> "No data" </Text>
         }}
       </Column>
+      <Column spacing=Sx.sm>
+        <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Status" </Text>
+        {switch status {
+        | Fail => <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.red300)]> "Failed" </Text>
+        | Pass => <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.green300)]> "Passed" </Text>
+        | Running =>
+          <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.yellow600)]> "Running" </Text>
+        }}
+      </Column>
     </Row>
+  // FIXME: Add notice about benchmarks being for older commit if fail/running
   }
 }

@@ -154,7 +154,9 @@ module BenchmarkView = {
     | Fetching => Rx.text("Loading...")
     | Data(data)
     | PartialData(data, _) =>
-      <Benchmark repoId pullNumber data />
+      <Block sx=[Sx.px.xl2, Sx.py.xl2, Sx.w.full, Sx.minW.zero]>
+        <CommitInfo repoId ?pullNumber benchmarks=data /> <Benchmark repoId pullNumber data />
+      </Block>
     }
   }
 }
@@ -298,10 +300,7 @@ module RepoView = {
                 {githubLink}
                 <Litepicker startDate endDate sx=[Sx.w.xl5] onSelect={onSelectDateRange} />
               </Topbar>
-              <Block sx=[Sx.px.xl2, Sx.py.xl2, Sx.w.full, Sx.minW.zero]>
-                <CommitInfo repoId ?pullNumber />
-                <BenchmarkView repoId ?pullNumber ?benchmarkName startDate endDate />
-              </Block>
+              <BenchmarkView repoId ?pullNumber ?benchmarkName startDate endDate />
             </Column>
           </>
         }}
