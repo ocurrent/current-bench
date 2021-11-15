@@ -5,7 +5,7 @@ open Components
 
 module GetAllRepos = %graphql(`
 query {
-  allRepoIds: benchmarks(distinct_on: [repo_id]) {
+  allRepoIds: benchmark_metadata(distinct_on: [repo_id]) {
     repo_id
   }
 }
