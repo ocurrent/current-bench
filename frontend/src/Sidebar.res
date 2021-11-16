@@ -31,17 +31,25 @@ module PullsMenu = {
 
     pullNumbers
     ->Belt.Array.mapWithIndex((i, pullNumber) => {
-      <Link
-        sx=[Sx.pb.md]
-        active={selectedPull === Some(pullNumber)}
-        key={string_of_int(i)}
-        href={AppRouter.RepoPull({
-          repoId: repoId,
-          pullNumber: pullNumber,
-          benchmarkName: selectedBenchmarkName,
-        })->AppRouter.path}
-        text={pullToString((pullNumber, None))}
-      />
+      <Row key={string_of_int(i)}>
+        <a
+          href={AppHelpers.pullUrl(~repoId, ~pull=string_of_int(pullNumber))}
+          className={Sx.make([Sx.ml.xs, Sx.mr.md, Sx.pt.md, Sx.text.color(Sx.gray400)])}
+          target="_blank">
+          {Icon.github}
+        </a>
+        <Link
+          sx=[Sx.pb.md]
+          active={selectedPull === Some(pullNumber)}
+          key={string_of_int(i)}
+          href={AppRouter.RepoPull({
+            repoId: repoId,
+            pullNumber: pullNumber,
+            benchmarkName: selectedBenchmarkName,
+          })->AppRouter.path}
+          text={pullToString((pullNumber, None))}
+        />
+      </Row>
     })
     ->Rx.array(~empty="None"->Rx.string)
   }
