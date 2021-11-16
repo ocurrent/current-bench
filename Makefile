@@ -35,6 +35,11 @@ redeploy-production: \
 ./local-test-repo/.git:
 	cd ./local-test-repo/ && git init && git add . && git commit -m "Initial commit."
 
+# Clean the fake testing repo
+.PHONY: clean-local-test-repo
+clean-local-test-repo:
+	cd ./local-test-repo/ && rm -rf .git/
+
 .PHONY: run-migrations
 run-migrations:
 	docker exec -it current-bench_pipeline_1 omigrate up \
