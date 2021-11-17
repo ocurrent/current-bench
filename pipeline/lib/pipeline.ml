@@ -214,6 +214,7 @@ let github_repositories ?slack_path repo =
        Github.Api.refs api repo
   in
   let default_branch = Github.Api.default_ref refs in
+  let stale_timestamp = Util.stale_timestamp () in
   let default_branch_name = Util.get_branch_name default_branch in
   let ref_map = Github.Api.all_refs refs in
   let+ _, repo = repo in
@@ -222,12 +223,15 @@ let github_repositories ?slack_path repo =
     (fun key head lst ->
       let commit = Github.Api.Commit.id head in
       let repository = repository ~commit ~github_head:head in
-      match key with
-      (* Skip all branches other than master, and check PRs *)
-      | `Ref branch when branch = default_branch ->
-          repository ~branch:default_branch_name () :: lst
-      | `Ref _ -> lst
-      | `PR pull_number -> repository ~pull_number () :: lst)
+      (* If commit is more than two weeks old, then skip it.*)
+      if Github.Api.Commit.committed_date head > stale_timestamp then
+        match key with
+        (* Skip all branches other than the default branch, and check PRs *)
+        | `Ref branch when branch = default_branch ->
+            repository ~branch:default_branch_name () :: lst
+        | `Ref _ -> lst
+        | `PR pull_number -> repository ~pull_number () :: lst
+      else lst)
     ref_map []
 
 let repositories = function
