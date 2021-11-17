@@ -77,7 +77,7 @@ let buildStatus = (lastCommitInfo: GetLastCommitInfo.t_lastCommitInfo, noCommitM
 }
 
 @react.component
-let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t) => {
+let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~setOldMetrics) => {
   let ({ReScriptUrql.Hooks.response: response}, _) = {
     ReScriptUrql.Hooks.useQuery(
       ~query=module(GetLastCommitInfo),
@@ -85,13 +85,43 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t) => {
     )
   }
 
+  // NOTE: This function needs to be called in all the branches of the switch,
+  // if not we see a React Warning about a change in the order of Hooks called
+  // by CommitInfo. (See https://reactjs.org/link/rules-of-hooks)
+  let showingOldMetrics = flag => {
+    // NOTE: We cannot directly call `setOldMetrics(_ => noCommitMetrics)` in
+    // the success branch, since it is not recommended to update a component
+    // (`App$BenchmarkView`) while rendering a different component
+    // (`CommitInfo`). So, we wrap it in useEffect. (See
+    // https://reactjs.org/link/setstate-in-render)
+    React.useEffect(() => {
+      setOldMetrics(_ => flag)
+      None
+    })
+  }
+
   switch response {
-  | Empty => <div> {"Something went wrong!"->Rx.text} </div>
-  | Error({networkError: Some(_)}) => <div> {"Network Error"->Rx.text} </div>
-  | Error({networkError: None}) => <div> {"Unknown Error"->Rx.text} </div>
-  | Fetching => Rx.text("Loading...")
+  | Empty => {
+      showingOldMetrics(false)
+      <div> {"Something went wrong!"->Rx.text} </div>
+    }
+  | Error({networkError: Some(_)}) => {
+      showingOldMetrics(false)
+      <div> {"Network Error"->Rx.text} </div>
+    }
+  | Error({networkError: None}) => {
+      showingOldMetrics(false)
+      <div> {"Unknown Error"->Rx.text} </div>
+    }
+  | Fetching => {
+      showingOldMetrics(false)
+      Rx.text("Loading...")
+    }
   | Data({lastCommitInfo: []})
-  | PartialData({lastCommitInfo: []}, _) => Rx.null
+  | PartialData({lastCommitInfo: []}, _) => {
+      showingOldMetrics(false)
+      Rx.null
+    }
   | Data(data)
   | PartialData(data, _) =>
     let lastCommitInfo = data.lastCommitInfo[0]
@@ -103,6 +133,7 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t) => {
     | None => true
     | Some(benchmark) => benchmark.commit != lastCommitInfo.commit
     }
+    showingOldMetrics(noCommitMetrics)
     let status = buildStatus(lastCommitInfo, noCommitMetrics)
     <>
       <Row sx=containerSx spacing=#between alignY=#bottom>

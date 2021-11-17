@@ -100,7 +100,7 @@ module Benchmark = {
     })
   }
   @react.component
-  let make = React.memo((~repoId, ~pullNumber, ~data: GetBenchmarks.t) => {
+  let make = React.memo((~repoId, ~pullNumber, ~data: GetBenchmarks.t, ~oldMetrics=false) => {
     let benchmarkDataByTestName = React.useMemo2(() => {
       data.benchmarks->makeBenchmarkData
     }, (data.benchmarks, makeBenchmarkData))
@@ -122,7 +122,7 @@ module Benchmark = {
       ->Belt.Map.String.valuesToArray
     }, [benchmarkDataByTestName])
 
-    <Column spacing=Sx.xl>
+    <Column spacing=Sx.xl sx={oldMetrics ? [Sx.opacity25] : []}>
       {graphsData
       ->Belt.List.fromArray
       ->Belt.List.sort(((_, _, _, idx1), (_, _, _, idx2)) => idx1 - idx2)
@@ -147,6 +147,8 @@ module BenchmarkView = {
       )
     }
 
+    let (oldMetrics, setOldMetrics) = React.useState(() => false)
+
     switch response {
     | Empty => <div> {"Something went wrong!"->Rx.text} </div>
     | Error({networkError: Some(_)}) => <div> {"Network Error"->Rx.text} </div>
@@ -155,7 +157,8 @@ module BenchmarkView = {
     | Data(data)
     | PartialData(data, _) =>
       <Block sx=[Sx.px.xl2, Sx.py.xl2, Sx.w.full, Sx.minW.zero]>
-        <CommitInfo repoId ?pullNumber benchmarks=data /> <Benchmark repoId pullNumber data />
+        <CommitInfo repoId ?pullNumber benchmarks=data setOldMetrics />
+        <Benchmark repoId pullNumber data oldMetrics />
       </Block>
     }
   }
