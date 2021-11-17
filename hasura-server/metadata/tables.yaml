@@ -19,3 +19,20 @@
       - build_job_id
       - run_job_id
       filter: {}
+
+- table:
+    schema: public
+    name: benchmark_metadata
+  select_permissions:
+  - role: public
+    permission:
+      columns:
+      - run_at
+      - repo_id
+      - commit
+      - branch
+      - pull_number
+      - build_job_id
+      - run_job_id
+      - failed
+      filter: {}

@@ -172,6 +172,9 @@ let record_pipeline_stage ~stage ~serial_id ~conninfo image =
   match (job_id, state) with
   | Some job_id, Error (`Active _) ->
       Storage.record_stage_start ~stage ~job_id ~serial_id ~conninfo
+  | Some _, Error (`Msg m) ->
+      Logs.err (fun log -> log "Error in %s stage: \n%s\n" stage m);
+      Storage.record_stage_failure ~stage ~serial_id ~conninfo
   | _ -> ()
 
 let pipeline ~conninfo ~docker_config ~repository =

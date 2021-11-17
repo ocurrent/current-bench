@@ -9,7 +9,7 @@ let pullToString = ((pullNumber, branch)) =>
 
 module SidebarMenuData = %graphql(`
 query ($repoId: String!) {
-  pullsMenuData: benchmarks(distinct_on: [pull_number], where: {_and: [{repo_id: {_eq: $repoId}}, {pull_number: {_is_null: false}}]}, order_by: [{pull_number: desc}]) {
+  pullsMenuData: benchmark_metadata(distinct_on: [pull_number], where: {_and: [{repo_id: {_eq: $repoId}}, {pull_number: {_is_null: false}}]}, order_by: [{pull_number: desc}]) {
     pull_number
     branch
   }  

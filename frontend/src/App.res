@@ -2,55 +2,12 @@
 
 open! Prelude
 open Components
+open BenchmarkQueryHelpers
 
 module GetAllRepos = %graphql(`
 query {
-  allRepoIds: benchmarks(distinct_on: [repo_id]) {
+  allRepoIds: benchmark_metadata(distinct_on: [repo_id]) {
     repo_id
-  }
-}
-`)
-
-module BenchmarkMetrics = %graphql(`
-fragment BenchmarkMetrics on benchmarks {
-  version
-  run_at
-  commit
-  test_name
-  test_index
-  metrics
-}
-`)
-
-module GetBenchmarks = %graphql(`
-query ($repoId: String!,
-       $pullNumber: Int,
-       $isMaster: Boolean!,
-       $benchmarkName: String,
-       $isDefaultBenchmark: Boolean!,
-       $startDate: timestamp!,
-       $endDate: timestamp!,
-       $comparisonLimit: Int!) {
-  benchmarks:
-    benchmarks(where: {_and: [{pull_number: {_eq: $pullNumber}},
-                              {pull_number: {_is_null: $isMaster}},
-                              {repo_id: {_eq: $repoId}},
-                              {benchmark_name: {_is_null: $isDefaultBenchmark,
-                                                _eq: $benchmarkName}},
-                              {run_at: {_gte: $startDate}},
-                              {run_at: {_lt: $endDate}}]},
-               order_by: [{run_at: asc}]) {
-    ...BenchmarkMetrics
-  }
-  comparisonBenchmarks:
-    benchmarks(where: {_and: [{pull_number: {_is_null: true}},
-                              {repo_id: {_eq: $repoId}},
-                              {benchmark_name: {_is_null: $isDefaultBenchmark, _eq: $benchmarkName}},
-                              {run_at: {_gte: $startDate}},
-                              {run_at: {_lt: $endDate}}]},
-               limit: $comparisonLimit,
-               order_by: [{run_at: desc}]) {
-    ...BenchmarkMetrics
   }
 }
 `)
@@ -143,7 +100,7 @@ module Benchmark = {
     })
   }
   @react.component
-  let make = React.memo((~repoId, ~pullNumber, ~data: GetBenchmarks.t) => {
+  let make = React.memo((~repoId, ~pullNumber, ~data: GetBenchmarks.t, ~oldMetrics=false) => {
     let benchmarkDataByTestName = React.useMemo2(() => {
       data.benchmarks->makeBenchmarkData
     }, (data.benchmarks, makeBenchmarkData))
@@ -165,7 +122,7 @@ module Benchmark = {
       ->Belt.Map.String.valuesToArray
     }, [benchmarkDataByTestName])
 
-    <Column spacing=Sx.xl>
+    <Column spacing=Sx.xl sx={oldMetrics ? [Sx.opacity25] : []}>
       {graphsData
       ->Belt.List.fromArray
       ->Belt.List.sort(((_, _, _, idx1), (_, _, _, idx2)) => idx1 - idx2)
@@ -190,6 +147,8 @@ module BenchmarkView = {
       )
     }
 
+    let (oldMetrics, setOldMetrics) = React.useState(() => false)
+
     switch response {
     | Empty => <div> {"Something went wrong!"->Rx.text} </div>
     | Error({networkError: Some(_)}) => <div> {"Network Error"->Rx.text} </div>
@@ -197,7 +156,10 @@ module BenchmarkView = {
     | Fetching => Rx.text("Loading...")
     | Data(data)
     | PartialData(data, _) =>
-      <Benchmark repoId pullNumber data />
+      <Block sx=[Sx.px.xl2, Sx.py.xl2, Sx.w.full, Sx.minW.zero]>
+        <CommitInfo repoId ?pullNumber benchmarks=data setOldMetrics />
+        <Benchmark repoId pullNumber data oldMetrics />
+      </Block>
     }
   }
 }
@@ -341,10 +303,7 @@ module RepoView = {
                 {githubLink}
                 <Litepicker startDate endDate sx=[Sx.w.xl5] onSelect={onSelectDateRange} />
               </Topbar>
-              <Block sx=[Sx.px.xl2, Sx.py.xl2, Sx.w.full, Sx.minW.zero]>
-                <CommitInfo repoId ?pullNumber />
-                <BenchmarkView repoId ?pullNumber ?benchmarkName startDate endDate />
-              </Block>
+              <BenchmarkView repoId ?pullNumber ?benchmarkName startDate endDate />
             </Column>
           </>
         }}
