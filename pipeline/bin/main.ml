@@ -58,7 +58,10 @@ module Docker = struct
        hyphen-separated range of CPUs a container can use, if you have more \
        than one CPU"
     in
-    Arg.(value & opt (some string) None & info [ "docker-cpu" ] ~doc)
+    Arg.(
+      value
+      & opt (some (list ~sep:',' string)) None
+      & info [ "docker-cpu" ] ~doc)
 
   let numa_node =
     let doc =
@@ -71,13 +74,22 @@ module Docker = struct
     let doc = "Size of tmpfs volume to be mounted in /dev/shm (in GB)." in
     Arg.(value & opt int 4 & info [ "docker-shm-size" ] ~doc)
 
+  let multicore_repositories =
+    let doc = "The repositories that should run on multiple cores." in
+    Arg.(
+      value
+      & opt (list ~sep:',' string) []
+      & info [ "multicore-repositories" ] ~doc)
+
   let v =
     Term.(
-      const (fun cpu numa_node shm_size ->
-          Pipeline.Docker_config.v ?cpu ?numa_node ~shm_size ())
+      const (fun cpu numa_node shm_size multicore_repositories ->
+          Pipeline.Docker_config.v ?cpu ?numa_node ~shm_size
+            ~multicore_repositories ())
       $ cpu
       $ numa_node
-      $ shm_size)
+      $ shm_size
+      $ multicore_repositories)
 end
 
 let setup_log =

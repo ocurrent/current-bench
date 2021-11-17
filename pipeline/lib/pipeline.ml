@@ -60,12 +60,27 @@ module Source = struct
 end
 
 module Docker_config = struct
-  type t = { cpu : string option; numa_node : int option; shm_size : int }
+  type t = {
+    cpu : string list;
+    numa_node : int option;
+    shm_size : int;
+    multicore_repositories : string list;
+  }
 
-  let v ?cpu ?numa_node ~shm_size () = { cpu; numa_node; shm_size }
+  let v ?(cpu = []) ?numa_node ~shm_size ~multicore_repositories () =
+    { cpu; numa_node; shm_size; multicore_repositories }
 
-  let cpuset_cpus t =
-    match t.cpu with Some cpu -> [ "--cpuset-cpus"; cpu ] | None -> []
+  let is_multicore ~repository t =
+    List.mem (Repository.info repository) t.multicore_repositories
+
+  let cpuset_cpus ~repository t =
+    match t.cpu with
+    | [] -> []
+    | first :: _ ->
+        let cpus =
+          if is_multicore ~repository t then String.concat "," t.cpu else first
+        in
+        [ "--cpuset-cpus"; cpus ]
 
   let cpuset_mems t =
     match t.numa_node with
@@ -82,7 +97,7 @@ module Docker_config = struct
     | None ->
         [ "--tmpfs"; Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg" t.shm_size ]
 
-  let run_args t =
+  let run_args ~repository t =
     [
       "--security-opt";
       "seccomp=./aslr_seccomp.json";
@@ -90,7 +105,7 @@ module Docker_config = struct
       "type=volume,src=current-bench-data,dst=/home/opam/bench-dir/current-bench-data";
     ]
     @ tmpfs t
-    @ cpuset_cpus t
+    @ cpuset_cpus ~repository t
     @ cpuset_mems t
 end
 
@@ -159,9 +174,10 @@ let record_pipeline_stage ~stage ~serial_id ~conninfo image =
       Storage.record_stage_start ~stage ~job_id ~serial_id ~conninfo
   | _ -> ()
 
-let pipeline ~conninfo ~run_args ~repository =
+let pipeline ~conninfo ~docker_config ~repository =
   let serial_id = Storage.setup_metadata ~repository ~conninfo in
   let src = Repository.src repository in
+  let run_args = Docker_config.run_args ~repository docker_config in
   let dockerfile = Custom_dockerfile.dockerfile ~pool ~run_args ~repository in
   let current_image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
   let* () =
@@ -186,8 +202,8 @@ let pipeline ~conninfo ~run_args ~repository =
   in
   output
 
-let pipeline ~conninfo ~run_args repository =
-  let p = pipeline ~conninfo ~run_args ~repository in
+let pipeline ~conninfo ~docker_config repository =
+  let p = pipeline ~conninfo ~docker_config ~repository in
   let* () = p |> slack_post ~repository |> github_set_status ~repository in
   Current.ignore_value p
 
@@ -255,13 +271,12 @@ let exists ~conninfo repository =
   exists
 
 let process_pipeline ~docker_config ~conninfo ~source () =
-  let run_args = Docker_config.run_args docker_config in
   Current.list_iter ~collapse_key:"pipeline"
     (module Repository)
     (fun repo ->
       let* repository = repo in
       if exists ~conninfo repository then Current.ignore_value repo
-      else pipeline ~conninfo ~run_args repository)
+      else pipeline ~conninfo ~docker_config repository)
     (repositories source)
 
 let v ~current_config ~docker_config ~server:mode ~(source : Source.t) conninfo

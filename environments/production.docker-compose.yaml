@@ -65,6 +65,7 @@ services:
       - "--verbosity=debug"
       - "--port=${OCAML_BENCH_PIPELINE_PORT?required}"
       - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU}"
+      - "--multicore-repositories=${OCAML_BENCH_MULTICORE_REPOSITORIES?required}"
       - "--conn-info=host=db user=docker port=5432 dbname=docker password=${OCAML_BENCH_DB_PASSWORD?required}"
       - "--github-app-id=${OCAML_BENCH_GITHUB_APP_ID}"
       - "--github-account-allowlist=${OCAML_BENCH_GITHUB_ACCOUNT_ALLOW_LIST?required}"
