@@ -203,16 +203,25 @@ let github_repositories ?slack_path repo =
     |> let> api, repo = repo in
        Github.Api.refs api repo
   in
+  let* refs_with_title =
+    Current.component "Get refs with title"
+    |> let> api, repo = repo in
+       Refs.refs api repo
+  in
   let default_branch = Github.Api.default_ref refs in
   let stale_timestamp = Util.stale_timestamp () in
   let default_branch_name = Util.get_branch_name default_branch in
   let ref_map = Github.Api.all_refs refs in
+  let title_map = refs_with_title in
   let+ _, repo = repo in
   let repository = Repository.v ?slack_path ~name:repo.name ~owner:repo.owner in
   Github.Api.Ref_map.fold
     (fun key head lst ->
+      let title =
+        try Github.Api.Ref_map.find key title_map with Not_found -> None
+      in
       let commit = Github.Api.Commit.id head in
-      let repository = repository ~commit ~github_head:head in
+      let repository = repository ~commit ~github_head:head ?title in
       (* If commit is more than two weeks old, then skip it.*)
       if Github.Api.Commit.committed_date head > stale_timestamp then
         match key with

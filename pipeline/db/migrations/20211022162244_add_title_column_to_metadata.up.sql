@@ -1,0 +1,1 @@
+ALTER TABLE benchmark_metadata ADD pr_title varchar(256);
