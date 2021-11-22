@@ -9,13 +9,20 @@ type testMetrics = {
 
 @module("../icons/branch.svg") external branchIcon: string = "default"
 
-let decodeMetricValue = (json): LineGraph.DataRow.value => {
+let decodeMetricValue = (json, units): (LineGraph.DataRow.value, Js.String.t) => {
   switch Js.Json.classify(json) {
-  | JSONNumber(n) => LineGraph.DataRow.single(n)
-  | JSONArray([]) => LineGraph.DataRow.single(nan)
+  | JSONNumber(n) => {
+    if AdjustMetricUnit.isSize(units) {
+      let (v, u) = AdjustMetricUnit.formatSize(n, units)
+      (LineGraph.DataRow.single(v), u)
+    } else {
+      (LineGraph.DataRow.single(n), units)
+    }
+  }
+  | JSONArray([]) => (LineGraph.DataRow.single(nan), units)
   | JSONArray(xs) =>
     let xs = xs->Belt.Array.map(x => x->Js.Json.decodeNumber->Belt.Option.getExn)
-    LineGraph.DataRow.many(xs)
+    (LineGraph.DataRow.many(xs), units)
   | JSONString(val) =>
     switch Js.String2.match_(
       val,
@@ -24,10 +31,10 @@ let decodeMetricValue = (json): LineGraph.DataRow.value => {
     | Some([_, minutes, seconds]) =>
       if minutes == "" {
         let n = Js.Float.fromString(seconds)
-        LineGraph.DataRow.single(n)
+        (LineGraph.DataRow.single(n), units)
       } else {
         let n = Js.Float.fromString(minutes) *. 60.0 +. Js.Float.fromString(seconds)
-        LineGraph.DataRow.single(n)
+        (LineGraph.DataRow.single(n), units)
       }
     | _ => invalid_arg("Invalid metric value:" ++ Js.Json.stringify(json))
     }
@@ -36,10 +43,13 @@ let decodeMetricValue = (json): LineGraph.DataRow.value => {
 }
 
 let decodeMetric = (data): LineGraph.DataRow.metric => {
+    let name = (Js.Dict.get(data, "name")->Belt.Option.getExn->Js.Json.decodeString->Belt.Option.getExn)
+    let units_ = (Js.Dict.get(data, "units")->Belt.Option.getExn->Js.Json.decodeString->Belt.Option.getExn)
+    let (value, units) = decodeMetricValue(Js.Dict.get(data, "value")->Belt.Option.getExn, units_)
   {
-    name: (Js.Dict.get(data, "name")->Belt.Option.getExn->Js.Json.decodeString->Belt.Option.getExn),
-    value: decodeMetricValue(Js.Dict.get(data, "value")->Belt.Option.getExn),
-    units: (Js.Dict.get(data, "units")->Belt.Option.getExn->Js.Json.decodeString->Belt.Option.getExn),
+    name: name,
+    units: units,
+    value: value,
   }
 }
 
