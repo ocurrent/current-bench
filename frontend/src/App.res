@@ -41,14 +41,14 @@ module Benchmark = {
     let metrics = DataHelpers.yojson_of_json(result.metrics->Belt.Option.getExn)
     #Assoc(list{("version", #Int(result.version)),
                 ("results", #List(list{#Assoc(list{("name", #String(result.test_name)),
-                                                  ("metrics", metrics)})}))})
+                                                   ("metrics", metrics)})}))})
   }
 
   let decode = (result : BenchmarkMetrics.t) => {
     let metrics = yojson_of_result(result)
     let metrics = Current_bench_json.of_json(metrics)
     let run_at = result.run_at->decodeRunAt->Belt.Option.getExn
-    (result.commit, run_at, metrics)
+    (result.commit, run_at, result.test_index, metrics)
   }
 
   let tryDecode = (result) => {
@@ -69,17 +69,19 @@ module Benchmark = {
   let makeBenchmarkData = (benchmarks: array<BenchmarkMetrics.t>) => {
     benchmarks
     ->Belt.Array.keepMap(tryDecode)
-    ->Belt.Array.reduce(BenchmarkData.empty, (acc, (commit, run_at, item)) => {
+    ->Belt.Array.reduce(BenchmarkData.empty, (acc, (commit, run_at, test_index, item)) => {
         ->List.fold_left((acc, (result : Current_bench_json.Latest.result) ) => {
             List.fold_left((acc, (metric : Current_bench_json.Latest.metric)) => {
+              let (value, units) = AdjustMetricUnit.format(metric.value, metric.units)
               BenchmarkData.add(
                 acc,
                 ~testName=result.test_name,
+                ~testIndex=test_index,
                 ~metricName=metric.name,
                 ~runAt=run_at,
                 ~commit=commit,
-                ~value=toLineGraph(metric.value),
-                ~units=metric.units,
+                ~value=toLineGraph(value),
+                ~units=units,
               )
             }, acc, result.metrics)
         }, acc, item.results)
