@@ -38,3 +38,13 @@ let formatSize = (value, units) => {
 
   (newValue, newUnit)
 }
+
+let format = (value, units) => {
+  switch value {
+    | Current_bench_json.Latest.Float(value) if isSize(units) =>
+        let (value, units) = formatSize(value, units)
+        (Current_bench_json.Latest.Float(value), units)
+    | _ =>
+        (value, units)
+  }
+}

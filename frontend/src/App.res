@@ -37,66 +37,54 @@ let makeGetBenchmarksVariables = (
 module Benchmark = {
   let decodeRunAt = runAt => runAt->Js.Json.decodeString->Belt.Option.map(Js.Date.fromString)
 
-  let decodeMetrics = metrics =>
-    metrics
-    ->Belt.Option.getExn
-    ->Js.Json.decodeArray
-    ->Belt.Option.getExn
-    ->Belt.Array.keepMap(v => {
-        try {
-          Some(v->Js.Json.decodeObject->Belt.Option.getExn->BenchmarkTest.decodeMetric)
-        } catch {
-          | _ => None
-        }
-      })
+  let yojson_of_result = (result : BenchmarkMetrics.t) => {
+    let metrics = DataHelpers.yojson_of_json(result.metrics->Belt.Option.getExn)
+    #Assoc(list{("version", #Int(result.version)),
+                ("results", #List(list{#Assoc(list{("name", #String(result.test_name)),
+                                                   ("metrics", metrics)})}))})
+  }
 
-  let migrateVersions = (benchmarks: array<BenchmarkMetrics.t>): array<BenchmarkMetrics.t> => {
-    // Convert metrics from an object to an array of objects and add units
-    let version1To2 = (benchmark: BenchmarkMetrics.t): BenchmarkMetrics.t => {
-      let metricsToArray = metrics =>
-        metrics
-        ->Belt.Option.getExn
-        ->Js.Json.decodeObject
-        ->Belt.Option.getExn
-        ->Js.Dict.entries
-        ->Belt.Array.map(((key, value)) => {
-            Js.Json.object_(Js.Dict.fromList(list{
-              ("name", Js.Json.string(key)),
-              ("value", value),
-              ("units", Js.Json.string("")),
-            }))
-          })
-        ->Js.Json.array
-        ->Some
+  let decode = (result : BenchmarkMetrics.t) => {
+    let metrics = yojson_of_result(result)
+    let metrics = Current_bench_json.of_json(metrics)
+    let run_at = result.run_at->decodeRunAt->Belt.Option.getExn
+    (result.commit, run_at, result.test_index, metrics)
+  }
 
-      switch benchmark.version {
-      | 1 => {...benchmark, version: 2, metrics: metricsToArray(benchmark.metrics)}
-      | _ => benchmark
-      }
+  let tryDecode = (result) => {
+    try {
+      Some(decode(result))
+    } catch {
+      | _ => None
     }
-    // New functions to migrate from previous latest version to next version can be added here. 
-    // For instance, define a function version2To3 and append `->Belt.Array.map(version2To3)` to the expression below
-    benchmarks->Belt.Array.map(version1To2)
+  }
+
+  let toLineGraph = (value : Current_bench_json.Latest.value) => {
+    switch value {
+      | Float(x) => LineGraph.DataRow.single(x)
+      | Floats(xs) => LineGraph.DataRow.many(Array.of_list(xs))
+    }
   }
 
   let makeBenchmarkData = (benchmarks: array<BenchmarkMetrics.t>) => {
     benchmarks
-    ->migrateVersions
-    ->Belt.Array.reduce(BenchmarkData.empty, (acc, item) => {
-      item.metrics
-      ->decodeMetrics
-      ->Belt.Array.reduce(acc, (acc, metric: LineGraph.DataRow.metric) => {
-        BenchmarkData.add(
-          acc,
-          ~testName=item.test_name,
-          ~testIndex=item.test_index,
-          ~metricName=metric.name,
-          ~runAt=item.run_at->decodeRunAt->Belt.Option.getExn,
-          ~commit=item.commit,
-          ~value=metric.value,
-          ~units=metric.units,
-        )
-      })
+    ->Belt.Array.keepMap(tryDecode)
+    ->Belt.Array.reduce(BenchmarkData.empty, (acc, (commit, run_at, test_index, item)) => {
+        ->List.fold_left((acc, (result : Current_bench_json.Latest.result) ) => {
+            List.fold_left((acc, (metric : Current_bench_json.Latest.metric)) => {
+              let (value, units) = AdjustMetricUnit.format(metric.value, metric.units)
+              BenchmarkData.add(
+                acc,
+                ~testName=result.test_name,
+                ~testIndex=test_index,
+                ~metricName=metric.name,
+                ~runAt=run_at,
+                ~commit=commit,
+                ~value=toLineGraph(value),
+                ~units=units,
+              )
+            }, acc, result.metrics)
+        }, acc, item.results)
     })
   }
   @react.component
