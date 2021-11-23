@@ -67,10 +67,11 @@ services:
     volumes:
       # Mount the source code of the test project to allow local testing.
       - current-bench-data:/app/current-bench-data
-      - ../local-test-repo:/app/local-test-repo
+      - "${OCAML_BENCH_LOCAL_REPO?required}:${OCAML_BENCH_LOCAL_REPO?required}"
       - /var/run/docker.sock:/var/run/docker.sock
       - ../pipeline/db/migrations:/app/db/migrations
       - ../pipeline:/mnt/project
+      - ../capnp-secrets:/app/capnp-secrets
     ports:
       - "${OCAML_BENCH_PIPELINE_PORT?required}:${OCAML_BENCH_PIPELINE_PORT?required}"
       - "4040:4040"
@@ -91,6 +92,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      cluster:
+        condition: service_started
     environment:
       OCAML_BENCH_FRONTEND_URL: ${OCAML_BENCH_FRONTEND_URL?required}
   cluster:
@@ -99,7 +102,7 @@ services:
     command:
       - "--capnp-secret-key-file=./capnp-secrets/key.pem"
       - "--capnp-listen-address=tcp:0.0.0.0:${OCAML_BENCH_CLUSTER_PORT?required}"
-      - "--capnp-public-address=tcp:127.0.0.1:${OCAML_BENCH_CLUSTER_PORT?required}"
+      - "--capnp-public-address=tcp:cluster:${OCAML_BENCH_CLUSTER_PORT?required}"
       - "--state-dir=/var/lib/ocluster-scheduler"
       - "--pools=${OCAML_BENCH_CLUSTER_POOLS}"
       - "--verbose"

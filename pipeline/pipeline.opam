@@ -28,6 +28,7 @@ depends: [
   "postgresql"
   "rresult"
   "omigrate"
+  "ocluster"
   "pcre"
 ]
 pin-depends: [
