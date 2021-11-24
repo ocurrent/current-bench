@@ -187,25 +187,58 @@ let record_pipeline_stage ~stage ~serial_id ~conninfo image =
       Storage.record_stage_failure ~stage ~serial_id ~conninfo
   | _ -> ()
 
-let pipeline ~conninfo ~docker_config ~repository =
+let job_output = function
+  | None ->
+      Logs.err (fun log -> log "no worker id");
+      "no job id"
+  | Some job_id -> (
+      match Current.Job.log_path job_id with
+      | Error (`Msg msg) ->
+          Logs.err (fun log -> log "worker %S: %s" job_id msg);
+          "error"
+      | Ok path ->
+          let read_file path =
+            let ch = open_in_bin path in
+            Fun.protect
+              ~finally:(fun () -> close_in ch)
+              (fun () ->
+                let len = in_channel_length ch in
+                really_input_string ch len)
+          in
+          read_file (Fpath.to_string path))
+
+let pipeline ~ocluster ~conninfo ~docker_config ~repository =
   let serial_id = Storage.setup_metadata ~repository ~conninfo in
-  let src = Repository.src repository in
   let run_args = Docker_config.run_args ~repository docker_config in
   let dockerfile = Custom_dockerfile.dockerfile ~repository in
-  let current_image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
-  let* () =
-    record_pipeline_stage ~stage:"build_job_id" ~serial_id ~conninfo
-      current_image
-  in
   let run_at = Ptime_clock.now () in
-  let current_output = docker_make_bench ~run_args ~repository current_image in
-  let* () =
-    record_pipeline_stage ~stage:"run_job_id" ~serial_id ~conninfo
-      current_output
+  let docker_options = Cluster_api.Docker.Spec.defaults in
+  let dockerfile =
+    match dockerfile with
+    | `Contents d -> `Contents (Current.return (Dockerfile.string_of_t d))
+    | `File filename -> `Path (Fpath.to_string filename)
   in
-  let+ build_job_id = Current_util.get_job_id current_image
-  and+ run_job_id = Current_util.get_job_id current_output
-  and+ output = current_output in
+  let src =
+    let commit = Repository.commit repository in
+    if Repository.info repository <> "local/local" then commit
+    else
+      let open Current_git.Commit_id in
+      v ~repo:"git://pipeline/" ~gref:(gref commit) ~hash:(hash commit)
+  in
+  let worker =
+    Current_ocluster.build ~pool:"linux"
+      ~src:(Current.return [ src ])
+      ~options:docker_options ocluster dockerfile
+  in
+  let* () =
+    record_pipeline_stage ~stage:"build_job_id" ~serial_id ~conninfo worker
+  and* () =
+    record_pipeline_stage ~stage:"run_job_id" ~serial_id ~conninfo worker
+  in
+  let+ worker_job_id = Current_util.get_job_id worker and+ () = worker in
+  let output = job_output worker_job_id in
+  let build_job_id = worker_job_id in
+  let run_job_id = worker_job_id in
   let duration = Ptime.diff (Ptime_clock.now ()) run_at in
   Logs.debug (fun log -> log "Benchmark output:\n%s" output);
   let () =
@@ -215,8 +248,8 @@ let pipeline ~conninfo ~docker_config ~repository =
   in
   output
 
-let pipeline ~conninfo ~docker_config repository =
-  let p = pipeline ~conninfo ~docker_config ~repository in
+let pipeline ~ocluster ~conninfo ~docker_config repository =
+  let p = pipeline ~ocluster ~conninfo ~docker_config ~repository in
   let* () = p |> slack_post ~repository |> github_set_status ~repository in
   Current.ignore_value p
 
@@ -301,7 +334,7 @@ let exists ~conninfo repository =
   db#finish;
   exists
 
-let process_pipeline ~docker_config ~conninfo ~sources () =
+let process_pipeline ~ocluster ~docker_config ~conninfo ~sources () =
   Current.list_iter ~collapse_key:"pipeline"
     (module Repository)
     (fun repo ->
@@ -313,6 +346,14 @@ let process_pipeline ~docker_config ~conninfo ~sources () =
 
 let v ~current_config ~docker_config ~server:mode ~sources conninfo () =
   Db_util.check_connection ~conninfo;
+  let cap_path = "/app/submission.cap" in
+  let vat = Capnp_rpc_unix.client_only_vat () in
+  let sr =
+    match Capnp_rpc_unix.Cap_file.load vat cap_path with
+    | Error (`Msg msg) -> failwith msg
+    | Ok sr -> sr
+  in
+  let ocluster = Current_ocluster.(v (Connection.create sr)) in
   let pipeline = process_pipeline ~docker_config ~conninfo ~sources in
   let engine = Current.Engine.create ~config:current_config pipeline in
   let webhook =

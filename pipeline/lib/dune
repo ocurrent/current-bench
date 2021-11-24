@@ -2,7 +2,7 @@
  (name pipeline)
  (public_name pipeline)
  (libraries current current.fs current_docker current_git current_github
-   current_slack current_web dockerfile fmt.tty logs logs.fmt prometheus
-   rresult uri postgresql yojson str pcre)
+   current_ocluster capnp-rpc-unix current_slack current_web dockerfile
+   fmt.tty logs logs.fmt prometheus rresult uri postgresql yojson str pcre)
  (preprocess
   (pps ppx_deriving_yojson)))
