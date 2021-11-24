@@ -61,6 +61,7 @@ services:
   pipeline:
     build:
       context: ../pipeline
+      dockerfile: ./Dockerfile.dev
       args:
         TARGET_ARCH: ${OCAML_BENCH_TARGET_ARCH?required}
     volumes:
@@ -69,9 +70,11 @@ services:
       - ../local-test-repo:/app/local-test-repo
       - /var/run/docker.sock:/var/run/docker.sock
       - ../pipeline/db/migrations:/app/db/migrations
+      - ../pipeline:/mnt/project
     ports: ["${OCAML_BENCH_PIPELINE_PORT?required}:${OCAML_BENCH_PIPELINE_PORT?required}"]
     command:
-      - "current-bench-pipeline"
+      - "/mnt/project/reload.sh"
+      - "/app/bin/current-bench-pipeline"
       - "local"
       - "/app/local-test-repo"
       - "--verbose"
