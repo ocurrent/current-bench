@@ -77,8 +77,8 @@ let check_contains ~path src =
   | Error (`Msg m) -> Error (`Msg m)
   | Ok path ->
       let path = Fpath.normalize path in
-      if Fpath.is_abs path then
-        error_msg "%a is an absolute path!" Fpath.pp path
+      if Fpath.is_abs path
+      then error_msg "%a is an absolute path!" Fpath.pp path
       else
         let rec aux ~src = function
           | [] -> error_msg "Empty path!"

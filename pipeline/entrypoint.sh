@@ -1,5 +1,9 @@
 #!/bin/sh
 
+cd /app/local-test-repo
+git daemon --verbose --export-all --base-path=.git --reuseaddr --strict-paths .git/ &
+cd /app
+
 # wait for the cluster to generate the file
 until [ -f /app/capnp-secrets/admin.cap ]
 do
