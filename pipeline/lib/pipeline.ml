@@ -9,6 +9,16 @@ module Benchmark = Models.Benchmark
 
 let ( >>| ) x f = Current.map f x
 
+let json_regexp =
+  Pcre.regexp {|\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|())+\}))+\}))+\}|}
+
+let extract_jsons str =
+  Pcre.exec_all ~rex:json_regexp str
+  |> Array.map (Pcre.get_opt_substrings ~full_match:true)
+  |> Array.to_list
+  |> List.filter_map (fun t -> t.(0))
+  |> String.concat "\n"
+
 let validate_json json_list =
   Current_bench_json.(validate (List.map of_json json_list))
 
@@ -117,6 +127,7 @@ let slack_post ~repository (output : string Current.t) =
 let db_save ~conninfo benchmark output =
   let db = new Postgresql.connection ~conninfo () in
   output
+  |> extract_jsons
   |> Json_util.parse_many
   |> validate_json
   |> Hashtbl.iter (fun benchmark_name (version, results) ->

@@ -29,6 +29,7 @@ depends: [
   "postgresql"
   "rresult"
   "omigrate"
+  "pcre"
 ]
 
 pin-depends: [
