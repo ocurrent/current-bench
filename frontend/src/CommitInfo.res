@@ -11,6 +11,7 @@ query ($repoId: String!, $pullNumber: Int, $isMaster: Boolean!) {
     build_job_id
     run_job_id
     failed
+    pr_title
   }
 }
 `)
@@ -136,6 +137,16 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~setOldMetrics
     showingOldMetrics(noCommitMetrics)
     let status = buildStatus(lastCommitInfo, noCommitMetrics)
     <>
+
+      <Row sx=containerSx spacing=#between alignY=#bottom>
+      {switch lastCommitInfo.pr_title {
+       | Some(title) =>
+         <Text sx=[Sx.text.lg]> title </Text>
+       | None =>
+         <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray700)]> "No data for PR Title" </Text>
+      }}
+      </Row>
+
       <Row sx=containerSx spacing=#between alignY=#bottom>
         <Column spacing=Sx.sm>
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Last Commit" </Text>
