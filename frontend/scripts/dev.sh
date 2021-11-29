@@ -10,7 +10,7 @@ echo "starting watch"
 rm -f .bsb.lock  # Remove any watcher locks, if the shutdown was not clean
 # NOTE: This is a workaround to avoid the watcher from exiting after compiling,
 # instead of watching.
-screen -Logfile /tmp/watch.log -dm yarn watch
+screen -L -Logfile /tmp/watch.log -dm yarn watch
 tail -F /tmp/watch.log &
 
 echo "starting serve"
