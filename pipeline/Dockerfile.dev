@@ -12,7 +12,8 @@ RUN sudo apt-get update && \
     capnproto \
     libsqlite3-dev \
     libcapnp-dev \
-    libev-dev
+    libev-dev \
+    libpcre3-dev
 
 WORKDIR /mnt/project
 
