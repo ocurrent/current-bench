@@ -1,7 +1,6 @@
 define BENCH_DATA_1
 {
-  "config": {
-  },
+  "config": null,
   "version": 2,
   "results": [
     {
@@ -50,7 +49,8 @@ endef
 
 define BENCH_DATA_2
 {
-  "config": {  },
+  "config": null,
+  "version": 2,
   "results": [
     {
       "name": "bench_2_test_1",
