@@ -45,56 +45,6 @@ module Source = struct
     | Github_app g -> Some (Github.App.webhook_secret g)
 end
 
-module Docker_config = struct
-  type t = {
-    cpu : string list;
-    numa_node : int option;
-    shm_size : int;
-    multicore_repositories : string list;
-  }
-
-  let v ?(cpu = []) ?numa_node ~shm_size ~multicore_repositories () =
-    { cpu; numa_node; shm_size; multicore_repositories }
-
-  let is_multicore ~repository t =
-    List.mem (Repository.info repository) t.multicore_repositories
-
-  let cpuset_cpus ~repository t =
-    match t.cpu with
-    | [] -> []
-    | first :: _ ->
-        let cpus =
-          if is_multicore ~repository t then String.concat "," t.cpu else first
-        in
-        [ "--cpuset-cpus"; cpus ]
-
-  let cpuset_mems t =
-    match t.numa_node with
-    | Some i -> [ "--cpuset-mems"; string_of_int i ]
-    | None -> []
-
-  let tmpfs t =
-    match t.numa_node with
-    | Some i ->
-        [
-          "--tmpfs";
-          Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg,mpol=bind:%d" t.shm_size i;
-        ]
-    | None ->
-        [ "--tmpfs"; Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg" t.shm_size ]
-
-  let run_args ~repository t =
-    [
-      "--security-opt";
-      "seccomp=./aslr_seccomp.json";
-      "--mount";
-      "type=volume,src=current-bench-data,dst=/home/opam/bench-dir/current-bench-data";
-    ]
-    @ tmpfs t
-    @ cpuset_cpus ~repository t
-    @ cpuset_mems t
-end
-
 let pool = Current.Pool.create ~label:"docker" 1
 
 let read_channel_uri p =
@@ -136,22 +86,6 @@ let db_save ~conninfo benchmark output =
                 benchmark ~version ~benchmark_name ~test_index res)
          |> List.iter (Models.Benchmark.Db.insert db));
   db#finish
-
-let docker_make_bench ~run_args ~repository image =
-  let { Repository.branch; pull_number; _ } = repository
-  and repo_info = Repository.info repository
-  and commit = Repository.commit_hash repository in
-  Docker_util.pread_log ~pool ~run_args image ~repo_info ?pull_number ?branch
-    ~commit
-    ~args:
-      [
-        "/usr/bin/setarch";
-        "x86_64";
-        "--addr-no-randomize";
-        "sh";
-        "-c";
-        "opam exec -- make bench";
-      ]
 
 let setup_on_cancel_hook ~stage ~job_id ~serial_id ~conninfo =
   let jobs = Current.Job.jobs () in
@@ -207,9 +141,8 @@ let job_output = function
           in
           read_file (Fpath.to_string path))
 
-let pipeline ~ocluster ~conninfo ~docker_config ~repository =
+let pipeline ~ocluster ~conninfo ~repository =
   let serial_id = Storage.setup_metadata ~repository ~conninfo in
-  let run_args = Docker_config.run_args ~repository docker_config in
   let dockerfile = Custom_dockerfile.dockerfile ~repository in
   let run_at = Ptime_clock.now () in
   let docker_options = Cluster_api.Docker.Spec.defaults in
@@ -220,7 +153,8 @@ let pipeline ~ocluster ~conninfo ~docker_config ~repository =
   in
   let src =
     let commit = Repository.commit repository in
-    if Repository.info repository <> "local/local" then commit
+    if Repository.info repository <> "local/local"
+    then commit
     else
       let open Current_git.Commit_id in
       v ~repo:"git://pipeline/" ~gref:(gref commit) ~hash:(hash commit)
@@ -248,8 +182,8 @@ let pipeline ~ocluster ~conninfo ~docker_config ~repository =
   in
   output
 
-let pipeline ~ocluster ~conninfo ~docker_config repository =
-  let p = pipeline ~ocluster ~conninfo ~docker_config ~repository in
+let pipeline ~ocluster ~conninfo repository =
+  let p = pipeline ~ocluster ~conninfo ~repository in
   let* () = p |> slack_post ~repository |> github_set_status ~repository in
   Current.ignore_value p
 
@@ -334,7 +268,7 @@ let exists ~conninfo repository =
   db#finish;
   exists
 
-let process_pipeline ~ocluster ~docker_config ~conninfo ~sources () =
+let process_pipeline ~ocluster ~conninfo ~sources () =
   Current.list_iter ~collapse_key:"pipeline"
     (module Repository)
     (fun repo ->
@@ -344,7 +278,7 @@ let process_pipeline ~ocluster ~docker_config ~conninfo ~sources () =
       else pipeline ~conninfo ~docker_config repository)
     (repositories sources)
 
-let v ~current_config ~docker_config ~server:mode ~sources conninfo () =
+let v ~current_config ~server:mode ~sources conninfo () =
   Db_util.check_connection ~conninfo;
   let cap_path = "/app/submission.cap" in
   let vat = Capnp_rpc_unix.client_only_vat () in
@@ -354,7 +288,7 @@ let v ~current_config ~docker_config ~server:mode ~sources conninfo () =
     | Ok sr -> sr
   in
   let ocluster = Current_ocluster.(v (Connection.create sr)) in
-  let pipeline = process_pipeline ~docker_config ~conninfo ~sources in
+  let pipeline = process_pipeline ~ocluster ~conninfo ~sources in
   let engine = Current.Engine.create ~config:current_config pipeline in
   let webhook =
     match List.find_map Source.webhook_secret sources with

@@ -106,47 +106,6 @@ module Source = struct
       $ github_app)
 end
 
-module Docker = struct
-  let cpu =
-    let doc =
-      "CPU/core that should run the benchmarks. A comma-separated list or \
-       hyphen-separated range of CPUs a container can use, if you have more \
-       than one CPU"
-    in
-    Arg.(
-      value
-      & opt (some (list ~sep:',' string)) None
-      & info [ "docker-cpu" ] ~doc)
-
-  let numa_node =
-    let doc =
-      "NUMA node to use for memory and tmpfs storage (should match CPU core if \
-       enabled, see `lscpu`)"
-    in
-    Arg.(value & opt (some int) None & info [ "docker-numa-node" ] ~doc)
-
-  let shm_size =
-    let doc = "Size of tmpfs volume to be mounted in /dev/shm (in GB)." in
-    Arg.(value & opt int 4 & info [ "docker-shm-size" ] ~doc)
-
-  let multicore_repositories =
-    let doc = "The repositories that should run on multiple cores." in
-    Arg.(
-      value
-      & opt (list ~sep:',' string) []
-      & info [ "multicore-repositories" ] ~doc)
-
-  let v =
-    Term.(
-      const (fun cpu numa_node shm_size multicore_repositories ->
-          Pipeline.Docker_config.v ?cpu ?numa_node ~shm_size
-            ~multicore_repositories ())
-      $ cpu
-      $ numa_node
-      $ shm_size
-      $ multicore_repositories)
-end
-
 let setup_log =
   let init style_renderer level =
     Pipeline.Logging.init ?style_renderer ?level ()
@@ -161,11 +120,10 @@ let conninfo =
 
 let cmd : (unit, [ `Msg of string ]) result Term.t =
   Term.(
-    const (fun current_config server docker_config conninfo () sources ->
-        Pipeline.v ~current_config ~docker_config ~server ~sources conninfo ())
+    const (fun current_config server conninfo () sources ->
+        Pipeline.v ~current_config ~server ~sources conninfo ())
     $ Current.Config.cmdliner
     $ Current_web.cmdliner
-    $ Docker.v
     $ conninfo
     $ setup_log
     $ Source.sources)
