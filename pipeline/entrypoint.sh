@@ -1,7 +1,10 @@
 #!/bin/sh
 
-cd /app/local-test-repo
-git daemon --verbose --export-all --base-path=.git --reuseaddr --strict-paths .git/ &
+if [ -d /app/local-test-repo ]; then
+  cd /app/local-test-repo
+  git daemon --verbose --export-all --base-path=.git --reuseaddr --strict-paths .git/ &
+fi
+
 cd /app
 
 # wait for the cluster to generate the file

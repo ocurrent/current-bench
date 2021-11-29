@@ -65,3 +65,4 @@ COPY pipeline/aslr_seccomp.json /app/aslr_seccomp.json
 COPY pipeline/db/migrations /app/db/migrations
 RUN cp /home/opam/.opam/4.13/bin/omigrate /app/bin/omigrate
 RUN cp /mnt/project/_build/default/bin/main.exe /app/bin/current-bench-pipeline
+COPY ./entrypoint.sh /app/entrypoint.sh
