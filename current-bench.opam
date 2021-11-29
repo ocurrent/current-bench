@@ -5,6 +5,7 @@ authors: ["Rizo I. <rizo@tarides.com>" "Gargi Sharma <gargi@tarides.com>"]
 homepage: "https://github.com/ocurrent/current-bench"
 bug-reports: "https://github.com/ocurrent/current-bench/issues"
 depends: [
+  "ocaml"   {>= "4.13.0"}
   "dune" {>= "2.0"}
   "yojson"
   "reason" {>= "dev"}
@@ -21,7 +22,6 @@ depends: [
   "current_web"    {= "dev"}
   "current_incr" {>= "0.5"}
   "current_ansi"
-  "curly"
   "duration"
   "fpath"
   "logs"

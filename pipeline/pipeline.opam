@@ -21,7 +21,6 @@ depends: [
   "current_web"    {= "dev"}
   "current_incr" {>= "0.5"}
   "current_ansi"
-  "curly"
   "duration"
   "fpath"
   "logs"
