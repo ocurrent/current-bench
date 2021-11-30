@@ -1,10 +1,10 @@
 open! Prelude
 open Components
 
-let pullToString = ((pullNumber, branch)) =>
+let pullToString = ((pullNumber, prTitle, branch)) =>
   switch branch {
   | Some(branch) => "#" ++ Belt.Int.toString(pullNumber) ++ " - " ++ branch
-  | None => "#" ++ Belt.Int.toString(pullNumber)
+  | None => "#" ++ Belt.Int.toString(pullNumber) ++  " " ++ prTitle
   }
 
 module SidebarMenuData = %graphql(`
@@ -12,6 +12,7 @@ query ($repoId: String!) {
   pullsMenuData: benchmark_metadata(distinct_on: [pull_number], where: {_and: [{repo_id: {_eq: $repoId}}, {pull_number: {_is_null: false}}]}, order_by: [{pull_number: desc}]) {
     pull_number
     branch
+    pr_title
   }  
   benchmarksMenuData: benchmarks(distinct_on: [benchmark_name], where: {repo_id: {_eq: $repoId}}, order_by: [{benchmark_name: asc_nulls_first}]) {
     benchmark_name
@@ -27,10 +28,16 @@ module PullsMenu = {
     ~selectedPull=?,
     ~selectedBenchmarkName=?,
   ) => {
-    let pullNumbers = pullsMenuData->Belt.Array.keepMap(obj => obj.pull_number)
+    let pullNumberInfos = pullsMenuData->Belt.Array.keepMap(obj =>
+    switch (obj.pull_number, obj.pr_title) {
+    | (Some(pullNumber), Some(prTitle)) => Some(pullNumber, prTitle)
+    | _ => None
+    })
 
-    pullNumbers
-    ->Belt.Array.mapWithIndex((i, pullNumber) => {
+    pullNumberInfos
+    ->Belt.Array.mapWithIndex((i, pullNumberInfo) => {
+      let (pullNumber, prTitle) = pullNumberInfo
+
       <Row key={string_of_int(i)}>
         <a
           href={AppHelpers.pullUrl(~repoId, ~pull=string_of_int(pullNumber))}
@@ -39,7 +46,7 @@ module PullsMenu = {
           {Icon.github}
         </a>
         <Link
-          sx=[Sx.pb.md]
+          sx=[Sx.pb.md, Sx.text.overflowEllipsis, Sx.text.noWrapWhiteSpace, Sx.text.blockDisplay, Sx.text.hiddenOverflow]
           active={selectedPull === Some(pullNumber)}
           key={string_of_int(i)}
           href={AppRouter.RepoPull({
@@ -47,7 +54,7 @@ module PullsMenu = {
             pullNumber: pullNumber,
             benchmarkName: selectedBenchmarkName,
           })->AppRouter.path}
-          text={pullToString((pullNumber, None))}
+          text={pullToString((pullNumber, prTitle, None))}
         />
       </Row>
     })

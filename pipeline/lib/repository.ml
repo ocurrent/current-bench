@@ -7,6 +7,7 @@ type t = {
   branch : string option;
   slack_path : Fpath.t option;
   github_head : Current_github.Api.Commit.t option;
+  title : string option;
 }
 
 let default_src ?src commit =
@@ -14,8 +15,8 @@ let default_src ?src commit =
   | None -> Current_git.fetch (Current.return commit)
   | Some src -> src
 
-let v ~owner ~name ?src ~commit ?pull_number ?branch ?slack_path ?github_head ()
-    =
+let v ~owner ~name ?src ~commit ?pull_number ?branch ?slack_path ?github_head
+    ?title () =
   {
     owner;
     name;
@@ -25,6 +26,7 @@ let v ~owner ~name ?src ~commit ?pull_number ?branch ?slack_path ?github_head ()
     slack_path;
     github_head;
     src = default_src ?src commit;
+    title;
   }
 
 let owner t = t.owner
@@ -38,6 +40,8 @@ let commit t = t.commit
 let commit_hash t = Current_git.Commit_id.hash t.commit
 
 let pull_number t = t.pull_number
+
+let title t = t.title
 
 let branch t = t.branch
 

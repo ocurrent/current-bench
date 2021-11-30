@@ -11,6 +11,7 @@ let setup_metadata ~repository (db : Postgresql.connection) =
   let commit = Sql_util.string (Repository.commit_hash repository) in
   let branch = Sql_util.(option string) (Repository.branch repository) in
   let pull_number = Sql_util.(option int) (Repository.pull_number repository) in
+  let title = Sql_util.(option string) (Repository.title repository) in
   let query =
     (*
       When setting up metadata, we are only insert the details that we know at th
@@ -21,14 +22,14 @@ let setup_metadata ~repository (db : Postgresql.connection) =
     Fmt.str
       {|
     INSERT INTO
-    benchmark_metadata(run_at, repo_id, commit, branch, pull_number)
+    benchmark_metadata(run_at, repo_id, commit, branch, pull_number, pr_title)
     VALUES
-    (%s, %s, %s, %s, %s)
+    (%s, %s, %s, %s, %s, %s)
     ON CONFLICT(repo_id, commit) DO UPDATE
     set build_job_id=NULL, run_job_id=NULL
     RETURNING id;
     |}
-      run_at repo_id commit branch pull_number
+      run_at repo_id commit branch pull_number title
   in
   try
     let result = db#exec query in
