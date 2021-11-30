@@ -160,6 +160,11 @@ module Make = (
     noUnderline: t,
     underline: t,
     lineThrough: t,
+    //other
+    overflowEllipsis: t,
+    noWrapWhiteSpace: t,
+    blockDisplay: t,
+    hiddenOverflow: t,
   }
 
   let text = {
@@ -199,6 +204,10 @@ module Make = (
     noUnderline: [Css.textDecoration(#none)],
     underline: [Css.textDecoration(#underline)],
     lineThrough: [Css.textDecoration(#lineThrough)],
+    overflowEllipsis:[Css.textOverflow(#ellipsis)],
+    noWrapWhiteSpace: [Css.whiteSpace(#nowrap)],
+    blockDisplay: [Css.display(#block)],
+    hiddenOverflow: [Css.overflow(#hidden)],
   }
 
   // Flex
