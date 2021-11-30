@@ -28,19 +28,16 @@ module PullsMenu = {
     ~selectedPull=?,
     ~selectedBenchmarkName=?,
   ) => {
-    let pullNumberInfos = pullsMenuData->Belt.Array.keepMap(obj => Some(obj.pull_number, obj.pr_title))
+    let pullNumberInfos = pullsMenuData->Belt.Array.keepMap(obj =>
+    switch (obj.pull_number, obj.pr_title) {
+    | (Some(pullNumber), Some(prTitle)) => Some(pullNumber, prTitle)
+    | _ => None
+    })
 
     pullNumberInfos
     ->Belt.Array.mapWithIndex((i, pullNumberInfo) => {
       let (pullNumber, prTitle) = pullNumberInfo
-      let pullNumber = switch pullNumber {
-      | Some(number) => number
-      | None => 0
-      }
-      let prTitle = switch prTitle {
-      | Some(title) => title
-      | None => ""
-      }
+
       <Row key={string_of_int(i)}>
         <a
           href={AppHelpers.pullUrl(~repoId, ~pull=string_of_int(pullNumber))}
