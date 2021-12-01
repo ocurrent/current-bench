@@ -1,1 +1,4 @@
+.git*
 frontend/node_modules
+current-bench-bechamel
+scripts

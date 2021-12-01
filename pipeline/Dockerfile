@@ -18,9 +18,9 @@ RUN sudo apt-get update && \
 WORKDIR /mnt/project
 
 # Build dependencies.
-COPY --chown=opam:opam pipeline.opam pipeline.opam
+COPY --chown=opam:opam pipeline/pipeline.opam pipeline.opam
 RUN opam install -y --deps-only -t .
-COPY --chown=opam . .
+COPY --chown=opam pipeline/. .
 RUN sudo chown opam .
 
 # Build the project.
@@ -54,7 +54,7 @@ RUN apt-get update \
 WORKDIR /app
 ENV PATH="/app/bin:${PATH}"
 
-COPY ./aslr_seccomp.json /app/aslr_seccomp.json
-COPY ./db/migrations /app/db/migrations
+COPY pipeline/aslr_seccomp.json /app/aslr_seccomp.json
+COPY pipeline/db/migrations /app/db/migrations
 COPY --from=build /home/opam/.opam/4.13/bin/omigrate /app/bin/omigrate
 COPY --from=build /mnt/project/_build/default/bin/main.exe /app/bin/current-bench-pipeline

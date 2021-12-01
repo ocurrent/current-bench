@@ -60,8 +60,8 @@ services:
     cpuset: "${OCAML_BENCH_PLATFORM_CPUSET}"
   pipeline:
     build:
-      context: ../pipeline
-      dockerfile: ./Dockerfile.dev
+      context: ..
+      dockerfile: ./pipeline/Dockerfile.dev
       args:
         TARGET_ARCH: ${OCAML_BENCH_TARGET_ARCH?required}
     volumes:
