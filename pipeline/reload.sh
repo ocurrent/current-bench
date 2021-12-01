@@ -13,6 +13,8 @@ function run {
 
 run
 
+dune build --watch bin/main.exe &
+
 /mnt/project/dev/github-app.sh
 
 while :
