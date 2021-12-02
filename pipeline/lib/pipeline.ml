@@ -168,7 +168,7 @@ let pipeline ~conninfo ~docker_config ~repository =
   let serial_id = Storage.setup_metadata ~repository ~conninfo in
   let src = Repository.src repository in
   let run_args = Docker_config.run_args ~repository docker_config in
-  let dockerfile = Custom_dockerfile.dockerfile ~pool ~run_args ~repository in
+  let dockerfile = Custom_dockerfile.dockerfile ~repository in
   let current_image = Docker.build ~pool ~pull:false ~dockerfile (`Git src) in
   let* () =
     record_pipeline_stage ~stage:"build_job_id" ~serial_id ~conninfo
@@ -223,7 +223,8 @@ let github_repositories ?slack_path repo =
       let commit = Github.Api.Commit.id head in
       let repository = repository ~commit ~github_head:head ?title in
       (* If commit is more than two weeks old, then skip it.*)
-      if Github.Api.Commit.committed_date head > stale_timestamp then
+      if Github.Api.Commit.committed_date head > stale_timestamp
+      then
         match key with
         (* Skip all branches other than the default branch, and check PRs *)
         | `Ref branch when branch = default_branch ->
@@ -278,7 +279,8 @@ let process_pipeline ~docker_config ~conninfo ~source () =
     (module Repository)
     (fun repo ->
       let* repository = repo in
-      if exists ~conninfo repository then Current.ignore_value repo
+      if exists ~conninfo repository
+      then Current.ignore_value repo
       else pipeline ~conninfo ~docker_config repository)
     (repositories source)
 
