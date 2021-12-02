@@ -20,8 +20,8 @@ If you want to enroll your repository or setup this benchmark repository for you
     {
       "name": <name-of-the-test>,
       "metrics": {
-        "<metric-1>": <numeric-value>,
-        "<metric-2>": [<numeric-value>, ...],
+        "<metric-1>": {"name": "benchmark-name", "value": benchmark-value, "units": "benchmark-unit"},
+        "<metric-2>":{"name": "num_ops", "value": [0.5, 1.5,...], "units": "ops/sec"},
         ...
       },
      ...
