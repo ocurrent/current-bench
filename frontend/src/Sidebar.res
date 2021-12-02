@@ -4,7 +4,7 @@ open Components
 let pullToString = ((pullNumber, prTitle, branch)) =>
   switch branch {
   | Some(branch) => "#" ++ Belt.Int.toString(pullNumber) ++ " - " ++ branch
-  | None => "#" ++ Belt.Int.toString(pullNumber) ++  " " ++ prTitle
+  | None => "#" ++ Belt.Int.toString(pullNumber) ++ " " ++ prTitle
   }
 
 module SidebarMenuData = %graphql(`
@@ -29,8 +29,8 @@ module PullsMenu = {
     ~selectedBenchmarkName=?,
   ) => {
     let pullNumberInfos = pullsMenuData->Belt.Array.keepMap(obj =>
-    switch (obj.pull_number, obj.pr_title) {
-    | (Some(pullNumber), Some(prTitle)) => Some(pullNumber, prTitle)
+    switch obj.pull_number {
+    | Some(pullNumber) => Some(pullNumber, Belt.Option.getWithDefault(obj.pr_title, ""))
     | _ => None
     })
 
