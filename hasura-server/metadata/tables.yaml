@@ -35,5 +35,7 @@
       - build_job_id
       - run_job_id
       - failed
+      - cancelled
+      - cancel_reason
       - pr_title
       filter: {}
