@@ -11,6 +11,8 @@ query ($repoId: String!, $pullNumber: Int, $isMaster: Boolean!) {
     build_job_id
     run_job_id
     failed
+    cancelled
+    cancel_reason
     pr_title
   }
 }
@@ -65,10 +67,12 @@ let renderCommitLink = (~style=linkStyle, repoId, commit) =>
     DataHelpers.trimCommit(commit),
   )
 
-type status = Fail | Pass | Running
+type status = Cancel | Fail | Pass | Running
 
 let buildStatus = (lastCommitInfo: GetLastCommitInfo.t_lastCommitInfo, noCommitMetrics) => {
-  if lastCommitInfo.failed->Belt.Option.getWithDefault(false) {
+  if lastCommitInfo.cancelled->Belt.Option.getWithDefault(false) {
+    Cancel
+  } else if lastCommitInfo.failed->Belt.Option.getWithDefault(false) {
     Fail
   } else if noCommitMetrics {
     Running
@@ -137,16 +141,15 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~setOldMetrics
     showingOldMetrics(noCommitMetrics)
     let status = buildStatus(lastCommitInfo, noCommitMetrics)
     <>
-
       <Row sx=containerSx spacing=#between alignY=#bottom>
-      {switch lastCommitInfo.pr_title {
-       | Some(title) =>
-         <Text sx=[Sx.text.lg]> title </Text>
-       | None =>
-         <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray700)]> "No data for PR Title" </Text>
-      }}
+        {switch lastCommitInfo.pr_title {
+        | Some(title) => <Text sx=[Sx.text.lg]> title </Text>
+        | None =>
+          <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray700)]>
+            "No data for PR Title"
+          </Text>
+        }}
       </Row>
-
       <Row sx=containerSx spacing=#between alignY=#bottom>
         <Column spacing=Sx.sm>
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Last Commit" </Text>
@@ -172,6 +175,13 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~setOldMetrics
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Status" </Text>
           {switch status {
           | Fail => <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.red300)]> "Failed" </Text>
+          | Cancel =>
+            <span>
+              <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray900)]> "Cancelled" </Text>
+              <Text sx=[Sx.text.blockDisplay, Sx.text.xs, Sx.text.color(Sx.gray600)]>
+                {lastCommitInfo.cancel_reason->Belt.Option.getWithDefault("Unknown Reason")}
+              </Text>
+            </span>
           | Pass =>
             <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.green300)]> "Passed" </Text>
           | Running =>
@@ -181,6 +191,7 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~setOldMetrics
       </Row>
       {switch status {
       | Fail
+      | Cancel
       | Running =>
         switch lastBenchmark {
         | None => Rx.null
