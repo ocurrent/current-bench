@@ -9,6 +9,9 @@ function run {
 
 run
 
+cd /mnt/project
+/mnt/project/dev/github-app.sh
+
 while :
 do
   cd /mnt/project

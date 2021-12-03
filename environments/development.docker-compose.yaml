@@ -63,7 +63,7 @@ services:
       context: ..
       dockerfile: ./pipeline/Dockerfile.dev
       args:
-        TARGET_ARCH: ${OCAML_BENCH_TARGET_ARCH?required}
+        TARGET_ARCH: "${OCAML_BENCH_TARGET_ARCH?required}"
     volumes:
       # Mount the source code of the test project to allow local testing.
       - current-bench-data:/app/current-bench-data
@@ -71,17 +71,22 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ../pipeline/db/migrations:/app/db/migrations
       - ../pipeline:/mnt/project
-    ports: ["${OCAML_BENCH_PIPELINE_PORT?required}:${OCAML_BENCH_PIPELINE_PORT?required}"]
+    ports:
+      - "${OCAML_BENCH_PIPELINE_PORT?required}:${OCAML_BENCH_PIPELINE_PORT?required}"
+      - "4040:4040"
     command:
       - "/mnt/project/reload.sh"
       - "/app/bin/current-bench-pipeline"
-      - "local"
-      - "/app/local-test-repo"
+      - "--local-repo=/app/local-test-repo"
       - "--verbose"
       - "--port=${OCAML_BENCH_PIPELINE_PORT?required}"
       - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU?required}"
       - "--multicore-repositories=${OCAML_BENCH_MULTICORE_REPOSITORIES}"
       - "--conn-info=host=db user=docker port=5432 dbname=docker password=${OCAML_BENCH_DB_PASSWORD?required}"
+      - "--github-app-id=${OCAML_BENCH_GITHUB_APP_ID}"
+      - "--github-account-allowlist=${OCAML_BENCH_GITHUB_ACCOUNT_ALLOW_LIST}"
+      - "--github-private-key-file=${OCAML_BENCH_GITHUB_PRIVATE_KEY_FILE}"
+      - "--github-webhook-secret-file=${OCAML_BENCH_GITHUB_WEBHOOK_SECRET_FILE}"
     restart: always
     depends_on:
       db:

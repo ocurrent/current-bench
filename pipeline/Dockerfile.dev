@@ -48,6 +48,11 @@ RUN apt-get update \
     && apt-get install docker-ce-cli graphviz --assume-yes \
     && rm -r /var/lib/apt/lists /var/cache/apt
 
+RUN ( curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc > /etc/apt/trusted.gpg.d/ngrok.asc ) \
+    && ( echo "deb https://ngrok-agent.s3.amazonaws.com buster main" > /etc/apt/sources.list.d/ngrok.list ) \
+    && sudo apt-get update \
+    && sudo apt-get install ngrok
+
 COPY --chown=opam pipeline/. .
 
 # Build the project.
@@ -58,6 +63,7 @@ WORKDIR /app
 RUN mkdir bin
 ENV PATH="/app/bin:${PATH}"
 
+COPY environments/ /mnt/environments/
 COPY pipeline/aslr_seccomp.json /app/aslr_seccomp.json
 COPY pipeline/db/migrations /app/db/migrations
 RUN cp /home/opam/.opam/4.13/bin/omigrate /app/bin/omigrate

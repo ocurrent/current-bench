@@ -267,28 +267,31 @@ let repositories = function
       in
       List.concat (List.concat repos)
 
+let repositories sources =
+  let repos = Current.list_seq (List.map repositories sources) in
+  Current.map List.concat repos
+
 let exists ~conninfo repository =
   let db = new Postgresql.connection ~conninfo () in
   let exists = Benchmark.Db.exists db repository in
   db#finish;
   exists
 
-let process_pipeline ~docker_config ~conninfo ~source () =
+let process_pipeline ~docker_config ~conninfo ~sources () =
   Current.list_iter ~collapse_key:"pipeline"
     (module Repository)
     (fun repo ->
       let* repository = repo in
       if exists ~conninfo repository then Current.ignore_value repo
       else pipeline ~conninfo ~docker_config repository)
-    (repositories source)
+    (repositories sources)
 
-let v ~current_config ~docker_config ~server:mode ~(source : Source.t) conninfo
-    () =
+let v ~current_config ~docker_config ~server:mode ~sources conninfo () =
   Db_util.check_connection ~conninfo;
-  let pipeline = process_pipeline ~docker_config ~conninfo ~source in
+  let pipeline = process_pipeline ~docker_config ~conninfo ~sources in
   let engine = Current.Engine.create ~config:current_config pipeline in
   let webhook =
-    match Source.webhook_secret source with
+    match List.find_map Source.webhook_secret sources with
     | None -> []
     | Some webhook_secret ->
         let webhook =

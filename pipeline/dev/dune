@@ -1,0 +1,12 @@
+(executable
+ (name jwt)
+ (libraries
+  base64
+  yojson
+  cstruct
+  mirage-crypto-rng.unix
+  mirage-crypto-pk
+  x509
+  unix)
+ (preprocess
+  (pps ppx_deriving_yojson)))
