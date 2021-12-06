@@ -74,10 +74,10 @@ let dockerfile ~base ~files =
   @@ run "sudo mv /usr/bin/opam-2.1 /usr/bin/opam"
   @@ run "opam remote add origin https://opam.ocaml.org"
   @@ run "opam update"
+  @@ run "mkdir bench-dir && chown opam:opam bench-dir"
   @@ workdir "bench-dir"
   @@ install_opam_dependencies ~files
-  @@ copy ~src:[ "--chown=opam:opam ." ] ~dst:"bench-dir" ()
-  @@ add ~src:[ "--chown=opam:opam ." ] ~dst:"." ()
+  @@ copy ~src:[ "--chown=opam:opam ." ] ~dst:"." ()
 
 let dockerfile ~base ~files = Dockerfile.crunch (dockerfile ~base ~files)
 
