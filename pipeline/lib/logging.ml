@@ -45,14 +45,13 @@ let init ?style_renderer ?level () =
     List.iter
       (fun src ->
         let name = Logs.Src.name src in
-        if
-          name = "handshake"
-          || name = "tls.tracing"
-          || name = "x509"
-          || name = "cohttp.lwt.io"
-          || name = "x509.private_key"
-          || name = "mirage-crypto-rng.lwt"
-          || name = "mirage-crypto-rng.unix"
+        if name = "handshake"
+           || name = "tls.tracing"
+           || name = "x509"
+           || name = "cohttp.lwt.io"
+           || name = "x509.private_key"
+           || name = "mirage-crypto-rng.lwt"
+           || name = "mirage-crypto-rng.unix"
         then Logs.Src.set_level src (Some Logs.Warning))
       srcs
   in
