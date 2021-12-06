@@ -27,8 +27,8 @@ depends: [
   "yojson"
 ]
 pin-depends: [
-  [ "ocluster-worker.dev" "git+https://github.com/art-w/ocluster.git#public-worker" ]
-  [ "ocluster-api.dev"    "git+https://github.com/art-w/ocluster.git#public-worker" ]
+  [ "ocluster-worker.dev" "git+https://github.com/art-w/ocluster.git#105f7766fb59b3695849397a0b5dde62db7e9f8d" ]
+  [ "ocluster-api.dev"    "git+https://github.com/art-w/ocluster.git#105f7766fb59b3695849397a0b5dde62db7e9f8d" ]
   [ "obuilder.dev"        "git+https://github.com/ocurrent/obuilder#8ca1207671d9c603885b17f1f909840c0a798a7e" ]
   [ "obuilder-spec.dev"   "git+https://github.com/ocurrent/obuilder#8ca1207671d9c603885b17f1f909840c0a798a7e" ]
 ]
