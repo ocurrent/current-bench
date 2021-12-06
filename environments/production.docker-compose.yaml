@@ -63,7 +63,6 @@ services:
       ]
     command:
       - "current-bench-pipeline"
-      - "github_app"
       - "--verbosity=debug"
       - "--port=${OCAML_BENCH_PIPELINE_PORT?required}"
       - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU}"

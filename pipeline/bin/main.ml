@@ -5,13 +5,13 @@ let path = Arg.conv ~docv:"PATH" Fpath.(of_string, pp)
 module Source = struct
   let github =
     let repo =
-      Arg.required
+      Arg.value
       @@ Arg.pos 0 (Arg.some Current_github.Repo_id.cmdliner) None
       @@ Arg.info ~doc:"The GitHub repository (owner/name) to monitor."
            ~docv:"REPO" []
     in
     let github_token_path =
-      Arg.required
+      Arg.value
       @@ Arg.opt Arg.(some file) None
       @@ Arg.info ~doc:"A file containing the GitHub OAuth token." ~docv:"PATH"
            [ "github-token-file" ]
@@ -31,24 +31,79 @@ module Source = struct
     in
     Term.(
       const (fun repo token webhook_secret slack_path ->
-          let token = Fpath.v token in
-          let slack_path = Option.map Fpath.v slack_path in
-          Pipeline.Source.github ~repo ~token ~webhook_secret ~slack_path)
+          match (repo, token) with
+          | Some repo, Some token ->
+              let token = Fpath.v token in
+              let slack_path = Option.map Fpath.v slack_path in
+              [
+                Pipeline.Source.github ~repo ~token ~webhook_secret ~slack_path;
+              ]
+          | _ -> [])
       $ repo
       $ github_token_path
       $ github_webhook_secret
       $ slack_path)
 
   let local =
+    let doc = "Path to a Git repository on disk" in
     let path =
-      Arg.required
-      @@ Arg.pos 0 (Arg.some path) None
-      @@ Arg.info ~doc:"Path to a Git repository on disk" ~docv:"PATH" []
+      Arg.(value & opt (some path) None & info [ "local-repo" ] ~doc)
     in
-    Term.(const Pipeline.Source.local $ path)
+    Term.(
+      const (function
+        | None -> []
+        | Some path -> [ Pipeline.Source.local path ])
+      $ path)
 
-  let github_app =
-    Term.(const Pipeline.Source.github_app $ Current_github.App.cmdliner)
+  let current_github_app =
+    ( Term.(const Pipeline.Source.github_app $ Current_github.App.cmdliner),
+      Term.info ~doc:"Monitor all repositories associated with the Github app."
+        "github_app" )
+
+  let github_app app_id allowlist key secret =
+    match List.filter (( <> ) "") [ app_id; allowlist; key; secret ] with
+    | [ app_id; allowlist; key; secret ] -> (
+        let argv =
+          [|
+            "github_app";
+            "--github-app-id=" ^ app_id;
+            "--github-account-allowlist=" ^ allowlist;
+            "--github-private-key-file=" ^ key;
+            "--github-webhook-secret-file=" ^ secret;
+          |]
+        in
+        match Term.eval ~argv current_github_app with `Ok x -> [ x ] | _ -> [])
+    | _ -> []
+
+  let app_id =
+    Arg.(required & opt (some string) (Some "") & info [ "github-app-id" ])
+
+  let allowlist =
+    Arg.(
+      required
+      & opt (some string) (Some "")
+      & info [ "github-account-allowlist" ])
+
+  let key =
+    Arg.(
+      required
+      & opt (some string) (Some "")
+      & info [ "github-private-key-file" ])
+
+  let secret =
+    Arg.(
+      required
+      & opt (some string) (Some "")
+      & info [ "github-webhook-secret-file" ])
+
+  let github_app = Term.(const github_app $ app_id $ allowlist $ key $ secret)
+
+  let sources =
+    Term.(
+      const (fun local github github_app -> local @ github @ github_app)
+      $ local
+      $ github
+      $ github_app)
 end
 
 module Docker = struct
@@ -104,34 +159,18 @@ let conninfo =
   @@ Arg.info ~doc:"Connection info for Postgres DB" ~docv:"PATH"
        [ "conn-info" ]
 
-let cmd : (Pipeline.Source.t -> (unit, [ `Msg of string ]) result) Term.t =
+let cmd : (unit, [ `Msg of string ]) result Term.t =
   Term.(
-    const (fun current_config server docker_config conninfo () source ->
-        Pipeline.v ~current_config ~docker_config ~server ~source conninfo ())
+    const (fun current_config server docker_config conninfo () sources ->
+        Pipeline.v ~current_config ~docker_config ~server ~sources conninfo ())
     $ Current.Config.cmdliner
     $ Current_web.cmdliner
     $ Docker.v
     $ conninfo
-    $ setup_log)
+    $ setup_log
+    $ Source.sources)
 
 let () =
-  let default =
-    let default_info =
-      let doc = "Continuously benchmark a Git repository." in
-      Term.info ~doc "pipeline"
-    in
-    Term.(ret (const (`Help (`Auto, None))), default_info)
-  in
   Term.(
     exit
-    @@ eval_choice default
-         [
-           ( cmd $ Source.local,
-             Term.info ~doc:"Monitor a Git repository on disk." "local" );
-           ( cmd $ Source.github,
-             Term.info ~doc:"Monitor a remote GitHub repository." "github" );
-           ( cmd $ Source.github_app,
-             Term.info
-               ~doc:"Monitor all repositories associated with github_app."
-               "github_app" );
-         ])
+    @@ eval (cmd, Term.info ~doc:"Monitor all configured repositories." "all"))

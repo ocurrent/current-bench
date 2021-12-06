@@ -44,8 +44,10 @@ RUN apt-get update \
     && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
     && echo "deb [arch=${TARGET_ARCH} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
         > /etc/apt/sources.list.d/docker.list \
+    && ( curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc > /etc/apt/trusted.gpg.d/ngrok.asc ) \
+    && ( echo "deb https://ngrok-agent.s3.amazonaws.com buster main" > /etc/apt/sources.list.d/ngrok.list ) \
     && apt-get update \
-    && apt-get install docker-ce-cli graphviz --assume-yes \
+    && apt-get install docker-ce-cli graphviz ngrok --assume-yes \
     && rm -r /var/lib/apt/lists /var/cache/apt
 
 COPY --chown=opam pipeline/. .
@@ -58,6 +60,7 @@ WORKDIR /app
 RUN mkdir bin
 ENV PATH="/app/bin:${PATH}"
 
+COPY environments/ /mnt/environments/
 COPY pipeline/aslr_seccomp.json /app/aslr_seccomp.json
 COPY pipeline/db/migrations /app/db/migrations
 RUN cp /home/opam/.opam/4.13/bin/omigrate /app/bin/omigrate
