@@ -45,8 +45,6 @@ module Source = struct
     | Github_app g -> Some (Github.App.webhook_secret g)
 end
 
-let pool = Current.Pool.create ~label:"docker" 1
-
 let read_channel_uri p =
   Util.read_fpath p |> String.trim |> Uri.of_string |> Current_slack.channel
 
@@ -143,7 +141,7 @@ let job_output = function
 
 let pipeline ~ocluster ~conninfo ~repository =
   let serial_id = Storage.setup_metadata ~repository ~conninfo in
-  let dockerfile = Custom_dockerfile.dockerfile ~repository in
+  let* dockerfile = Custom_dockerfile.dockerfile ~repository in
   let run_at = Ptime_clock.now () in
   let docker_options = Cluster_api.Docker.Spec.defaults in
   let dockerfile =
@@ -275,7 +273,7 @@ let process_pipeline ~ocluster ~conninfo ~sources () =
       let* repository = repo in
       if exists ~conninfo repository
       then Current.ignore_value repo
-      else pipeline ~conninfo ~docker_config repository)
+      else pipeline ~ocluster ~conninfo repository)
     (repositories sources)
 
 let v ~current_config ~server:mode ~sources conninfo () =
