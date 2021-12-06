@@ -3,25 +3,29 @@ open Lwt.Infix
 
 module Docker_config = struct
   type t = {
-    cpu : string list;
+    mutable cpus : string list;
     numa_node : int option;
     shm_size : int;
-    multicore_repositories : string list;
   }
 
-  let v ?(cpu = []) ?numa_node ~shm_size ~multicore_repositories () =
-    { cpu; numa_node; shm_size; multicore_repositories }
+  let v ?(cpus = []) ?numa_node ~shm_size () = { cpus; numa_node; shm_size }
 
-  let is_multicore ~repository t = List.mem repository t.multicore_repositories
+  let cpus_count t = List.length t.cpus
 
-  let cpuset_cpus ~repository t =
-    match t.cpu with
-    | [] -> []
-    | first :: _ ->
-        let cpus =
-          if is_multicore ~repository t then String.concat "," t.cpu else first
-        in
-        [ "--cpuset-cpus"; cpus ]
+  let acquire_cpu t =
+    match t.cpus with
+    | [] -> Lwt.fail (Failure "No CPU available")
+    | first :: rest ->
+        t.cpus <- rest;
+        Lwt.return first
+
+  let release_cpu t cpu =
+    t.cpus <- cpu :: t.cpus;
+    Lwt.return_unit
+
+  let with_cpu t fn =
+    acquire_cpu t >>= fun cpu ->
+    Lwt.finalize (fun () -> fn cpu) (fun () -> release_cpu t cpu)
 
   let cpuset_mems t =
     match t.numa_node with
@@ -38,15 +42,16 @@ module Docker_config = struct
     | None ->
         [ "--tmpfs"; Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg" t.shm_size ]
 
-  let run_args ~repository t =
+  let run_args ~cpu t =
     [
       "--security-opt";
       "seccomp=./aslr_seccomp.json";
       "--mount";
       "type=volume,src=current-bench-data,dst=/home/opam/bench-dir/current-bench-data";
+      "--cpuset-cpus";
+      cpu;
     ]
     @ tmpfs t
-    @ cpuset_cpus ~repository t
     @ cpuset_mems t
 end
 
@@ -106,14 +111,17 @@ let run_command =
     "opam exec -- make bench";
   ]
 
-let docker_run ~switch ~log ~docker_config img_hash =
-  let repository = "todo/todo" in
-  let run_args = Docker_config.run_args ~repository docker_config in
+let docker_run ~switch ~log ~docker_config ~cpu img_hash =
+  let run_args = Docker_config.run_args ~cpu docker_config in
   let command =
     ("docker" :: "run" :: run_args) @ [ "--rm"; "-i"; img_hash ] @ run_command
   in
   Process.check_call ~label:"docker-run" ~switch ~log command >>!= fun () ->
   Lwt.return (Ok ())
+
+let docker_run ~switch ~log ~docker_config img_hash =
+  Docker_config.with_cpu docker_config @@ fun cpu ->
+  docker_run ~switch ~log ~docker_config ~cpu img_hash
 
 let dockerpath ~src = function
   | `Contents contents ->
@@ -159,19 +167,19 @@ let run ~state_dir ~docker_config ~name ~registration_path =
   let build ~switch ~log ~src ~secrets:_ request =
     build_and_run ~switch ~log ~docker_config ~src request
   in
+  let capacity = Docker_config.cpus_count docker_config in
   let worker =
-    Cluster_worker.run ~build ~update ~name ~capacity:1 ~state_dir sr
+    Cluster_worker.run ~build ~update ~name ~capacity ~state_dir sr
   in
   Lwt_main.run worker
 
 open Cmdliner
 
 module Docker = struct
-  let cpu =
+  let cpus =
     let doc =
-      "CPU/core that should run the benchmarks. A comma-separated list or \
-       hyphen-separated range of CPUs a container can use, if you have more \
-       than one CPU"
+      "CPUs/cores that should run the benchmarks, as a comma-separated list if \
+       you have more than one CPU"
     in
     Arg.(
       value
@@ -189,21 +197,13 @@ module Docker = struct
     let doc = "Size of tmpfs volume to be mounted in /dev/shm (in GB)." in
     Arg.(value & opt int 4 & info [ "docker-shm-size" ] ~doc)
 
-  let multicore_repositories =
-    let doc = "The repositories that should run on multiple cores." in
-    Arg.(
-      value
-      & opt (list ~sep:',' string) []
-      & info [ "multicore-repositories" ] ~doc)
-
   let v =
     Term.(
-      const (fun cpu numa_node shm_size multicore_repositories ->
-          Docker_config.v ?cpu ?numa_node ~shm_size ~multicore_repositories ())
-      $ cpu
+      const (fun cpus numa_node shm_size ->
+          Docker_config.v ?cpus ?numa_node ~shm_size ())
+      $ cpus
       $ numa_node
-      $ shm_size
-      $ multicore_repositories)
+      $ shm_size)
 end
 
 let registration_path =
