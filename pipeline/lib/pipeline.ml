@@ -153,11 +153,34 @@ let docker_make_bench ~run_args ~repository image =
         "opam exec -- make bench";
       ]
 
+let setup_on_cancel_hook ~stage ~job_id ~serial_id ~conninfo =
+  let jobs = Current.Job.jobs () in
+  match Current.Job.Map.find_opt job_id jobs with
+  | Some job ->
+      let _ =
+        Current.Job.on_cancel job (fun m ->
+            (* NOTE: on_cancel hooks also get called when the job ends, not
+               just when the job is cancelled! *)
+            (match m with
+            | "Job complete" -> Logs.debug (fun log -> log "%s: %s\n" m job_id)
+            | _ -> Storage.record_cancel ~stage ~serial_id ~reason:m ~conninfo);
+            (* FIXME: We need to update GitHub status too!             *)
+            Lwt.return_unit)
+      in
+      Logs.info (fun log ->
+          log "Setting up hook for job %s in stage %s: %d\n" job_id stage
+            serial_id)
+  | None -> Logs.debug (fun log -> log "Job already stopped: %s\n" job_id)
+
 let record_pipeline_stage ~stage ~serial_id ~conninfo image =
   let+ job_id = Current_util.get_job_id image
   and+ state = Current.state image in
   match (job_id, state) with
   | Some job_id, Error (`Active _) ->
+      (* NOTE: For some reason this hook gets called twice, even if we match for
+         (`Active `Running), explicitly. The DB calls would happen twice, which
+         shouldn't be a problem.*)
+      setup_on_cancel_hook ~stage ~job_id ~serial_id ~conninfo;
       Storage.record_stage_start ~stage ~job_id ~serial_id ~conninfo
   | Some _, Error (`Msg m) ->
       Logs.err (fun log -> log "Error in %s stage: \n%s\n" stage m);

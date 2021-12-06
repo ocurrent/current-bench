@@ -107,3 +107,31 @@ UPDATE
 
 let record_stage_failure ~stage ~serial_id ~conninfo =
   with_db ~conninfo (record_stage_failure ~stage ~serial_id)
+
+let record_cancel ~stage ~serial_id ~reason (db : Postgresql.connection) =
+  Logs.debug (fun log -> log "Recording stage cancel...");
+  let serial_id = Sql_util.int serial_id in
+  let query =
+    Fmt.str
+      {|
+UPDATE
+  benchmark_metadata
+  SET
+    cancelled = true,
+    cancel_reason = '%s'
+    WHERE id = %s
+|}
+      reason serial_id
+  in
+  try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
+  | Postgresql.Error err ->
+      Logs.err (fun log ->
+          log "Database error while recording stage cancellation %s: %s" stage
+            (Postgresql.string_of_error err))
+  | exn ->
+      Logs.err (fun log ->
+          log "Unknown error while recording stage cancellation %s:\n%a" stage
+            Fmt.exn exn)
+
+let record_cancel ~stage ~serial_id ~reason ~conninfo =
+  with_db ~conninfo (record_cancel ~stage ~serial_id ~reason)
