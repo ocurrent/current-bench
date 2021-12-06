@@ -45,6 +45,10 @@ pin-depends: [
   [ "current_web.dev"    "git+https://github.com/ocurrent/ocurrent.git#739c80bfda5290e6b0b854372db60789ac83ec97"]
 ]
 
+depexts: [
+  [ "jq" ] {}
+]
+
 build: [
   ["dune" "subst"] {pinned}
   [

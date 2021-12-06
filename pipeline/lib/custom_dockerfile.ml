@@ -54,7 +54,17 @@ let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
 let base = Docker.pull ~schedule:weekly "ocaml/opam"
 
-let dockerfile ~base =
+let install_opam_dependencies ~files =
+  if not (List.exists (String.ends_with ~suffix:".opam") files)
+  then Dockerfile.empty
+  else
+    let open Dockerfile in
+    copy ~src:[ "--chown=opam:opam ./*.opam" ] ~dst:"." ()
+    @@ run "opam exec -- opam pin -y -n --with-version=dev ."
+    @@ run "opam exec -- opam install -y --depext-only ."
+    @@ run "opam exec -- opam install -y --deps-only ."
+
+let dockerfile ~base ~files =
   let open Dockerfile in
   from (Docker.Image.hash base)
   @@ run "sudo apt-get update"
@@ -65,25 +75,18 @@ let dockerfile ~base =
   @@ run "opam remote add origin https://opam.ocaml.org"
   @@ run "opam update"
   @@ workdir "bench-dir"
-  @@ copy ~src:[ "--chown=opam:opam ./*.opam" ] ~dst:"." ()
-  @@ run "opam exec -- opam pin -y -n --with-version=dev ."
-  @@ run "opam exec -- opam install -y --depext-only ."
-  @@ run "opam exec -- opam install -y --deps-only ."
+  @@ install_opam_dependencies ~files
   @@ copy ~src:[ "--chown=opam:opam ." ] ~dst:"bench-dir" ()
   @@ add ~src:[ "--chown=opam:opam ." ] ~dst:"." ()
 
-let dockerfile ~base = Dockerfile.crunch (dockerfile ~base)
+let dockerfile ~base ~files = Dockerfile.crunch (dockerfile ~base ~files)
 
 let dockerfile ~repository =
   let custom_dockerfile = Fpath.v "bench.Dockerfile" in
-  let* file_list = get_all_files ~repository in
-  Logs.info (fun logs ->
-      logs "These are all the fetched files %s" (String.concat "\n" file_list));
-  let dockerfile_exists =
-    List.mem (Fpath.to_string custom_dockerfile) file_list
-  in
+  let* files = get_all_files ~repository in
+  let dockerfile_exists = List.mem (Fpath.to_string custom_dockerfile) files in
   if dockerfile_exists
   then Current.return (`File custom_dockerfile)
   else
     let+ base = base in
-    `Contents (dockerfile ~base)
+    `Contents (dockerfile ~base ~files)
