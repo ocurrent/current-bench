@@ -57,12 +57,12 @@ module Source = struct
 
   let current_github_app =
     ( Term.(const Pipeline.Source.github_app $ Current_github.App.cmdliner),
-      Term.info ~doc:"Monitor a Git repository on disk." "github_app" )
+      Term.info ~doc:"Monitor all repositories associated with the Github app."
+        "github_app" )
 
   let github_app app_id allowlist key secret =
-    match (app_id, allowlist, key, secret) with
-    | "", "", "", "" -> []
-    | app_id, allowlist, key, secret -> (
+    match List.filter (( <> ) "") [ app_id; allowlist; key; secret ] with
+    | [ app_id; allowlist; key; secret ] -> (
         let argv =
           [|
             "github_app";
@@ -73,6 +73,7 @@ module Source = struct
           |]
         in
         match Term.eval ~argv current_github_app with `Ok x -> [ x ] | _ -> [])
+    | _ -> []
 
   let app_id =
     Arg.(required & opt (some string) (Some "") & info [ "github-app-id" ])
@@ -170,15 +171,6 @@ let cmd : (unit, [ `Msg of string ]) result Term.t =
     $ Source.sources)
 
 let () =
-  (*
-  let default =
-    let default_info =
-      let doc = "Continuously benchmark a Git repository." in
-      Term.info ~doc "pipeline"
-    in
-    Term.(ret (const (`Help (`Auto, None))), default_info)
-  in
-  *)
   Term.(
     exit
     @@ eval (cmd, Term.info ~doc:"Monitor all configured repositories." "all"))
