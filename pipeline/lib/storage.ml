@@ -26,7 +26,7 @@ let setup_metadata ~repository (db : Postgresql.connection) =
     VALUES
     (%s, %s, %s, %s, %s, %s)
     ON CONFLICT(repo_id, commit) DO UPDATE
-    set build_job_id=NULL, run_job_id=NULL
+    set build_job_id=NULL, run_job_id=NULL, failed = false
     RETURNING id;
     |}
       run_at repo_id commit branch pull_number title
@@ -65,7 +65,7 @@ UPDATE
   benchmark_metadata
   SET
     %s = %s
-    WHERE id = %s
+  WHERE id = %s
 |}
       stage job_id serial_id
   in
