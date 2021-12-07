@@ -141,15 +141,15 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~setOldMetrics
     showingOldMetrics(noCommitMetrics)
     let status = buildStatus(lastCommitInfo, noCommitMetrics)
     <>
-      <Row sx=containerSx spacing=#between alignY=#bottom>
-        {switch lastCommitInfo.pr_title {
-        | Some(title) => <Text sx=[Sx.text.lg]> title </Text>
-        | None =>
-          <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray700)]>
-            "No data for PR Title"
-          </Text>
-        }}
-      </Row>
+      {switch lastCommitInfo.pull_number {
+      | Some(pullNumber) => {
+          let href = AppHelpers.pullUrl(~repoId, ~pull=string_of_int(pullNumber))
+          <Row sx=containerSx spacing=#between alignY=#bottom>
+            {renderExternalLink(~href, lastCommitInfo.pr_title->Belt.Option.getWithDefault("No PR Title"))}
+          </Row>
+        }
+      | None => Rx.null
+      }}
       <Row sx=containerSx spacing=#between alignY=#bottom>
         <Column spacing=Sx.sm>
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Last Commit" </Text>
