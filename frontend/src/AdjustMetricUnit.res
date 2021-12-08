@@ -9,21 +9,33 @@ let getUnitsIndex = units => {
   Js.Array.findIndex(x => x == oldStr, sizeUnits)
 }
 
-let formatSize = (value, units) => {
-  let exp = Js.Math.log10(value)->Js.Math.floor_int
-  let unitChange = exp / 3
+let getAdjustedSize = (value, units, unitIndex, unitChange) => {
   let changeFactor = Js.Math.pow_float(~base=10.0, ~exp=(unitChange * 3)->Js.Int.toFloat)
   let newValue =
     (value /. changeFactor)
     ->Js.Float.toFixedWithPrecision(~digits=2)
     ->Belt.Float.fromString
     ->Belt.Option.getExn
-  let unitIndex = getUnitsIndex(units)
   let newUnitIndex = unitIndex + unitChange
   let oldStr = Belt.Array.getExn(sizeUnits, unitIndex)
   let newStr = Belt.Array.getExn(sizeUnits, newUnitIndex)
   let newUnit = Js.String.replace(oldStr, newStr, units)
   (newValue, newUnit)
+}
+
+let formatSize = (value, units) => {
+  let exp = Js.Math.log10(value)->Js.Math.floor_int
+  let unitChange = exp / 3
+  let unitIndex = getUnitsIndex(units)
+  getAdjustedSize(value, units, unitIndex, unitChange)
+}
+
+let changeSizeUnits = (value, units, newUnits) => {
+  let oldUnitIndex = getUnitsIndex(units)
+  let newUnitIndex = getUnitsIndex(newUnits)
+  let unitChange = newUnitIndex - oldUnitIndex
+  let (value_, _) = getAdjustedSize(value, units, oldUnitIndex, unitChange)
+  value_
 }
 
 let format = (value, units) => {
