@@ -118,10 +118,20 @@ let conninfo =
   @@ Arg.info ~doc:"Connection info for Postgres DB" ~docv:"PATH"
        [ "conn-info" ]
 
+let config_file =
+  let arg =
+    Arg.required
+    @@ Arg.opt Arg.(some path) None
+    @@ Arg.info ~doc:"Config file for repositories" ~docv:"PATH"
+         [ "repositories" ]
+  in
+  Term.(const Pipeline.Config.of_file $ arg)
+
 let cmd : (unit, [ `Msg of string ]) result Term.t =
   Term.(
-    const (fun current_config server conninfo () sources ->
-        Pipeline.v ~current_config ~server ~sources conninfo ())
+    const (fun config current_config server conninfo () sources ->
+        Pipeline.v ~config ~current_config ~server ~sources conninfo ())
+    $ config_file
     $ Current.Config.cmdliner
     $ Current_web.cmdliner
     $ conninfo

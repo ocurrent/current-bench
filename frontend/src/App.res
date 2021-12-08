@@ -15,17 +15,21 @@ query {
 let makeGetBenchmarksVariables = (
   ~repoId,
   ~pullNumber=?,
+  ~worker,
   ~benchmarkName=?,
   ~startDate,
   ~endDate,
 ): GetBenchmarks.t_variables => {
   let isMaster = Belt.Option.isNone(pullNumber)
   let isDefaultBenchmark = Belt.Option.isNone(benchmarkName)
+  let (worker, dockerImage) = worker
   let comparisonLimit = isMaster ? 0 : 50
   {
     repoId: repoId,
     pullNumber: pullNumber,
     isMaster: isMaster,
+    worker: worker,
+    dockerImage: dockerImage,
     isDefaultBenchmark: isDefaultBenchmark,
     benchmarkName: benchmarkName,
     startDate: startDate,
@@ -130,13 +134,13 @@ module Benchmark = {
 
 module BenchmarkView = {
   @react.component
-  let make = (~repoId, ~pullNumber=?, ~benchmarkName=?, ~startDate, ~endDate) => {
+  let make = (~repoId, ~pullNumber=?, ~worker, ~benchmarkName=?, ~startDate, ~endDate) => {
     let ({ReScriptUrql.Hooks.response: response}, _) = {
       let startDate = Js.Date.toISOString(startDate)->Js.Json.string
       let endDate = Js.Date.toISOString(endDate)->Js.Json.string
       ReScriptUrql.Hooks.useQuery(
         ~query=module(GetBenchmarks),
-        makeGetBenchmarksVariables(~repoId, ~pullNumber?, ~benchmarkName?, ~startDate, ~endDate),
+        makeGetBenchmarksVariables(~repoId, ~pullNumber?, ~worker, ~benchmarkName?, ~startDate, ~endDate),
       )
     }
 
@@ -150,12 +154,13 @@ module BenchmarkView = {
     | Data(data)
     | PartialData(data, _) =>
       <Block sx=[Sx.px.xl2, Sx.py.xl2, Sx.w.full, Sx.minW.zero]>
-        <CommitInfo repoId ?pullNumber benchmarks=data setOldMetrics />
+        <CommitInfo repoId worker ?pullNumber benchmarks=data setOldMetrics />
         <Benchmark repoId pullNumber data oldMetrics />
       </Block>
     }
   }
 }
+
 
 let getDefaultDateRange = {
   let hourMs = 3600.0 *. 1000.
@@ -212,6 +217,8 @@ module RepoView = {
     let ((startDate, endDate), setDateRange) = React.useState(getDefaultDateRange)
     let onSelectDateRange = (startDate, endDate) => setDateRange(_ => (startDate, endDate))
 
+    let (worker, setWorker) = React.useState(() => ("autumn", "ocaml/opam"))
+
     switch response {
     | Empty => <div> {"Something went wrong!"->Rx.text} </div>
     | Error({networkError: Some(_)}) => <div> {"Network Error"->Rx.text} </div>
@@ -221,20 +228,24 @@ module RepoView = {
     | PartialData(data, _) =>
       let repoIds = data.allRepoIds->Belt.Array.map(obj => obj.repo_id)
 
-      let sidebar =
+      let sidebar : React.element = {
         <Sidebar
+          repoIds
+          worker
+          setWorker
           selectedRepoId=?repoId
           selectedPull=?pullNumber
           selectedBenchmarkName=?benchmarkName
-          repoIds
           onSelectRepoId={repoId =>
             AppRouter.Repo({repoId: repoId, benchmarkName: None})->AppRouter.go}
         />
+      }
 
       <div className={Sx.make([Sx.container, Sx.d.flex])}>
         {switch repoId {
-        | None => <>
-            {sidebar}
+        | None =>
+          <>
+            sidebar
             <Column sx=[Sx.w.full, Sx.minW.zero]>
               <Topbar>
                 <Litepicker
@@ -291,14 +302,14 @@ module RepoView = {
             />
 
           <>
-            {sidebar}
+            sidebar
             <Column sx=[Sx.w.full, Sx.minW.zero]>
               <Topbar>
                 {breadcrumbs}
                 {githubLink}
                 <Litepicker startDate endDate sx=[Sx.w.xl5] onSelect={onSelectDateRange} />
               </Topbar>
-              <BenchmarkView repoId ?pullNumber ?benchmarkName startDate endDate />
+              <BenchmarkView repoId worker ?pullNumber ?benchmarkName startDate endDate />
             </Column>
           </>
         }}

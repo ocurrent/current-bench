@@ -7,6 +7,8 @@ module Benchmark : sig
     ?run_job_id:string ->
     run_at:Ptime.t ->
     duration:Ptime.span ->
+    worker:string ->
+    docker_image:string ->
     benchmark_name:string option ->
     test_index:int ->
     repository:Repository.t ->
@@ -30,6 +32,10 @@ module Benchmark : sig
   val build_job_id : t -> string option
 
   val run_job_id : t -> string option
+
+  val worker : t -> string
+
+  val docker_image : t -> string
 
   val test_name : t -> string
 

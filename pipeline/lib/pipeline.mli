@@ -1,6 +1,12 @@
 module Logging = Logging
 module Github = Current_github
 
+module Config : sig
+  type t
+
+  val of_file : Fpath.t -> t
+end
+
 module Source : sig
   type t
 
@@ -17,6 +23,7 @@ module Source : sig
 end
 
 val v :
+  config:Config.t ->
   current_config:Current.Config.t ->
   server:Conduit_lwt_unix.server ->
   sources:Source.t list ->

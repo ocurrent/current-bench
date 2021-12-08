@@ -82,6 +82,7 @@ services:
       - "/app/entrypoint.sh"
       - "/mnt/project/reload.sh"
       - "/app/bin/current-bench-pipeline"
+      - "--repositories=/mnt/environments/development.conf"
       - "--local-repo=/app/local-test-repo"
       - "--verbose"
       - "--port=${OCAML_BENCH_PIPELINE_PORT?required}"
