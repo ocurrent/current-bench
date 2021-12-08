@@ -1,4 +1,6 @@
-let isSize = x => Js.Re.exec_(%re("/(gb|mb|kb|bytes)\w*/i"), x)->Belt.Option.isSome
+// FIXME: Should include other units too?!
+let sizeRegex = %re("/(gb|mb|kb|bytes)\w*/i")
+let isSize = x => Js.Re.exec_(sizeRegex, x)->Belt.Option.isSome
 
 let formatSize = (value, units) => {
   let unitArr = ["bytes", "kb", "mb", "gb", "tb", "pb", "eb", "zb", "yb"]
@@ -11,7 +13,7 @@ let formatSize = (value, units) => {
     ->Belt.Float.fromString
     ->Belt.Option.getExn
 
-  let reMatch = Js.Re.exec_(%re("/(gb|mb|kb|bytes)\w*/i"), units)
+  let reMatch = Js.Re.exec_(sizeRegex, units)
   let oldStr = reMatch->Belt.Option.getExn->Js.Re.captures->Belt.Array.getExn(1)->Js.String.make
   // unitArrIndex <- index of the regex match in unitArr
   let unitArrIndex = Js.Array.findIndex(x => x == oldStr, unitArr)
