@@ -12,16 +12,7 @@ let formatSize = (value, units) => {
     ->Belt.Option.getExn
 
   let reMatch = Js.Re.exec_(%re("/(gb|mb|kb|bytes)\w*/i"), units)
-  let startIndex = reMatch->Belt.Option.getExn->Js.Re.index
-  let endIndex =
-    startIndex +
-    reMatch
-    ->Belt.Option.getExn
-    ->Js.Re.captures
-    ->Belt.Array.getExn(1)
-    ->Js.String.make
-    ->Js.String.length
-  let oldStr = Js.String.substring(~from=startIndex, ~to_=endIndex, units)
+  let oldStr = reMatch->Belt.Option.getExn->Js.Re.captures->Belt.Array.getExn(1)->Js.String.make
   // unitArrIndex <- index of the regex match in unitArr
   let unitArrIndex = Js.Array.findIndex(x => x == oldStr, unitArr)
   let newStr = Belt.Array.getExn(unitArr, unitArrIndex + unitChange)
