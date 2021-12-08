@@ -76,7 +76,6 @@ module Benchmark = {
     ->Belt.Array.reduce(BenchmarkData.empty, (acc, (commit, run_at, test_index, item)) => {
       List.fold_left((acc, result: Current_bench_json.Latest.result) => {
         List.fold_left((acc, metric: Current_bench_json.Latest.metric) => {
-          let (value, units) = AdjustMetricUnit.format(metric.value, metric.units)
           BenchmarkData.add(
             acc,
             ~testName=result.test_name,
@@ -84,17 +83,18 @@ module Benchmark = {
             ~metricName=metric.name,
             ~runAt=run_at,
             ~commit,
-            ~value=toLineGraph(value),
-            ~units,
+            ~value=toLineGraph(metric.value),
+            ~units=metric.units,
           )
         }, acc, result.metrics)
       }, acc, item.results)
     })
   }
+
   @react.component
   let make = React.memo((~repoId, ~pullNumber, ~data: GetBenchmarks.t, ~oldMetrics=false) => {
     let benchmarkDataByTestName = React.useMemo2(() => {
-      data.benchmarks->makeBenchmarkData
+      data.benchmarks->makeBenchmarkData->AdjustMetricUnit.adjust
     }, (data.benchmarks, makeBenchmarkData))
     let comparisonBenchmarkDataByTestName = React.useMemo2(
       () => data.comparisonBenchmarks->Belt.Array.reverse->makeBenchmarkData,

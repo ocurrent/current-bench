@@ -38,11 +38,43 @@ let changeSizeUnits = (value, units, newUnits) => {
   value_
 }
 
-let format = (value, units) => {
-  switch value {
-  | Current_bench_json.Latest.Float(value) if isSize(units) =>
-    let (value, units) = formatSize(value, units)
-    (Current_bench_json.Latest.Float(value), units)
-  | _ => (value, units)
-  }
+let adjustSize = (timeseries: BenchmarkData.timeseries, units: LineGraph.DataRow.units) => {
+  let avgs = Belt.Array.map(timeseries, val => Obj.magic(val[1])[1])
+  let maxValue = Array.fold_left((a, b) => a < b ? b : a, 0., avgs)
+  let (_, newUnits) = formatSize(maxValue, units)
+  let adjustedTimeseries = Belt.Array.map(timeseries, valueWithTime => {
+    let (time, value) = Obj.magic(valueWithTime)
+    let adjustedValues = Belt.Array.map(value, v =>
+      Obj.magic(v) == Js.null ? v : changeSizeUnits(v, units, newUnits)
+    )
+    Obj.magic([time, adjustedValues])
+  })
+  (adjustedTimeseries, newUnits)
+}
+
+let adjust = (data: BenchmarkData.t) => {
+  data->Belt.Map.String.mapWithKey((_, (testIndex, dataByMetricName)) => {
+    let adjustedDataByMetricName = dataByMetricName->Belt.Map.String.mapWithKey((
+      _,
+      (timeseries, metadata),
+    ) => {
+      let isSizeMetric = switch Belt.Array.size(metadata) {
+      | 0 => false
+      | _ => isSize(metadata[0]["units"])
+      }
+      switch isSizeMetric {
+      | true => {
+          let units = metadata[0]["units"]
+          let (ts, newUnits) = adjustSize(timeseries, units)
+          let md =
+            metadata->Belt.Array.map(x =>
+              {"commit": x["commit"], "runAt": x["runAt"], "units": newUnits}
+            )
+          (ts, md)
+        }
+      | false => (timeseries, metadata)
+      }
+    })
+    (testIndex, adjustedDataByMetricName)
+  })
 }
