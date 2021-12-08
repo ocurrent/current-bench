@@ -1,9 +1,9 @@
+let sizeUnits = ["bytes", "kb", "mb", "gb", "tb", "pb", "eb", "zb", "yb"]
 // FIXME: Should include other units too?!
 let sizeRegex = %re("/(gb|mb|kb|bytes)\w*/i")
 let isSize = x => Js.Re.exec_(sizeRegex, x)->Belt.Option.isSome
 
 let formatSize = (value, units) => {
-  let unitArr = ["bytes", "kb", "mb", "gb", "tb", "pb", "eb", "zb", "yb"]
   let exp = Js.Math.log10(value)->Js.Math.floor_int
   let unitChange = exp / 3
   let changeFactor = Js.Math.pow_float(~base=10.0, ~exp=(unitChange * 3)->Js.Int.toFloat)
@@ -15,9 +15,8 @@ let formatSize = (value, units) => {
 
   let reMatch = Js.Re.exec_(sizeRegex, units)
   let oldStr = reMatch->Belt.Option.getExn->Js.Re.captures->Belt.Array.getExn(1)->Js.String.make
-  // unitArrIndex <- index of the regex match in unitArr
-  let unitArrIndex = Js.Array.findIndex(x => x == oldStr, unitArr)
-  let newStr = Belt.Array.getExn(unitArr, unitArrIndex + unitChange)
+  let unitIndex = Js.Array.findIndex(x => x == oldStr, sizeUnits)
+  let newStr = Belt.Array.getExn(sizeUnits, unitIndex + unitChange)
   let newUnit = Js.String.replace(oldStr, newStr, units)
   (newValue, newUnit)
 }
