@@ -2,15 +2,11 @@ let isSize = x => Js.Re.exec_(%re("/(gb|mb|kb|bytes)\w*/i"), x)->Belt.Option.isS
 
 let formatSize = (value, units) => {
   let unitArr = ["bytes", "kb", "mb", "gb", "tb", "pb", "eb", "zb", "yb"]
-  // exp_ is the exponent value derived from value
-  // exp tracks the unit change (which is a factor of 3)
-  // mod_exp is the value tracking exp_ % 3 which is multiplied to fractional part
-  let exp_ = Js.Math.log10(value)->Js.Math.floor_int
-  let exp = exp_ / 3
-  let mod_exp = mod(exp_, 3)->Belt.Int.toFloat
+  let exp = Js.Math.log10(value)->Js.Math.floor_int
+  let unitChange = exp / 3
+  let changeFactor = Js.Math.pow_float(~base=10.0, ~exp=(unitChange * 3)->Js.Int.toFloat)
   let newValue =
-    Js.Math.pow_float(~base=10.0, ~exp=Js.Math.log10(value) -. Js.Int.toFloat(exp_))
-    ->(x => x *. Js.Math.pow_float(~base=10.0, ~exp=mod_exp))
+    (value /. changeFactor)
     ->Js.Float.toFixedWithPrecision(~digits=2)
     ->Belt.Float.fromString
     ->Belt.Option.getExn
@@ -28,9 +24,8 @@ let formatSize = (value, units) => {
   let oldStr = Js.String.substring(~from=startIndex, ~to_=endIndex, units)
   // unitArrIndex <- index of the regex match in unitArr
   let unitArrIndex = Js.Array.findIndex(x => x == oldStr, unitArr)
-  let newStr = Belt.Array.getExn(unitArr, unitArrIndex + exp)
+  let newStr = Belt.Array.getExn(unitArr, unitArrIndex + unitChange)
   let newUnit = Js.String.replace(oldStr, newStr, units)
-
   (newValue, newUnit)
 }
 
