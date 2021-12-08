@@ -3,6 +3,12 @@ let sizeUnits = ["bytes", "kb", "mb", "gb", "tb", "pb", "eb", "zb", "yb"]
 let sizeRegex = %re("/(gb|mb|kb|bytes)\w*/i")
 let isSize = x => Js.Re.exec_(sizeRegex, x)->Belt.Option.isSome
 
+let getUnitsIndex = units => {
+  let reMatch = Js.Re.exec_(sizeRegex, units)
+  let oldStr = reMatch->Belt.Option.getExn->Js.Re.captures->Belt.Array.getExn(1)->Js.String.make
+  Js.Array.findIndex(x => x == oldStr, sizeUnits)
+}
+
 let formatSize = (value, units) => {
   let exp = Js.Math.log10(value)->Js.Math.floor_int
   let unitChange = exp / 3
@@ -12,11 +18,10 @@ let formatSize = (value, units) => {
     ->Js.Float.toFixedWithPrecision(~digits=2)
     ->Belt.Float.fromString
     ->Belt.Option.getExn
-
-  let reMatch = Js.Re.exec_(sizeRegex, units)
-  let oldStr = reMatch->Belt.Option.getExn->Js.Re.captures->Belt.Array.getExn(1)->Js.String.make
-  let unitIndex = Js.Array.findIndex(x => x == oldStr, sizeUnits)
-  let newStr = Belt.Array.getExn(sizeUnits, unitIndex + unitChange)
+  let unitIndex = getUnitsIndex(units)
+  let newUnitIndex = unitIndex + unitChange
+  let oldStr = Belt.Array.getExn(sizeUnits, unitIndex)
+  let newStr = Belt.Array.getExn(sizeUnits, newUnitIndex)
   let newUnit = Js.String.replace(oldStr, newStr, units)
   (newValue, newUnit)
 }
