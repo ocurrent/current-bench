@@ -142,6 +142,7 @@ let getElementHTMLonClick: (Dom.element, string => unit) => unit = %raw(`
 
 module Legend = {
   type t = {
+    label: string,
     labelHTML: string,
     yHTML: string,
     dashHTML: string,
@@ -165,8 +166,13 @@ module Legend = {
         ("<div>" ++ labelHTML ++ "&ndash; </div>") ++
         ("<div>" ++ " <b>" ++ yHTML ++ "</b>" ++ "</div>" ++ "</div>"))
       }
-      let legend = Array.map((unit: t) => {
-        row(unit.dashHTML, unit.labelHTML, unit.yHTML)
+      let legend = Array.mapi((idx, unit: t) => {
+        // Add extra header for overall stats
+        let extraHeader = switch unit.label {
+        | "mean" => "<b>Overall Stats</b>"
+        | _ => ""
+        }
+        extraHeader ++ row(unit.dashHTML, unit.labelHTML, unit.yHTML)
       }, data.series)
       let legend = Array.fold_left((a, b) => a ++ b, "", legend)
       `<div class="dygraph-legend-formatter">${html}${legend}</div>`
