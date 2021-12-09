@@ -211,7 +211,7 @@ let defaultOptions = (
       },
     },
     "series": {
-      "std-dev": {
+      "mean": {
         "strokeWidth": 1.0,
         "strokePattern": [3, 2],
         "highlightCircleSize": 0,
@@ -318,7 +318,7 @@ let make = React.memo((
   }
   let data = addSeries(data, constantSeries)
   let labels = labels->Belt.Option.map(labels => {
-    labels->BeltHelpers.Array.add("std-dev")
+    labels->BeltHelpers.Array.add("mean")
   })
 
   // Dygraph does not display the last tick, so a dummy value
