@@ -13,15 +13,20 @@ RUN sudo apt-get update && \
     libsqlite3-dev \
     libcapnp-dev \
     libev-dev \
-    libpcre3-dev
+    libsqlite3-dev
 
 WORKDIR /mnt/project
 
 # Build dependencies.
-COPY --chown=opam:opam pipeline/pipeline.opam pipeline.opam
+COPY --chown=opam:opam cb-worker.opam cb-worker.opam
 RUN opam install -y --deps-only -t .
+COPY --chown=opam . .
+RUN sudo chown opam .
 
-USER root
+# Build the project.
+RUN opam exec -- dune build --profile=release ./cb_worker.exe
+
+FROM debian:stable-slim
 
 ARG TARGET_ARCH=amd64
 
@@ -32,38 +37,21 @@ RUN apt-get update \
         apt-transport-https \
         curl \
         netcat \
-        postgresql-client \
         gnupg \
         lsb-release \
         git \
         libpq-dev \
         libsqlite3-dev \
         libev-dev \
-        inotify-tools \
-        procps \
     && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
     && echo "deb [arch=${TARGET_ARCH} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
         > /etc/apt/sources.list.d/docker.list \
-    && ( curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc > /etc/apt/trusted.gpg.d/ngrok.asc ) \
-    && ( echo "deb https://ngrok-agent.s3.amazonaws.com buster main" > /etc/apt/sources.list.d/ngrok.list ) \
     && apt-get update \
-    && apt-get install docker-ce-cli graphviz ngrok --assume-yes \
+    && apt-get install docker-ce-cli graphviz --assume-yes \
     && rm -r /var/lib/apt/lists /var/cache/apt
 
-COPY --chown=opam pipeline/. .
-
-# Build the project.
-RUN opam exec -- dune build --profile=release bin/main.exe
-
 WORKDIR /app
-
-RUN mkdir bin
 ENV PATH="/app/bin:${PATH}"
 
-COPY environments/ /mnt/environments/
-COPY pipeline/aslr_seccomp.json /app/aslr_seccomp.json
-COPY pipeline/db/migrations /app/db/migrations
-RUN cp /home/opam/.opam/4.13/bin/omigrate /app/bin/omigrate
-RUN cp /home/opam/.opam/4.13/bin/ocluster-admin /app/bin/ocluster-admin
-RUN cp /mnt/project/_build/default/bin/main.exe /app/bin/current-bench-pipeline
-COPY pipeline/entrypoint.sh /app/entrypoint.sh
+COPY ./aslr_seccomp.json /app/aslr_seccomp.json
+COPY --from=build /mnt/project/_build/default/cb_worker.exe /app/bin/cb_worker.exe

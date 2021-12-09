@@ -38,9 +38,9 @@ services:
     build:
       context: ..
       dockerfile: ./frontend/Dockerfile
-    environment:
-      VITE_OCAML_BENCH_PIPELINE_URL: ${OCAML_BENCH_PIPELINE_URL?required}
-      VITE_OCAML_BENCH_GRAPHQL_URL: ${OCAML_BENCH_GRAPHQL_URL?required}
+      args:
+        VITE_OCAML_BENCH_PIPELINE_URL: "${OCAML_BENCH_PIPELINE_URL?required}"
+        VITE_OCAML_BENCH_GRAPHQL_URL: "${OCAML_BENCH_GRAPHQL_URL?required}"
     ports:
       - "${OCAML_BENCH_FRONTEND_PORT?required}:${OCAML_BENCH_FRONTEND_PORT?required}"
     restart: always
@@ -57,6 +57,7 @@ services:
       - current-bench-data:/app/current-bench-data:ro
       - pipeline_var:/app/var
       - /var/run/docker.sock:/var/run/docker.sock
+      - ../capnp-secrets:/app/capnp-secrets
     ports:
       [
         "${OCAML_BENCH_PIPELINE_PORT?required}:${OCAML_BENCH_PIPELINE_PORT?required}",
@@ -65,8 +66,6 @@ services:
       - "current-bench-pipeline"
       - "--verbosity=debug"
       - "--port=${OCAML_BENCH_PIPELINE_PORT?required}"
-      - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU}"
-      - "--multicore-repositories=${OCAML_BENCH_MULTICORE_REPOSITORIES?required}"
       - "--conn-info=host=db user=docker port=5432 dbname=docker password=${OCAML_BENCH_DB_PASSWORD?required}"
       - "--github-app-id=${OCAML_BENCH_GITHUB_APP_ID}"
       - "--github-account-allowlist=${OCAML_BENCH_GITHUB_ACCOUNT_ALLOW_LIST?required}"
@@ -76,8 +75,43 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      cluster:
+        condition: service_started
     environment:
       OCAML_BENCH_FRONTEND_URL: ${OCAML_BENCH_FRONTEND_URL?required}
+  cluster:
+    build:
+      context: ../cluster
+    command:
+      - "--capnp-secret-key-file=./capnp-secrets/key.pem"
+      - "--capnp-listen-address=tcp:0.0.0.0:${OCAML_BENCH_CLUSTER_PORT?required}"
+      - "--capnp-public-address=tcp:cluster:${OCAML_BENCH_CLUSTER_PORT?required}"
+      - "--state-dir=/var/lib/ocluster-scheduler"
+      - "--pools=${OCAML_BENCH_CLUSTER_POOLS}"
+      - "--verbose"
+    ports: ["${OCAML_BENCH_CLUSTER_PORT?required}:${OCAML_BENCH_CLUSTER_PORT?required}"]
+    volumes:
+      # Allow access to capnp secrets required by client and workers
+      - ../capnp-secrets:/var/lib/ocluster-scheduler/capnp-secrets
+  worker:
+    build:
+      context: ../worker
+    restart: always
+    command:
+      - "cb_worker.exe"
+      - "--name=development-worker"
+      - "--state-dir=/app/state"
+      - "--ocluster-pool=./capnp-secrets/pool-linux.cap"
+      - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU?required}"
+      - "--multicore-repositories=${OCAML_BENCH_MULTICORE_REPOSITORIES}"
+    volumes:
+      - ../capnp-secrets:/app/capnp-secrets
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      pipeline:
+        condition: service_started
+      cluster:
+        condition: service_started
     cpuset: "${OCAML_BENCH_PLATFORM_CPUSET}"
 
 volumes:

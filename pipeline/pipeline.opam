@@ -21,6 +21,7 @@ depends: [
   "current_web"    {= "dev"}
   "current_incr" {>= "0.5"}
   "current_ansi"
+  "current_ocluster"
   "duration"
   "fpath"
   "logs"
@@ -28,6 +29,7 @@ depends: [
   "postgresql"
   "rresult"
   "omigrate"
+  "ocluster"
   "pcre"
 ]
 pin-depends: [

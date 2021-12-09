@@ -24,6 +24,11 @@ depends: [
   "current_web"    {= "dev"}
   "current_incr" {>= "0.5"}
   "current_ansi"
+  "current_ocluster" {= "dev"}
+  "ocluster-api"     {= "dev"}
+  "ocluster-worker"  {= "dev"}
+  "obuilder"         {= "dev"}
+  "obuilder-spec"    {= "dev"}
   "duration"
   "fpath"
   "logs"
@@ -43,6 +48,11 @@ pin-depends: [
   [ "current_rpc.dev"    "git+https://github.com/ocurrent/ocurrent.git#739c80bfda5290e6b0b854372db60789ac83ec97"]
   [ "current_slack.dev"  "git+https://github.com/ocurrent/ocurrent.git#739c80bfda5290e6b0b854372db60789ac83ec97"]
   [ "current_web.dev"    "git+https://github.com/ocurrent/ocurrent.git#739c80bfda5290e6b0b854372db60789ac83ec97"]
+  [ "current_ocluster.dev" "git+https://github.com/art-w/ocluster.git#f5884b0e8454c29c156cda939416436565206e24" ]
+  [ "ocluster-api.dev"     "git+https://github.com/art-w/ocluster.git#f5884b0e8454c29c156cda939416436565206e24" ]
+  [ "ocluster-worker.dev"  "git+https://github.com/art-w/ocluster.git#f5884b0e8454c29c156cda939416436565206e24" ]
+  [ "obuilder.dev"        "git+https://github.com/ocurrent/obuilder#8ca1207671d9c603885b17f1f909840c0a798a7e" ]
+  [ "obuilder-spec.dev"   "git+https://github.com/ocurrent/obuilder#8ca1207671d9c603885b17f1f909840c0a798a7e" ]
 ]
 
 depexts: [

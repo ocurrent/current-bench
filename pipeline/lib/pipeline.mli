@@ -16,21 +16,8 @@ module Source : sig
   val github_app : Github.App.t -> t
 end
 
-module Docker_config : sig
-  type t
-
-  val v :
-    ?cpu:string list ->
-    ?numa_node:int ->
-    shm_size:int ->
-    multicore_repositories:string list ->
-    unit ->
-    t
-end
-
 val v :
   current_config:Current.Config.t ->
-  docker_config:Docker_config.t ->
   server:Conduit_lwt_unix.server ->
   sources:Source.t list ->
   string ->

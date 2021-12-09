@@ -57,4 +57,6 @@ ENV PATH="/app/bin:${PATH}"
 COPY pipeline/aslr_seccomp.json /app/aslr_seccomp.json
 COPY pipeline/db/migrations /app/db/migrations
 COPY --from=build /home/opam/.opam/4.13/bin/omigrate /app/bin/omigrate
+COPY --from=build /home/opam/.opam/4.13/bin/ocluster-admin /app/bin/ocluster-admin
 COPY --from=build /mnt/project/_build/default/bin/main.exe /app/bin/current-bench-pipeline
+COPY pipeline/entrypoint.sh /app/entrypoint.sh

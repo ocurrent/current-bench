@@ -1,5 +1,6 @@
 local-test-repo/.git
 *.env
 _build
-/environments/cb-dev-test.pem
-/environments/github.secret
+environments/cb-dev-test.pem
+environments/github.secret
+capnp-secrets
