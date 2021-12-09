@@ -37,32 +37,36 @@ let makeGetBenchmarksVariables = (
 module Benchmark = {
   let decodeRunAt = runAt => runAt->Js.Json.decodeString->Belt.Option.map(Js.Date.fromString)
 
-  let yojson_of_result = (result : BenchmarkMetrics.t) => {
+  let yojson_of_result = (result: BenchmarkMetrics.t) => {
     let metrics = DataHelpers.yojson_of_json(result.metrics->Belt.Option.getExn)
-    #Assoc(list{("version", #Int(result.version)),
-                ("results", #List(list{#Assoc(list{("name", #String(result.test_name)),
-                                                   ("metrics", metrics)})}))})
+    #Assoc(list{
+      ("version", #Int(result.version)),
+      (
+        "results",
+        #List(list{#Assoc(list{("name", #String(result.test_name)), ("metrics", metrics)})}),
+      ),
+    })
   }
 
-  let decode = (result : BenchmarkMetrics.t) => {
+  let decode = (result: BenchmarkMetrics.t) => {
     let metrics = yojson_of_result(result)
     let metrics = Current_bench_json.of_json(metrics)
     let run_at = result.run_at->decodeRunAt->Belt.Option.getExn
     (result.commit, run_at, result.test_index, metrics)
   }
 
-  let tryDecode = (result) => {
+  let tryDecode = result => {
     try {
       Some(decode(result))
     } catch {
-      | _ => None
+    | _ => None
     }
   }
 
-  let toLineGraph = (value : Current_bench_json.Latest.value) => {
+  let toLineGraph = (value: Current_bench_json.Latest.value) => {
     switch value {
-      | Float(x) => LineGraph.DataRow.single(x)
-      | Floats(xs) => LineGraph.DataRow.many(Array.of_list(xs))
+    | Float(x) => LineGraph.DataRow.single(x)
+    | Floats(xs) => LineGraph.DataRow.many(Array.of_list(xs))
     }
   }
 
@@ -70,27 +74,27 @@ module Benchmark = {
     benchmarks
     ->Belt.Array.keepMap(tryDecode)
     ->Belt.Array.reduce(BenchmarkData.empty, (acc, (commit, run_at, test_index, item)) => {
-        ->List.fold_left((acc, (result : Current_bench_json.Latest.result) ) => {
-            List.fold_left((acc, (metric : Current_bench_json.Latest.metric)) => {
-              let (value, units) = AdjustMetricUnit.format(metric.value, metric.units)
-              BenchmarkData.add(
-                acc,
-                ~testName=result.test_name,
-                ~testIndex=test_index,
-                ~metricName=metric.name,
-                ~runAt=run_at,
-                ~commit=commit,
-                ~value=toLineGraph(value),
-                ~units=units,
-              )
-            }, acc, result.metrics)
-        }, acc, item.results)
+      List.fold_left((acc, result: Current_bench_json.Latest.result) => {
+        List.fold_left((acc, metric: Current_bench_json.Latest.metric) => {
+          BenchmarkData.add(
+            acc,
+            ~testName=result.test_name,
+            ~testIndex=test_index,
+            ~metricName=metric.name,
+            ~runAt=run_at,
+            ~commit,
+            ~value=toLineGraph(metric.value),
+            ~units=metric.units,
+          )
+        }, acc, result.metrics)
+      }, acc, item.results)
     })
   }
+
   @react.component
   let make = React.memo((~repoId, ~pullNumber, ~data: GetBenchmarks.t, ~oldMetrics=false) => {
     let benchmarkDataByTestName = React.useMemo2(() => {
-      data.benchmarks->makeBenchmarkData
+      data.benchmarks->makeBenchmarkData->AdjustMetricUnit.adjust
     }, (data.benchmarks, makeBenchmarkData))
     let comparisonBenchmarkDataByTestName = React.useMemo2(
       () => data.comparisonBenchmarks->Belt.Array.reverse->makeBenchmarkData,
