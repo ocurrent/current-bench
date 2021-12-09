@@ -147,10 +147,12 @@ module Legend = {
     yHTML: string,
     dashHTML: string,
   }
+  type dygraph = {rawData_: array<DataRow.value>}
   type many = {
     xHTML: string,
     series: array<t>,
     x: int,
+    dygraph: dygraph,
   }
   let format = (~xTicks=?, data: many): string => {
     let xLabel = switch xTicks {
@@ -172,7 +174,18 @@ module Legend = {
         | "mean" => "<b>Overall Stats</b>"
         | _ => ""
         }
-        extraHeader ++ row(unit.dashHTML, unit.labelHTML, unit.yHTML)
+        // We check if the data point was originally a multi-value data point,
+        // by testing if min and max are not Js.null. DataRow.single sets these
+        // to null, while they are set to non-null by DataRow.many
+        let (min, _, max) = Obj.magic(data.dygraph.rawData_[data.x])[idx + 1] // rawData_ also has x-index, so idx+1
+        let multiValue = !(min == Js.null || max == Js.null)
+        let extraHTML = switch multiValue {
+        | true if unit.label != "mean" =>
+          row(unit.dashHTML, "min", min->Js.Float.toPrecisionWithPrecision(~digits=4)) ++
+          row(unit.dashHTML, "max", max->Js.Float.toPrecisionWithPrecision(~digits=4))
+        | _ => ""
+        }
+        extraHeader ++ row(unit.dashHTML, unit.labelHTML, unit.yHTML) ++ extraHTML
       }, data.series)
       let legend = Array.fold_left((a, b) => a ++ b, "", legend)
       `<div class="dygraph-legend-formatter">${html}${legend}</div>`
