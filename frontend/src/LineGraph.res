@@ -158,11 +158,11 @@ module Legend = {
     }
     switch xLabel {
     | Some(xLabel) =>
-      let html = "<b>" ++ (xLabel ++ "</b>")
+      let html = "<b>" ++ xLabel ++ "</b>"
       let legend = Array.map((unit: t) => {
         "<div class='dygraph-legend-row'>" ++
         (unit.dashHTML ++
-        ("<div>" ++ (" <b>" ++ (unit.yHTML ++ ("</b>" ++ ("</div>" ++ "</div>"))))))
+        ("<div>" ++ " <b>" ++ unit.yHTML ++ "</b>" ++ "</div>" ++ "</div>"))
       }, data.series)
       let legend = Array.fold_left((a, b) => a ++ b, "", legend)
       `<div class="dygraph-legend-formatter">${html}${legend}</div>`
