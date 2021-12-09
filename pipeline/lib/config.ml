@@ -3,7 +3,7 @@ module Images = Map.Make (String)
 
 type repo = {
   name : string;
-  worker : string; [@default "linux"]
+  worker : string; [@default "autumn"]
   image : string; [@default "ocaml/opam"]
 }
 [@@deriving yojson]

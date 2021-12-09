@@ -121,7 +121,7 @@ services:
       - "cb_worker.exe"
       - "--name=development-worker"
       - "--state-dir=/app/state"
-      - "--ocluster-pool=./capnp-secrets/pool-linux.cap"
+      - "--ocluster-pool=./capnp-secrets/pool-autumn.cap"
       - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU?required}"
     volumes:
       - ../capnp-secrets:/app/capnp-secrets
