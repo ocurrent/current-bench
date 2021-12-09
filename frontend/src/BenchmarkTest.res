@@ -1,12 +1,6 @@
 open! Prelude
 open Components
 
-type testMetrics = {
-  name: string,
-  commit: string,
-  metrics: array<LineGraph.DataRow.metric>,
-}
-
 @module("../icons/branch.svg") external branchIcon: string = "default"
 
 let calcDelta = (a, b) => {
