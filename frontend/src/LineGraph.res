@@ -79,12 +79,6 @@ module DataRow = {
     Obj.magic(row[0])
   }
 
-  let nan = (~index): t => [
-    Obj.magic(index),
-    Obj.magic([Obj.magic(Js.null), nan, Obj.magic(Js.null)]),
-  ]
-
-  // Similar to nan, but with for two series.
   let nan2 = (~index): t => [
     Obj.magic(index),
     Obj.magic([Obj.magic(Js.null), nan, Obj.magic(Js.null)]),
