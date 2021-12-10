@@ -21,7 +21,7 @@ let deltaToString = n =>
   }
 
 let renderMetricOverviewRow = (
-  ~comparison as (comparisonTimeseries: array<LineGraph.DataRow.t>, _comparisonMetadata)=([], []),
+  ~comparison as (comparisonTimeseries: array<LineGraph.DataRow.row>, _comparisonMetadata)=([], []),
   ~testName,
   ~metricName,
   (timeseries, _),
@@ -77,7 +77,7 @@ let make = (
   ~pullNumber,
   ~testName,
   ~comparison=Belt.Map.String.empty,
-  ~dataByMetricName: Belt.Map.String.t<(array<LineGraph.DataRow.t>, 'a)>,
+  ~dataByMetricName: Belt.Map.String.t<(array<LineGraph.DataRow.row>, 'a)>,
 ) => {
   let metric_table = {
     <Table sx=[Sx.mb.xl2]>
@@ -118,7 +118,7 @@ let make = (
         ([], []),
       )
 
-      let timeseries: array<LineGraph.DataRow.t> = Belt.Array.concat(
+      let timeseries: array<LineGraph.DataRow.row> = Belt.Array.concat(
         comparisonTimeseries,
         timeseries,
       )

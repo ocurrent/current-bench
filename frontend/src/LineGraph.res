@@ -50,42 +50,40 @@ let computeStats = xs => {
 module DataRow = {
   type name = string
   type units = string
-  type value
+  type value = float
   type metric = {name: name, value: value, units: units}
   type t = array<value>
+  type row = array<t>
 
   external makeFloat: 'a => float = "%identity"
   let floatNull = makeFloat(Js.null)
 
-  let single = (x: float): value => Obj.magic([floatNull, x, floatNull])
+  let single = (x: float): t => [floatNull, x, floatNull]
 
-  let many = (xs: array<float>): value => {
+  let many = (xs: array<float>): t => {
     switch computeStats(xs) {
-    | Some((min, max, avg)) => Obj.magic([min, avg, max])
-    | None => Obj.magic([floatNull, nan, floatNull])
+    | Some((min, max, avg)) => [min, avg, max]
+    | None => [floatNull, nan, floatNull]
     }
   }
 
-  let valueWithErrorBars = (~mid, ~low, ~high): value => {
-    Obj.magic([Obj.magic(low), Obj.magic(mid), Obj.magic(high)])
-  }
+  let valueWithErrorBars = (~mid, ~low, ~high): t => [low, mid, high]
 
-  let set_index = (index: int, row: t): unit => {
-    let index: value = Obj.magic(index)
-    Belt.Array.set(row, 0, index)->ignore
+  let set_index = (index: int, row: row): unit => {
+    Belt.Array.set(row, 0, Obj.magic(index))->ignore
   }
 
   let unsafe_get_index = (row): int => {
     Obj.magic(row[0])
   }
 
-  let nan2 = (~index): t => [
+  let nan2 = (~index): row => [
     Obj.magic(index),
-    Obj.magic([floatNull, nan, floatNull]),
-    Obj.magic([floatNull, nan, floatNull]),
+    [floatNull, nan, floatNull],
+    [floatNull, nan, floatNull],
   ]
 
-  let toFloat = (row: t): float => {
+  let toFloat = (row: row): float => {
     let value = row[1]
     if Js.Array.isArray(value) {
       let values: array<float> = Obj.magic(value)
@@ -96,13 +94,13 @@ module DataRow = {
     }
   }
 
-  let add_value = (row: t, value: value): t => {
+  let add_value = (row: row, value: t): row => {
     row->BeltHelpers.Array.add(value)
   }
 }
 
 @new @module("dygraphs")
-external init: ('element, array<DataRow.t>, 'options) => graph = "default"
+external init: ('element, array<DataRow.row>, 'options) => graph = "default"
 
 @send
 external ready: (graph, unit => unit) => unit = "ready"
@@ -143,7 +141,7 @@ module Legend = {
     yHTML: string,
     dashHTML: string,
   }
-  type dygraph = {rawData_: array<DataRow.value>}
+  type dygraph = {rawData_: array<DataRow.row>}
   type many = {
     xHTML: string,
     series: array<t>,
@@ -173,7 +171,11 @@ module Legend = {
         // We check if the data point was originally a multi-value data point,
         // by testing if min and max are not Js.null. DataRow.single sets these
         // to null, while they are set to non-null by DataRow.many
-        let (min, _, max) = Obj.magic(data.dygraph.rawData_[data.x])[idx + 1] // rawData_ also has x-index, so idx+1
+        let rawRow = data.dygraph.rawData_[data.x][idx + 1] // rawData_ also has x-index, so idx+1
+        let (min, max) = switch Array.length(rawRow) {
+        | 3 => (rawRow[0], rawRow[2])
+        | _ => (DataRow.floatNull, DataRow.floatNull)
+        }
         let multiValue = !(min == DataRow.floatNull || max == DataRow.floatNull)
         let extraHTML = switch multiValue {
         | true if unit.label != "mean" =>
@@ -196,7 +198,7 @@ let convertTicks = (ticks: Belt.Map.Int.t<string>) => {
   ->Belt.Map.Int.valuesToArray
 }
 
-let addSeries = (data: array<DataRow.t>, series: array<DataRow.value>) => {
+let addSeries = (data: array<DataRow.row>, series: DataRow.row) => {
   assert (Array.length(data) == Array.length(series))
   data->Belt.Array.mapWithIndex((i, row) => DataRow.add_value(row, series[i]))
 }
