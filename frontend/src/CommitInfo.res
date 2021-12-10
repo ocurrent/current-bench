@@ -138,6 +138,10 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~setOldMetrics
     | None => true
     | Some(benchmark) => benchmark.commit != lastCommitInfo.commit
     }
+    let sameBuildJobLog = switch (lastCommitInfo.build_job_id, lastCommitInfo.run_job_id) {
+    | (Some(buildID), Some(jobID)) => buildID == jobID
+    | (_, _) => false
+    }
     showingOldMetrics(noCommitMetrics)
     let status = buildStatus(lastCommitInfo, noCommitMetrics)
     <>
@@ -155,14 +159,18 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~setOldMetrics
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Last Commit" </Text>
           {renderCommitLink(repoId, lastCommitInfo.commit)}
         </Column>
-        <Column spacing=Sx.sm>
-          <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Build logs" </Text>
-          {switch lastCommitInfo.build_job_id {
-          | Some(jobId) => renderJobIdLink(jobId)
-          | None =>
-            <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray700)]> "No data" </Text>
-          }}
-        </Column>
+        {switch sameBuildJobLog {
+        | false =>
+          <Column spacing=Sx.sm>
+            <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Build logs" </Text>
+            {switch lastCommitInfo.build_job_id {
+            | Some(jobId) => renderJobIdLink(jobId)
+            | None =>
+              <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray700)]> "No data" </Text>
+            }}
+          </Column>
+        | true => Rx.null
+        }}
         <Column spacing=Sx.sm>
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Execution logs" </Text>
           {switch lastCommitInfo.run_job_id {
