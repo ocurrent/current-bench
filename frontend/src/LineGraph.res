@@ -51,7 +51,7 @@ module DataRow = {
   type name = string
   type units = string
   type value
-  type metric = {name, value, units}
+  type metric = {name: name, value: value, units: units}
   type t = array<value>
 
   let single = (x: float): value =>
@@ -453,7 +453,7 @@ let make = React.memo((
           Js.Float.toPrecisionWithPrecision(~digits=4, DataRow.toFloat(value))
         )}
       </Text>
-      <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray500)]>units</Text>
+      <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray500)]> units </Text>
     </Row>
 
   let sx = Array.append(uSx, containerSx)
