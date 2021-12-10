@@ -54,13 +54,15 @@ module DataRow = {
   type metric = {name: name, value: value, units: units}
   type t = array<value>
 
-  let single = (x: float): value =>
-    Obj.magic([Obj.magic(Js.null), Obj.magic(x), Obj.magic(Js.null)])
+  external makeFloat: 'a => float = "%identity"
+  let floatNull = makeFloat(Js.null)
+
+  let single = (x: float): value => Obj.magic([floatNull, x, floatNull])
 
   let many = (xs: array<float>): value => {
     switch computeStats(xs) {
     | Some((min, max, avg)) => Obj.magic([min, avg, max])
-    | None => Obj.magic([Obj.magic(Js.null), nan, Obj.magic(Js.null)])
+    | None => Obj.magic([floatNull, nan, floatNull])
     }
   }
 
@@ -79,8 +81,8 @@ module DataRow = {
 
   let nan2 = (~index): t => [
     Obj.magic(index),
-    Obj.magic([Obj.magic(Js.null), nan, Obj.magic(Js.null)]),
-    Obj.magic([Obj.magic(Js.null), nan, Obj.magic(Js.null)]),
+    Obj.magic([floatNull, nan, floatNull]),
+    Obj.magic([floatNull, nan, floatNull]),
   ]
 
   let toFloat = (row: t): float => {
@@ -172,7 +174,7 @@ module Legend = {
         // by testing if min and max are not Js.null. DataRow.single sets these
         // to null, while they are set to non-null by DataRow.many
         let (min, _, max) = Obj.magic(data.dygraph.rawData_[data.x])[idx + 1] // rawData_ also has x-index, so idx+1
-        let multiValue = !(min == Js.null || max == Js.null)
+        let multiValue = !(min == DataRow.floatNull || max == DataRow.floatNull)
         let extraHTML = switch multiValue {
         | true if unit.label != "mean" =>
           row(unit.dashHTML, "min", min->Js.Float.toPrecisionWithPrecision(~digits=4)) ++

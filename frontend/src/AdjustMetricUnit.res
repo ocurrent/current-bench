@@ -45,7 +45,7 @@ let adjustSize = (timeseries: BenchmarkData.timeseries, units: LineGraph.DataRow
   let adjustedTimeseries = Belt.Array.map(timeseries, valueWithTime => {
     let (time, value) = Obj.magic(valueWithTime)
     let adjustedValues = Belt.Array.map(value, v =>
-      Obj.magic(v) == Js.null ? v : changeSizeUnits(v, units, newUnits)
+      v == LineGraph.DataRow.floatNull ? v : changeSizeUnits(v, units, newUnits)
     )
     Obj.magic([time, adjustedValues])
   })
