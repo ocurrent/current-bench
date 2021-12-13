@@ -31,8 +31,7 @@ let add = (
   let (timeseries, metadata) = Map.String.getWithDefault(byMetricName, metricName, ([], []))
 
   // Update
-  let row = LineGraph.DataRow.with_date(runAt, value)
-  let timeseries = BeltHelpers.Array.add(timeseries, row)
+  let timeseries = BeltHelpers.Array.add(timeseries, [Obj.magic(Belt.Array.length(timeseries)), value])
   let metadata = BeltHelpers.Array.add(
     metadata,
     {"commit": commit, "runAt": runAt, "units": units, "description": description},

@@ -68,8 +68,6 @@ module DataRow = {
     Obj.magic([Obj.magic(low), Obj.magic(mid), Obj.magic(high)])
   }
 
-  let with_date = (date: Js.Date.t, value): t => [Obj.magic(date), value]
-
   let set_index = (index: int, row: t): unit => {
     let index: value = Obj.magic(index)
     Belt.Array.set(row, 0, index)->ignore
