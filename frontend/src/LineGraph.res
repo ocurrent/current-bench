@@ -72,7 +72,7 @@ module DataRow = {
 
   let dummyValue = [floatNull, nan, floatNull]
 
-  let toFloat = (row: t): float => row[1]
+  let toValue = (row: t): value => row[1]
 }
 
 @new @module("dygraphs")
@@ -300,7 +300,7 @@ let make = React.memo((
 
   // Add constant stdDev series.
   let constantSeries = {
-    let values = data->Belt.Array.map(DataRow.toFloat)
+    let values = data->Belt.Array.map(DataRow.toValue)
     let mean = values->computeMean->Belt.Option.getWithDefault(0.0)
     let stdDev = computeStdDev(~mean, values)
     DataRow.valueWithErrorBars(~mid=mean, ~low=mean -. stdDev, ~high=mean +. stdDev)
@@ -407,7 +407,7 @@ let make = React.memo((
   let right =
     <Row alignX=#right spacing=Sx.md sx=[Sx.w.auto]>
       <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray900)]>
-        {lastValue->DataRow.toFloat->Js.Float.toPrecisionWithPrecision(~digits=4)}
+        {lastValue->DataRow.toValue->Js.Float.toPrecisionWithPrecision(~digits=4)}
       </Text>
       <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray500)]> units </Text>
     </Row>
