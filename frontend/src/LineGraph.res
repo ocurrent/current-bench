@@ -142,14 +142,17 @@ let getElementHTMLonClick: (Dom.element, string => unit) => unit = %raw(`
 
 module Legend = {
   type t = {
+    label: string,
     labelHTML: string,
     yHTML: string,
     dashHTML: string,
   }
+  type dygraph = {rawData_: array<DataRow.value>}
   type many = {
     xHTML: string,
     series: array<t>,
     x: int,
+    dygraph: dygraph,
   }
   let format = (~xTicks=?, data: many): string => {
     let xLabel = switch xTicks {
@@ -158,11 +161,31 @@ module Legend = {
     }
     switch xLabel {
     | Some(xLabel) =>
-      let html = "<b>" ++ (xLabel ++ "</b>")
-      let legend = Array.map((unit: t) => {
+      let html = "<b>" ++ xLabel ++ "</b>"
+      let row = (dashHTML, labelHTML, yHTML) => {
         "<div class='dygraph-legend-row'>" ++
-        (unit.dashHTML ++
-        ("<div>" ++ (" <b>" ++ (unit.yHTML ++ ("</b>" ++ ("</div>" ++ "</div>"))))))
+        (dashHTML ++
+        ("<div>" ++ labelHTML ++ "&ndash; </div>") ++
+        ("<div>" ++ " <b>" ++ yHTML ++ "</b>" ++ "</div>" ++ "</div>"))
+      }
+      let legend = Array.mapi((idx, unit: t) => {
+        // Add extra header for overall stats
+        let extraHeader = switch unit.label {
+        | "mean" => "<b>Overall Stats</b>"
+        | _ => ""
+        }
+        // We check if the data point was originally a multi-value data point,
+        // by testing if min and max are not Js.null. DataRow.single sets these
+        // to null, while they are set to non-null by DataRow.many
+        let (min, _, max) = Obj.magic(data.dygraph.rawData_[data.x])[idx + 1] // rawData_ also has x-index, so idx+1
+        let multiValue = !(min == Js.null || max == Js.null)
+        let extraHTML = switch multiValue {
+        | true if unit.label != "mean" =>
+          row(unit.dashHTML, "min", min->Js.Float.toPrecisionWithPrecision(~digits=4)) ++
+          row(unit.dashHTML, "max", max->Js.Float.toPrecisionWithPrecision(~digits=4))
+        | _ => ""
+        }
+        extraHeader ++ row(unit.dashHTML, unit.labelHTML, unit.yHTML) ++ extraHTML
       }, data.series)
       let legend = Array.fold_left((a, b) => a ++ b, "", legend)
       `<div class="dygraph-legend-formatter">${html}${legend}</div>`
@@ -211,7 +234,7 @@ let defaultOptions = (
       },
     },
     "series": {
-      "std-dev": {
+      "mean": {
         "strokeWidth": 1.0,
         "strokePattern": [3, 2],
         "highlightCircleSize": 0,
@@ -318,7 +341,7 @@ let make = React.memo((
   }
   let data = addSeries(data, constantSeries)
   let labels = labels->Belt.Option.map(labels => {
-    labels->BeltHelpers.Array.add("std-dev")
+    labels->BeltHelpers.Array.add("mean")
   })
 
   // Dygraph does not display the last tick, so a dummy value
