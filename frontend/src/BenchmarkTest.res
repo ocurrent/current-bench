@@ -31,8 +31,8 @@ let renderMetricOverviewRow = (
   } else {
     let last_value = BeltHelpers.Array.lastExn(timeseries)->LineGraph.DataRow.toFloat
     let (vsMasterAbs, vsMasterRel) = switch BeltHelpers.Array.last(comparisonTimeseries) {
-    | Some(lastComparisionRow) =>
-      let lastComparisonY = lastComparisionRow->LineGraph.DataRow.toFloat
+    | Some(lastComparisonRow) =>
+      let lastComparisonY = lastComparisonRow->LineGraph.DataRow.toFloat
       (
         Js.Float.toPrecisionWithPrecision(~digits=6)(lastComparisonY),
         calcDelta(last_value, lastComparisonY)->deltaToString,
@@ -63,8 +63,8 @@ let getMetricDelta = (
     let last_value = BeltHelpers.Array.lastExn(timeseries)->LineGraph.DataRow.toFloat
 
     switch BeltHelpers.Array.last(comparisonTimeseries) {
-    | Some(lastComparisionRow) =>
-      let lastComparisonY = lastComparisionRow->LineGraph.DataRow.toFloat
+    | Some(lastComparisonRow) =>
+      let lastComparisonY = lastComparisonRow->LineGraph.DataRow.toFloat
       Some(calcDelta(last_value, lastComparisonY))
     | _ => None
     }
