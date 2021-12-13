@@ -52,7 +52,8 @@ module DataRow = {
   type units = string
   type value = float
   type metric = {name: name, value: value, units: units}
-  type t = array<value>
+  type t = array<value> // Currently array of length 3: [min, value, max]
+  // The type of each row in the data supplied to Dygraph: [index, dataArray, statsArray]
   type row = array<t>
 
   external makeFloat: 'a => float = "%identity"
@@ -69,34 +70,9 @@ module DataRow = {
 
   let valueWithErrorBars = (~mid, ~low, ~high): t => [low, mid, high]
 
-  let set_index = (index: int, row: row): unit => {
-    Belt.Array.set(row, 0, Obj.magic(index))->ignore
-  }
+  let dummyValue = [floatNull, nan, floatNull]
 
-  let unsafe_get_index = (row): int => {
-    Obj.magic(row[0])
-  }
-
-  let nan2 = (~index): row => [
-    Obj.magic(index),
-    [floatNull, nan, floatNull],
-    [floatNull, nan, floatNull],
-  ]
-
-  let toFloat = (row: row): float => {
-    let value = row[1]
-    if Js.Array.isArray(value) {
-      let values: array<float> = Obj.magic(value)
-      values[1]
-    } else {
-      let value: float = Obj.magic(value)
-      value
-    }
-  }
-
-  let add_value = (row: row, value: t): row => {
-    row->BeltHelpers.Array.add(value)
-  }
+  let toFloat = (row: t): float => row[1]
 }
 
 @new @module("dygraphs")
@@ -196,11 +172,6 @@ let convertTicks = (ticks: Belt.Map.Int.t<string>) => {
   ticks
   ->Belt.Map.Int.mapWithKey((idx, label) => {"v": idx, "label": label})
   ->Belt.Map.Int.valuesToArray
-}
-
-let addSeries = (data: array<DataRow.row>, series: DataRow.row) => {
-  assert (Array.length(data) == Array.length(series))
-  data->Belt.Array.mapWithIndex((i, row) => DataRow.add_value(row, series[i]))
 }
 
 let defaultOptions = (
@@ -332,25 +303,18 @@ let make = React.memo((
     let values = data->Belt.Array.map(DataRow.toFloat)
     let mean = values->computeMean->Belt.Option.getWithDefault(0.0)
     let stdDev = computeStdDev(~mean, values)
-    Array.make(
-      Array.length(data),
-      DataRow.valueWithErrorBars(~mid=mean, ~low=mean -. stdDev, ~high=mean +. stdDev),
-    )
+    DataRow.valueWithErrorBars(~mid=mean, ~low=mean -. stdDev, ~high=mean +. stdDev)
   }
-  let data = addSeries(data, constantSeries)
   let labels = labels->Belt.Option.map(labels => {
     labels->BeltHelpers.Array.add("mean")
   })
 
-  // Dygraph does not display the last tick, so a dummy value
-  // is added a the end of the data to overcome this.
-  // See: https://github.com/danvk/dygraphs/issues/506
-  let lastRow = data->BeltHelpers.Array.last
-  let data = switch lastRow {
-  | Some(lastRow) =>
-    let lastIndex = DataRow.unsafe_get_index(lastRow)
-    data->BeltHelpers.Array.add(DataRow.nan2(~index=lastIndex + 1))
-  | None => data
+  let makeDygraphData = (data: array<DataRow.t>) => {
+    // Dygraph does not display the last tick, so a dummy value
+    // is added a the end of the data to overcome this.
+    // See: https://github.com/danvk/dygraphs/issues/506
+    let data = Belt.Array.concat(data, [DataRow.dummyValue])
+    Belt.Array.mapWithIndex(data, (idx, d) => [Obj.magic(idx), d, constantSeries])
   }
 
   React.useEffect1(() => {
@@ -367,7 +331,7 @@ let make = React.memo((
     | Some(ref) =>
       switch (graphRef.current, isIntersecting) {
       | (None, true) => {
-          let graph = init(ref, data, options)
+          let graph = init(ref, makeDygraphData(data), options)
           graphRef.current = Some(graph)
 
           if Array.length(annotations) > 0 {
@@ -408,7 +372,7 @@ let make = React.memo((
           ~yLabel?,
           ~labels?,
           ~xTicks?,
-          ~data,
+          ~data=makeDygraphData(data),
           ~legendFormatter=Legend.format(~xTicks?),
           (),
         )
@@ -427,9 +391,7 @@ let make = React.memo((
     None
   }, (data, annotations))
 
-  let lastValue = data
-  // take into account the dummy value added at the end of the data (to show the last tick)
-  ->Belt.Array.get(Belt.Array.length(data) - 2)
+  let lastValue = data->Belt.Array.getExn(Belt.Array.length(data) - 1)
 
   let left = switch title {
   | Some(title) =>
@@ -445,9 +407,7 @@ let make = React.memo((
   let right =
     <Row alignX=#right spacing=Sx.md sx=[Sx.w.auto]>
       <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray900)]>
-        {lastValue->Belt.Option.mapWithDefault("", value =>
-          Js.Float.toPrecisionWithPrecision(~digits=4, DataRow.toFloat(value))
-        )}
+        {lastValue->DataRow.toFloat->Js.Float.toPrecisionWithPrecision(~digits=4)}
       </Text>
       <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray500)]> units </Text>
     </Row>
