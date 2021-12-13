@@ -21,7 +21,7 @@ let deltaToString = n =>
   }
 
 let renderMetricOverviewRow = (
-  ~comparison as (comparisonTimeseries: array<LineGraph.DataRow.row>, _comparisonMetadata)=([], []),
+  ~comparison as (comparisonTimeseries: array<LineGraph.DataRow.t>, _comparisonMetadata)=([], []),
   ~testName,
   ~metricName,
   (timeseries, _),
@@ -77,7 +77,7 @@ let make = (
   ~pullNumber,
   ~testName,
   ~comparison=Belt.Map.String.empty,
-  ~dataByMetricName: Belt.Map.String.t<(array<LineGraph.DataRow.row>, 'a)>,
+  ~dataByMetricName: Belt.Map.String.t<(array<LineGraph.DataRow.t>, 'a)>,
 ) => {
   let metric_table = {
     <Table sx=[Sx.mb.xl2]>
@@ -118,15 +118,13 @@ let make = (
         ([], []),
       )
 
-      let timeseries: array<LineGraph.DataRow.row> = Belt.Array.concat(
+      let timeseries: array<LineGraph.DataRow.t> = Belt.Array.concat(
         comparisonTimeseries,
         timeseries,
       )
       let metadata = Belt.Array.concat(comparisonMetadata, metadata)
 
-      let xTicks = Belt.Array.reduceWithIndex(timeseries, Belt.Map.Int.empty, (acc, row, index) => {
-        // Use indexed instead of dates. This allows us to map to commits.
-        LineGraph.DataRow.set_index(index, row)
+      let xTicks = Belt.Array.reduceWithIndex(timeseries, Belt.Map.Int.empty, (acc, _, index) => {
         let tick = switch Belt.Array.get(metadata, index) {
         | Some(xMetadata) =>
           let xValue = xMetadata["commit"]

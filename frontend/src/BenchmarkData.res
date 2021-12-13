@@ -1,6 +1,6 @@
 open Belt
 
-type timeseries = array<LineGraph.DataRow.row>
+type timeseries = array<LineGraph.DataRow.t>
 type byMetricName = Map.String.t<(
   timeseries,
   array<{
@@ -31,10 +31,7 @@ let add = (
   let (timeseries, metadata) = Map.String.getWithDefault(byMetricName, metricName, ([], []))
 
   // Update
-  let timeseries = BeltHelpers.Array.add(
-    timeseries,
-    [Obj.magic(Belt.Array.length(timeseries)), value],
-  )
+  let timeseries = BeltHelpers.Array.add(timeseries, value)
   let metadata = BeltHelpers.Array.add(
     metadata,
     {"commit": commit, "runAt": runAt, "units": units, "description": description},
