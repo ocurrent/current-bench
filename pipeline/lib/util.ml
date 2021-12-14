@@ -17,3 +17,10 @@ let stale_timestamp () =
   let min = curr_gmt.tm_min in
   let sec = curr_gmt.tm_sec in
   Format.sprintf "%04d-%02d-%02dT%02d:%02d:%02dZ" year month day hour min sec
+
+let stream_to_list stream =
+  let acc = ref [] in
+  Stream.iter (fun x -> acc := x :: !acc) stream;
+  List.rev !acc
+
+let parse_jsons string = stream_to_list (Yojson.Safe.stream_from_string string)
