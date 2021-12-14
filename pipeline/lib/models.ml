@@ -131,15 +131,14 @@ module Benchmark = struct
     let insert ~conninfo self = Db_util.with_db ~conninfo (insert self)
 
     let exists_query ~repository =
-      let repo_id = Repository.info repository
-      and commit = Repository.commit_hash repository in
+      let repo_id = Db_util.string @@ Repository.info repository
+      and commit = Db_util.string @@ Repository.commit_hash repository in
       (* NOTE: We check if an entry exists in the benchmarks table, and not the
          benchmarks_metadata table since we want to re-run the benchmarks if
          the failure occurred due to a current-bench pipeline related error
          like DB write error, running out of space, incorrectly solving opam
          dependencies, etc. *)
-      Fmt.str
-        "SELECT COUNT(*) FROM benchmarks WHERE repo_id='%s' AND commit='%s'"
+      Fmt.str "SELECT COUNT(*) FROM benchmarks WHERE repo_id=%s AND commit=%s"
         repo_id commit
 
     let exists repository (db : Postgresql.connection) =
