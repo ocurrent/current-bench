@@ -1,14 +1,14 @@
 let setup_metadata ~repository ~worker ~docker_image
     (db : Postgresql.connection) =
   Logs.debug (fun log -> log "Inserting metada....");
-  let run_at = Sql_util.time (Ptime_clock.now ()) in
-  let repo_id = Sql_util.string (Repository.info repository) in
-  let commit = Sql_util.string (Repository.commit_hash repository) in
-  let branch = Sql_util.(option string) (Repository.branch repository) in
-  let pull_number = Sql_util.(option int) (Repository.pull_number repository) in
-  let title = Sql_util.(option string) (Repository.title repository) in
-  let worker = Sql_util.string worker in
-  let docker_image = Sql_util.string docker_image in
+  let run_at = Db_util.time (Ptime_clock.now ()) in
+  let repo_id = Db_util.string (Repository.info repository) in
+  let commit = Db_util.string (Repository.commit_hash repository) in
+  let branch = Db_util.(option string) (Repository.branch repository) in
+  let pull_number = Db_util.(option int) (Repository.pull_number repository) in
+  let title = Db_util.(option string) (Repository.title repository) in
+  let worker = Db_util.string worker in
+  let docker_image = Db_util.string docker_image in
   let query =
     (*
       When setting up metadata, we are only insert the details that we know at th
@@ -56,8 +56,8 @@ let setup_metadata ~repository ~conninfo ~worker ~docker_image =
 
 let record_stage_start ~stage ~job_id ~serial_id (db : Postgresql.connection) =
   Logs.debug (fun log -> log "Recording build start...");
-  let job_id = Sql_util.string job_id in
-  let serial_id = Sql_util.int serial_id in
+  let job_id = Db_util.string job_id in
+  let serial_id = Db_util.int serial_id in
   let query =
     Fmt.str
       {|UPDATE benchmark_metadata
@@ -81,7 +81,7 @@ let record_stage_start ~stage ~job_id ~serial_id ~conninfo =
 let record_stage_failure ~stage ~serial_id ~reason (db : Postgresql.connection)
     =
   Logs.debug (fun log -> log "Recording stage failure...");
-  let serial_id = Sql_util.int serial_id in
+  let serial_id = Db_util.int serial_id in
   let query =
     Fmt.str
       {|UPDATE benchmark_metadata
@@ -106,7 +106,7 @@ let record_stage_failure ~stage ~serial_id ~reason ~conninfo =
 
 let record_cancel ~stage ~serial_id ~reason (db : Postgresql.connection) =
   Logs.debug (fun log -> log "Recording stage cancel...");
-  let serial_id = Sql_util.int serial_id in
+  let serial_id = Db_util.int serial_id in
   let query =
     Fmt.str
       {|UPDATE benchmark_metadata

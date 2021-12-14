@@ -92,31 +92,28 @@ module Benchmark = struct
 
   module Db = struct
     let insert_query self =
-      let version = Sql_util.int self.version in
-      let run_at = Sql_util.time self.run_at in
-      let duration = Sql_util.span self.duration in
+      let version = Db_util.int self.version in
+      let run_at = Db_util.time self.run_at in
+      let duration = Db_util.span self.duration in
       let repository =
-        Sql_util.string (fst self.repo_id ^ "/" ^ snd self.repo_id)
+        Db_util.string (fst self.repo_id ^ "/" ^ snd self.repo_id)
       in
-      let commit = Sql_util.string self.commit in
-      let branch = Sql_util.(option string) self.branch in
-      let pull_number = Sql_util.(option int) self.pull_number in
-      let build_job_id = Sql_util.(option string) self.build_job_id in
-      let run_job_id = Sql_util.(option string) self.run_job_id in
-      let benchmark_name = Sql_util.(option string) self.benchmark_name in
-      let test_name = Sql_util.(string) self.test_name in
-      let test_index = Sql_util.(int) self.test_index in
-      let metrics = Sql_util.json self.metrics in
-      let worker = Sql_util.string self.worker in
-      let docker_image = Sql_util.string self.docker_image in
+      let commit = Db_util.string self.commit in
+      let branch = Db_util.(option string) self.branch in
+      let pull_number = Db_util.(option int) self.pull_number in
+      let build_job_id = Db_util.(option string) self.build_job_id in
+      let run_job_id = Db_util.(option string) self.run_job_id in
+      let benchmark_name = Db_util.(option string) self.benchmark_name in
+      let test_name = Db_util.(string) self.test_name in
+      let test_index = Db_util.(int) self.test_index in
+      let metrics = Db_util.json self.metrics in
+      let worker = Db_util.string self.worker in
+      let docker_image = Db_util.string self.docker_image in
       Fmt.str
-        {|
-INSERT INTO
-  benchmarks(version, run_at, duration, repo_id, commit, branch, pull_number, build_job_id, run_job_id, worker, docker_image, benchmark_name, test_name,  test_index, metrics)
-VALUES
-  (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-  ON CONFLICT (commit, test_name, run_job_id) DO NOTHING
-|}
+        {|INSERT INTO benchmarks(version, run_at, duration, repo_id, commit, branch, pull_number, build_job_id, run_job_id, worker, docker_image, benchmark_name, test_name,  test_index, metrics)
+          VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+          ON CONFLICT (commit, test_name, run_job_id) DO NOTHING
+        |}
         version run_at duration repository commit branch pull_number
         build_job_id run_job_id worker docker_image benchmark_name test_name
         test_index metrics
