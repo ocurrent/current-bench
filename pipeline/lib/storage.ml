@@ -1,7 +1,3 @@
-let with_db ~conninfo fn =
-  let db = new Postgresql.connection ~conninfo () in
-  Fun.protect ~finally:(fun () -> db#finish) (fun () -> fn db)
-
 let setup_metadata ~repository ~worker ~docker_image
     (db : Postgresql.connection) =
   Logs.debug (fun log -> log "Inserting metada....");
@@ -21,15 +17,18 @@ let setup_metadata ~repository ~worker ~docker_image
       and the run_job_id.
     *)
     Fmt.str
-      {|
-    INSERT INTO
-    benchmark_metadata(run_at, repo_id, commit, branch, pull_number, pr_title, worker, docker_image)
-    VALUES
-    (%s, %s, %s, %s, %s, %s, %s, %s)
-    ON CONFLICT(repo_id, commit, worker, docker_image)
-    DO UPDATE set build_job_id=NULL, run_job_id=NULL, failed=false, cancelled=false, reason=''
-    RETURNING id;
-    |}
+      {|INSERT INTO benchmark_metadata
+          (run_at, repo_id, commit, branch, pull_number, pr_title, worker, docker_image)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT(repo_id, commit, worker, docker_image)
+        DO UPDATE
+        SET build_job_id = NULL,
+            run_job_id=NULL,
+            failed=false,
+            cancelled=false,
+            reason=''
+        RETURNING id;
+      |}
       run_at repo_id commit branch pull_number title worker docker_image
   in
   try
@@ -53,7 +52,7 @@ let setup_metadata ~repository ~worker ~docker_image
     -1
 
 let setup_metadata ~repository ~conninfo ~worker ~docker_image =
-  with_db ~conninfo (setup_metadata ~repository ~worker ~docker_image)
+  Db_util.with_db ~conninfo (setup_metadata ~repository ~worker ~docker_image)
 
 let record_stage_start ~stage ~job_id ~serial_id (db : Postgresql.connection) =
   Logs.debug (fun log -> log "Recording build start...");
@@ -61,13 +60,10 @@ let record_stage_start ~stage ~job_id ~serial_id (db : Postgresql.connection) =
   let serial_id = Sql_util.int serial_id in
   let query =
     Fmt.str
-      {|
-UPDATE
-  benchmark_metadata
-  SET
-    %s = %s
-  WHERE id = %s
-|}
+      {|UPDATE benchmark_metadata
+        SET %s = %s
+        WHERE id = %s
+      |}
       stage job_id serial_id
   in
   try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
@@ -80,7 +76,7 @@ UPDATE
           log "Unknown error while recording stage %s:\n%a" stage Fmt.exn exn)
 
 let record_stage_start ~stage ~job_id ~serial_id ~conninfo =
-  with_db ~conninfo (record_stage_start ~stage ~job_id ~serial_id)
+  Db_util.with_db ~conninfo (record_stage_start ~stage ~job_id ~serial_id)
 
 let record_stage_failure ~stage ~serial_id ~reason (db : Postgresql.connection)
     =
@@ -88,14 +84,11 @@ let record_stage_failure ~stage ~serial_id ~reason (db : Postgresql.connection)
   let serial_id = Sql_util.int serial_id in
   let query =
     Fmt.str
-      {|
-UPDATE
-  benchmark_metadata
-  SET
-    failed = true,
-    reason = '%s'
-    WHERE id = %s
-|}
+      {|UPDATE benchmark_metadata
+        SET failed = true,
+            reason = '%s'
+        WHERE id = %s
+      |}
       reason serial_id
   in
   try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
@@ -109,21 +102,18 @@ UPDATE
             Fmt.exn exn)
 
 let record_stage_failure ~stage ~serial_id ~reason ~conninfo =
-  with_db ~conninfo (record_stage_failure ~stage ~serial_id ~reason)
+  Db_util.with_db ~conninfo (record_stage_failure ~stage ~serial_id ~reason)
 
 let record_cancel ~stage ~serial_id ~reason (db : Postgresql.connection) =
   Logs.debug (fun log -> log "Recording stage cancel...");
   let serial_id = Sql_util.int serial_id in
   let query =
     Fmt.str
-      {|
-UPDATE
-  benchmark_metadata
-  SET
-    cancelled = true,
-    reason = '%s'
-    WHERE id = %s
-|}
+      {|UPDATE benchmark_metadata
+        SET cancelled = true,
+            reason = '%s'
+        WHERE id = %s
+      |}
       reason serial_id
   in
   try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
@@ -137,4 +127,4 @@ UPDATE
             Fmt.exn exn)
 
 let record_cancel ~stage ~serial_id ~reason ~conninfo =
-  with_db ~conninfo (record_cancel ~stage ~serial_id ~reason)
+  Db_util.with_db ~conninfo (record_cancel ~stage ~serial_id ~reason)

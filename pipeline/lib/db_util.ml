@@ -1,3 +1,9 @@
+type t = string
+
+let with_db ~conninfo fn =
+  let db = new Postgresql.connection ~conninfo () in
+  Fun.protect ~finally:(fun () -> db#finish) (fun () -> fn db)
+
 let check_connection ~conninfo =
   try
     let db = new Postgresql.connection ~conninfo () in

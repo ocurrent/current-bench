@@ -212,18 +212,12 @@ let repositories sources =
   let repos = Current.list_seq (List.map repositories sources) in
   Current.map List.concat repos
 
-let exists ~conninfo repository =
-  let db = new Postgresql.connection ~conninfo () in
-  let exists = Benchmark.Db.exists db repository in
-  db#finish;
-  exists
-
 let process_pipeline ~config ~ocluster ~conninfo ~sources () =
   Current.list_iter ~collapse_key:"pipeline"
     (module Repository)
     (fun repo ->
       let* repository = repo in
-      if exists ~conninfo repository
+      if Benchmark.Db.exists ~conninfo repository
       then Current.ignore_value repo
       else pipeline ~config ~ocluster ~conninfo repository)
     (repositories sources)

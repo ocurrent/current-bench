@@ -121,7 +121,7 @@ VALUES
         build_job_id run_job_id worker docker_image benchmark_name test_name
         test_index metrics
 
-    let insert (db : Postgresql.connection) self =
+    let insert self (db : Postgresql.connection) =
       let query = insert_query self in
       try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
       | Postgresql.Error err ->
@@ -130,6 +130,8 @@ VALUES
                 (Postgresql.string_of_error err))
       | exn ->
           Logs.err (fun log -> log "Could not insert results:\n%a" Fmt.exn exn)
+
+    let insert ~conninfo self = Db_util.with_db ~conninfo (insert self)
 
     let exists_query ~repository =
       let repo_id = Repository.info repository
@@ -140,31 +142,33 @@ VALUES
          like DB write error, running out of space, incorrectly solving opam
          dependencies, etc. *)
       Fmt.str
-        {|SELECT COUNT(*) FROM benchmarks WHERE repo_id='%s' AND commit='%s'|}
+        "SELECT COUNT(*) FROM benchmarks WHERE repo_id='%s' AND commit='%s'"
         repo_id commit
 
-    let exists (db : Postgresql.connection) repository =
+    let exists repository (db : Postgresql.connection) =
       let query = exists_query ~repository in
-      try
-        let result = db#exec query in
-        match result#get_all with
-        | [| [| count_str |] |] ->
-            let count = int_of_string count_str in
-            count >= 1
-        | result ->
-            Logs.err (fun log ->
-                log "Unexpected result for Db.exists %s:%s\n%a"
-                  (Repository.info repository)
-                  (Repository.commit_hash repository)
-                  (Fmt.array (Fmt.array Fmt.string))
-                  result);
-            true
-      with exn ->
-        Logs.err (fun log ->
-            log "Error for Db.exists %s:%s\n%a"
-              (Repository.info repository)
-              (Repository.commit_hash repository)
-              Fmt.exn exn);
-        true
+      let result = db#exec query in
+      match result#get_all with
+      | [| [| count_str |] |] ->
+          let count = int_of_string count_str in
+          count >= 1
+      | result ->
+          Logs.err (fun log ->
+              log "Unexpected result for Db.exists %s:%s\n%a"
+                (Repository.info repository)
+                (Repository.commit_hash repository)
+                (Fmt.array (Fmt.array Fmt.string))
+                result);
+          true
+      | exception exn ->
+          Logs.err (fun log ->
+              log "Error for Db.exists %s:%s\n%a"
+                (Repository.info repository)
+                (Repository.commit_hash repository)
+                Fmt.exn exn);
+          true
+
+    let exists ~conninfo repository =
+      Db_util.with_db ~conninfo (exists repository)
   end
 end
