@@ -1,8 +1,6 @@
 open Current.Syntax
 module Git = Current_git
 module Github = Current_github
-module Docker = Current_docker.Default
-module Docker_util = Current_util.Docker_util
 module Logging = Logging
 module Benchmark = Models.Benchmark
 module Config = Config

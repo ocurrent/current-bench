@@ -1,5 +1,3 @@
-open Current.Syntax
-
 module Metrics = struct
   open Prometheus
 
@@ -63,36 +61,3 @@ let run x =
   | Error (`Msg m) as e ->
       Logs.err (fun f -> f "%a" Fmt.lines m);
       e
-
-module SVar = Current.Var (struct
-  type t = unit -> unit Current.t
-
-  let equal = ( == )
-
-  let pp f _ = Fmt.string f "pipeline"
-end)
-
-let selected = SVar.create ~name:"current-test" (Error (`Msg "no-test"))
-
-let test_pipeline =
-  Current.component "choose pipeline"
-  |> let** make_pipeline = SVar.get selected in
-     make_pipeline ()
-
-let with_dot ~dotfile f () =
-  SVar.set selected (Ok f);
-  Logs.debug (fun f -> f "Pipeline: @[%a@]" Current.Analysis.pp test_pipeline);
-  let path = Fmt.str "%s.%d.dot" dotfile 1 in
-  let ch = open_out path in
-  let f = Format.formatter_of_out_channel ch in
-  let env = [] in
-  let collapse_link ~k ~v = Some (k ^ v) in
-  let job_info { Current.Metadata.job_id; update } =
-    let url = job_id |> Option.map (fun id -> Fmt.str "/job/%s" id) in
-    (update, url)
-  in
-  Fmt.pf f "%a@!"
-    (Current.Analysis.pp_dot ~env ~collapse_link ~job_info)
-    test_pipeline;
-  close_out ch;
-  test_pipeline
