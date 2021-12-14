@@ -9,19 +9,6 @@ module Benchmark = Models.Benchmark
 
 let ( >>| ) x f = Current.map f x
 
-let json_regexp =
-  Pcre.regexp {|\{(?:[^{}]|(\{(?:[^{}]|(\{(?:[^{}]|())+\}))+\}))+\}|}
-
-let extract_jsons str =
-  Pcre.exec_all ~rex:json_regexp str
-  |> Array.map (Pcre.get_opt_substrings ~full_match:true)
-  |> Array.to_list
-  |> List.filter_map (fun t -> t.(0))
-  |> String.concat "\n"
-
-let validate_json json_list =
-  Current_bench_json.(validate (List.map of_json json_list))
-
 module Source = struct
   type github = {
     token : Fpath.t;
@@ -72,19 +59,6 @@ let slack_post ~repository (output : string Current.t) =
          let channel = read_channel_uri path in
          Slack.post channel ~key:"output" output
 
-let db_save ~conninfo benchmark output =
-  let db = new Postgresql.connection ~conninfo () in
-  output
-  |> extract_jsons
-  |> Json_util.parse_many
-  |> validate_json
-  |> Hashtbl.iter (fun benchmark_name (version, results) ->
-         results
-         |> List.mapi (fun test_index res ->
-                benchmark ~version ~benchmark_name ~test_index res)
-         |> List.iter (Models.Benchmark.Db.insert db));
-  db#finish
-
 let setup_on_cancel_hook ~stage ~job_id ~serial_id ~conninfo =
   let jobs = Current.Job.jobs () in
   match Current.Job.Map.find_opt job_id jobs with
@@ -104,9 +78,8 @@ let setup_on_cancel_hook ~stage ~job_id ~serial_id ~conninfo =
             serial_id)
   | None -> Logs.debug (fun log -> log "Job already stopped: %s\n" job_id)
 
-let record_pipeline_stage ~stage ~serial_id ~conninfo image =
-  let+ job_id = Current_util.get_job_id image
-  and+ state = Current.state image in
+let record_pipeline_stage ~stage ~serial_id ~conninfo image job_id =
+  let+ job_id = job_id and+ state = Current.state image in
   match (job_id, state) with
   | Some job_id, Error (`Active _) ->
       (* NOTE: For some reason this hook gets called twice, even if we match for
@@ -119,30 +92,9 @@ let record_pipeline_stage ~stage ~serial_id ~conninfo image =
       Storage.record_stage_failure ~stage ~serial_id ~conninfo
   | _ -> ()
 
-let job_output = function
-  | None ->
-      Logs.err (fun log -> log "no worker id");
-      "no job id"
-  | Some job_id -> (
-      match Current.Job.log_path job_id with
-      | Error (`Msg msg) ->
-          Logs.err (fun log -> log "worker %S: %s" job_id msg);
-          "error"
-      | Ok path ->
-          let read_file path =
-            let ch = open_in_bin path in
-            Fun.protect
-              ~finally:(fun () -> close_in ch)
-              (fun () ->
-                let len = in_channel_length ch in
-                really_input_string ch len)
-          in
-          read_file (Fpath.to_string path))
-
 let pipeline ~ocluster ~conninfo ~repository =
   let serial_id = Storage.setup_metadata ~repository ~conninfo in
   let* dockerfile = Custom_dockerfile.dockerfile ~repository in
-  let run_at = Ptime_clock.now () in
   let docker_options = Cluster_api.Docker.Spec.defaults in
   let dockerfile =
     match dockerfile with
@@ -162,22 +114,14 @@ let pipeline ~ocluster ~conninfo ~repository =
       ~src:(Current.return [ src ])
       ~options:docker_options ocluster dockerfile
   in
-  let* () =
+  let worker_job_id = Current_util.get_job_id worker in
+  let+ () =
     record_pipeline_stage ~stage:"build_job_id" ~serial_id ~conninfo worker
-  and* () =
+      worker_job_id
+  and+ () =
     record_pipeline_stage ~stage:"run_job_id" ~serial_id ~conninfo worker
-  in
-  let+ worker_job_id = Current_util.get_job_id worker and+ () = worker in
-  let output = job_output worker_job_id in
-  let build_job_id = worker_job_id in
-  let run_job_id = worker_job_id in
-  let duration = Ptime.diff (Ptime_clock.now ()) run_at in
-  Logs.debug (fun log -> log "Benchmark output:\n%s" output);
-  let () =
-    db_save ~conninfo
-      (Benchmark.make ~duration ~run_at ~repository ?build_job_id ?run_job_id)
-      output
-  in
+      worker_job_id
+  and+ output = Json_stream.save ~conninfo ~repository worker_job_id in
   output
 
 let pipeline ~ocluster ~conninfo repository =
