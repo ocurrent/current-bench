@@ -5,7 +5,7 @@ let validate_json json_list =
 
 let db_save ~conninfo benchmark output =
   output
-  |> Json_util.parse_many
+  |> Util.parse_jsons
   |> validate_json
   |> Hashtbl.iter (fun benchmark_name (version, results) ->
          results

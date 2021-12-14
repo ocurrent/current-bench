@@ -63,6 +63,14 @@ let setup_on_cancel_hook ~stage ~job_id ~serial_id ~conninfo =
             serial_id)
   | None -> Logs.debug (fun log -> log "Job already stopped: %s\n" job_id)
 
+let get_job_id x =
+  Current.with_context x (fun () ->
+      let open Current.Syntax in
+      let+ md = Current.Analysis.metadata x in
+      match md with
+      | Some { Current.Metadata.job_id; _ } -> job_id
+      | None -> None)
+
 let record_pipeline_stage ~stage ~serial_id ~conninfo image job_id =
   let+ job_id = job_id and+ state = Current.state image in
   match (job_id, state) with
@@ -104,7 +112,7 @@ let pipeline ~ocluster ~conninfo ~repository env =
       ~src:(Current.return [ src ])
       ~options:docker_options ocluster dockerfile
   in
-  let worker_job_id = Current_util.get_job_id ocluster_worker in
+  let worker_job_id = get_job_id ocluster_worker in
   let output =
     Json_stream.save ~conninfo ~repository ~worker ~docker_image worker_job_id
   in
