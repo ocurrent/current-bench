@@ -8,7 +8,8 @@ let check_connection ~conninfo =
   try
     let db = new Postgresql.connection ~conninfo () in
     let query = "SELECT 1" in
-    ignore (db#exec ~expect:[ Postgresql.Tuples_ok ] query)
+    ignore (db#exec ~expect:[ Postgresql.Tuples_ok ] query);
+    db#finish
   with
   | Postgresql.Error err as exn ->
       Logs.err (fun log ->
