@@ -4,13 +4,15 @@ type point
 type event
 
 let computeStdDev = (~mean, xs) => {
-  let var = ref(0.0)
   let n = Array.length(xs)
-  for i in 0 to n - 1 {
-    let x = xs[i] -. mean
-    var := var.contents +. x *. x
+  let var = xs->Belt.Array.reduce(0., (acc, x) => {
+    let y = x -. mean
+    acc +. y *. y
+  })
+  switch n > 1 {
+  | true => sqrt(var /. float_of_int(n - 1))
+  | _ => var
   }
-  sqrt(var.contents /. float_of_int(n - 1))
 }
 
 let computeMean = xs => {
