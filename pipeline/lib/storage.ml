@@ -1,8 +1,6 @@
 let with_db ~conninfo fn =
   let db = new Postgresql.connection ~conninfo () in
-  let ret_val = fn db in
-  db#finish;
-  ret_val
+  Fun.protect ~finally:(fun () -> db#finish) (fun () -> fn db)
 
 let setup_metadata ~repository (db : Postgresql.connection) =
   Logs.debug (fun log -> log "Inserting metada....");
