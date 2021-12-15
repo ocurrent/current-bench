@@ -20,8 +20,8 @@ If you want to enroll your repository or setup this benchmark repository for you
     {
       "name": <name-of-the-test>,
       "metrics": {
-        "<metric-1>": {"name": "benchmark-name", "value": benchmark-value, "units": "benchmark-unit"},
-        "<metric-2>":{"name": "num_ops", "value": [0.5, 1.5,...], "units": "ops/sec"},
+        "<metric-1>": {"name": "benchmark-name", "value": benchmark-value, "units": "benchmark-unit", "description": "benchmark-description"},
+        "<metric-2>":{"name": "num_ops", "value": [0.5, 1.5,...], "units": "ops/sec", "description": "total number of ops"},
         ...
       },
      ...
@@ -75,4 +75,3 @@ NOTE: Although it should be possible to get good results on a NUMA enabled syste
 ## ASLR
 
 ASLR affects performance as the memory layout is changed each time the benchmark is loaded. The ocurrent pipeline disables ASLR inside the container automatically by wrapping the benchmark command in a call to `setarch [...] --addr-no-randomize`. This is normally blocked by the default Docker seccomp profile, so we have modified the profile to allow [`personality(2)`](http://man7.org/linux/man-pages/man2/personality.2.html) to be invoked with the `ADDR_NO_RANDOMIZE` flag.
-

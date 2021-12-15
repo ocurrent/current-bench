@@ -85,6 +85,7 @@ module Benchmark = {
             ~commit,
             ~value=toLineGraph(metric.value),
             ~units=metric.units,
+            ~description=metric.description,
           )
         }, acc, result.metrics)
       }, acc, item.results)

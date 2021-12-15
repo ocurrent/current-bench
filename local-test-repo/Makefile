@@ -8,18 +8,21 @@ define BENCH_DATA_1
       "metrics": [
 	{
 	  "name": "time",
-	  "value": 4.02,
-	  "units": "secs"
+	  "value": 8.02,
+	  "units": "secs",
+	  "description": "The total time to do awesome $job"
 	},
 	{
 	  "name": "ops_per_sec",
 	  "value": 690.0,
-	  "units": "num/sec"
+	  "units": "num/sec",
+	  "description": "The number of awesome things done in a second"
 	},
 	{
 	  "name": "mbs_per_sec",
 	  "value": 199,
-	  "units": "mbps"
+	  "units": "mbps",
+	  "description": "Quantity of awesome data downloaded"
 	}
       ]
     },
