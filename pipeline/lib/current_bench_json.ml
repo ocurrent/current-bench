@@ -177,8 +177,8 @@ let of_json json =
   | _ -> V1.to_v2 @@ V1.of_json json
 
 let validate t =
-  let open V2 in
   let tbl = Hashtbl.create 16 in
+  let open Latest in
   List.iter
     (fun result ->
       let key = result.benchmark_name in
