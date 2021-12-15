@@ -169,6 +169,7 @@ let getDefaultDateRange = {
 module Welcome = {
   @react.component
   let make = () => {
+    let version: string = %raw(`import.meta.env.VITE_CURRENT_BENCH_VERSION`)
     <Column alignX=#center sx=[Sx.mt.xl]>
       <Heading level=#h1 align=#center text=`hello world 👋` />
       <center>
@@ -178,7 +179,8 @@ module Welcome = {
         <a target="_blank" href="https://github.com/ocurrent/current-bench">
           {Rx.text("https://github.com/ocurrent/current-bench")}
         </a>
-        {Rx.text(".")}
+        {Rx.text(".")}<br />
+        <Text sx=[Sx.text.xs]>`Version: ${version}`</Text>
       </center>
     </Column>
   }
