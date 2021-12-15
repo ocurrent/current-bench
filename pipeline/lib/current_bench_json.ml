@@ -66,7 +66,12 @@ module V2 = struct
 
   type value = Float of float | Floats of float list
 
-  type metric = { name : string; value : value; units : string }
+  type metric = {
+    name : string;
+    description : string;
+    value : value;
+    units : string;
+  }
 
   type result = { test_name : string; metrics : metric list }
 
@@ -109,13 +114,17 @@ module V2 = struct
 
   let metric_of_json t =
     let units = Json.get "units" t |> Json.to_string_option |> default "" in
+    let description =
+      Json.get "description" t |> Json.to_string_option |> default ""
+    in
     let value, units = value_of_json ~units (Json.get "value" t) in
-    { name = Json.get "name" t |> Json.to_string; value; units }
+    { name = Json.get "name" t |> Json.to_string; description; value; units }
 
   let json_of_metric m =
     `Assoc
       [
         ("name", `String m.name);
+        ("description", `String m.description);
         ("value", json_of_value m.value);
         ("units", `String m.units);
       ]
@@ -152,7 +161,8 @@ module V1 = struct
 
   let metric_of_json (name, value) =
     let value, units = V2.value_of_json value in
-    { V2.name; value; units }
+    let description = "" in
+    { V2.name; description; value; units }
 
   let result_of_json t =
     {
