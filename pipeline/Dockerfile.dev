@@ -1,4 +1,4 @@
-FROM ocaml/opam:debian-ocaml-4.13 AS build
+FROM ocaml/opam:debian-11-ocaml-4.13 AS build
 
 RUN sudo apt-get update && \
     sudo apt-get install -qq -yy \
