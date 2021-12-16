@@ -11,11 +11,7 @@ module Source : sig
   type t
 
   val github :
-    token:Fpath.t ->
-    webhook_secret:string ->
-    slack_path:Fpath.t option ->
-    repo:Github.Repo_id.t ->
-    t
+    token:Fpath.t -> webhook_secret:string -> repo:Github.Repo_id.t -> t
 
   val local : Fpath.t -> t
 

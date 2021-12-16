@@ -3,7 +3,6 @@ module Git = Current_git
 module Github = Current_github
 module Docker = Current_docker.Default
 module Docker_util = Current_util.Docker_util
-module Slack = Current_slack
 module Logging = Logging
 module Benchmark = Models.Benchmark
 module Config = Config
@@ -14,14 +13,13 @@ module Source = struct
   type github = {
     token : Fpath.t;
     webhook_secret : string;
-    slack_path : Fpath.t option;
     repo : Github.Repo_id.t;
   }
 
   type t = Github of github | Local of Fpath.t | Github_app of Github.App.t
 
-  let github ~token ~webhook_secret ~slack_path ~repo =
-    Github { token; webhook_secret; slack_path; repo }
+  let github ~token ~webhook_secret ~repo =
+    Github { token; webhook_secret; repo }
 
   let local path = Local path
 
@@ -32,11 +30,6 @@ module Source = struct
     | Github g -> Some g.webhook_secret
     | Github_app g -> Some (Github.App.webhook_secret g)
 end
-
-(*
-let read_channel_uri p =
-  Util.read_fpath p |> String.trim |> Uri.of_string |> Current_slack.channel
-*)
 
 let github_status_of_state url = function
   | Ok _ -> Github.Api.Status.v ~url `Success ~description:"Passed"
@@ -52,17 +45,6 @@ let github_set_status ~repository result =
       >>| github_status_of_state status_url
       |> Github.Api.Commit.set_status (Current.return head) "ocaml-benchmarks"
       |> Current.ignore_value
-
-(*
-let slack_post ~repository (output : unit Current.t) =
-  match Repository.slack_path repository with
-  | None -> Current.ignore_value output
-  | Some path ->
-      Current.component "slack post"
-      |> let** _ = output in
-         let channel = read_channel_uri path in
-         Slack.post channel ~key:"output" output
-*)
 
 let setup_on_cancel_hook ~stage ~job_id ~serial_id ~conninfo =
   let jobs = Current.Job.jobs () in
@@ -146,12 +128,10 @@ let pipeline ~config ~ocluster ~conninfo ~repository =
 
 let pipeline ~config ~ocluster ~conninfo repository =
   let p = pipeline ~config ~ocluster ~conninfo ~repository in
-  let* () =
-    p |> (* slack_post ~repository |> *) github_set_status ~repository
-  in
+  let* () = p |> github_set_status ~repository in
   Current.ignore_value p
 
-let github_repositories ?slack_path repo =
+let github_repositories repo =
   let* refs =
     Current.component "Get PRs"
     |> let> api, repo = repo in
@@ -168,7 +148,7 @@ let github_repositories ?slack_path repo =
   let ref_map = Github.Api.all_refs refs in
   let title_map = refs_with_title in
   let+ _, repo = repo in
-  let repository = Repository.v ?slack_path ~name:repo.name ~owner:repo.owner in
+  let repository = Repository.v ~name:repo.name ~owner:repo.owner in
   Github.Api.Ref_map.fold
     (fun key head lst ->
       let title =
@@ -205,11 +185,11 @@ let repositories = function
                 None)
       in
       [ Repository.v ?branch ~src ~commit ~name:"local" ~owner:"local" () ]
-  | Github { repo; slack_path; token; webhook_secret } ->
+  | Github { repo; token; webhook_secret } ->
       let token = token |> Util.read_fpath |> String.trim in
       let api = Current_github.Api.of_oauth ~token ~webhook_secret in
       let repo = Current.return (api, repo) in
-      github_repositories ?slack_path repo
+      github_repositories repo
   | Github_app app ->
       let+ repos =
         Github.App.installations app
