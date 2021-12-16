@@ -1,5 +1,5 @@
 .PHONY: start-production
-start-production:
+start-production: update-version-info
 	docker-compose \
 		--project-name="current-bench" \
 		--file=./environments/production.docker-compose.yaml \
@@ -35,6 +35,11 @@ redeploy-production: \
 ./local-test-repo/.git:
 	cd ./local-test-repo/ && git init && git add . && git commit -m "Initial commit."
 
+# Update current bench version
+.PHONY: update-version-info
+update-version-info:
+	./scripts/version.sh
+
 # Clean the fake testing repo
 .PHONY: clean-local-test-repo
 clean-local-test-repo:
@@ -47,7 +52,7 @@ run-migrations:
 		--database=postgresql://docker:docker@db:5432/docker
 
 .PHONY: start-development
-start-development: ./local-test-repo/.git
+start-development: ./local-test-repo/.git update-version-info
 	docker-compose \
 		--project-name="current-bench" \
 		--file=./environments/development.docker-compose.yaml \
