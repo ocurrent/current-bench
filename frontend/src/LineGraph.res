@@ -55,22 +55,20 @@ module DataRow = {
   type t = array<value> // Currently array of length 3: [min, value, max]
   // The type of each row in the data supplied to Dygraph: [index, dataArray, statsArray]
   type row = array<t>
+  type rawRow = array<array<Js.Nullable.t<float>>> // type used by Dygraph
 
-  external makeFloat: 'a => float = "%identity"
-  let floatNull = makeFloat(Js.null)
-
-  let single = (x: float): t => [floatNull, x, floatNull]
+  let single = (x: float): t => [nan, x, nan]
 
   let many = (xs: array<float>): t => {
     switch computeStats(xs) {
     | Some((min, max, avg)) => [min, avg, max]
-    | None => [floatNull, nan, floatNull]
+    | None => [nan, nan, nan]
     }
   }
 
   let valueWithErrorBars = (~mid, ~low, ~high): t => [low, mid, high]
 
-  let dummyValue = [floatNull, nan, floatNull]
+  let dummyValue = [nan, nan, nan]
 
   let toValue = (row: t): value => row[1]
 }
@@ -117,7 +115,7 @@ module Legend = {
     yHTML: string,
     dashHTML: string,
   }
-  type dygraph = {rawData_: array<DataRow.row>}
+  type dygraph = {rawData_: array<DataRow.rawRow>}
   type many = {
     xHTML: string,
     series: array<t>,
@@ -150,13 +148,14 @@ module Legend = {
         let rawRow = data.dygraph.rawData_[data.x][idx + 1] // rawData_ also has x-index, so idx+1
         let (min, max) = switch Array.length(rawRow) {
         | 3 => (rawRow[0], rawRow[2])
-        | _ => (DataRow.floatNull, DataRow.floatNull)
+        | _ => (Js.Nullable.null, Js.Nullable.null)
         }
-        let multiValue = !(min == DataRow.floatNull || max == DataRow.floatNull)
+        let multiValue = !(Js.Nullable.isNullable(min) || Js.Nullable.isNullable(max))
+        let rawToFloat = x =>
+          x->Js.Nullable.toOption->Belt.Option.getExn->Js.Float.toPrecisionWithPrecision(~digits=4)
         let extraHTML = switch multiValue {
         | true if unit.label != "mean" =>
-          row(unit.dashHTML, "min", min->Js.Float.toPrecisionWithPrecision(~digits=4)) ++
-          row(unit.dashHTML, "max", max->Js.Float.toPrecisionWithPrecision(~digits=4))
+          row(unit.dashHTML, "min", min->rawToFloat) ++ row(unit.dashHTML, "max", max->rawToFloat)
         | _ => ""
         }
         extraHeader ++ row(unit.dashHTML, unit.labelHTML, unit.yHTML) ++ extraHTML
@@ -310,11 +309,15 @@ let make = React.memo((
   })
 
   let makeDygraphData = (data: array<DataRow.t>) => {
+    // Dygraph needs null values, and cannot handle NaNs correctly
+    let convertNanToNull = (xs: DataRow.t) =>
+      Belt.Array.map(xs, x => Js.Float.isNaN(x) ? Obj.magic(Js.null) : x)
     // Dygraph does not display the last tick, so a dummy value
     // is added a the end of the data to overcome this.
     // See: https://github.com/danvk/dygraphs/issues/506
     let data = Belt.Array.concat(data, [DataRow.dummyValue])
-    Belt.Array.mapWithIndex(data, (idx, d) => [Obj.magic(idx), d, constantSeries])
+    let nullConstantSeries = convertNanToNull(constantSeries)
+    Belt.Array.mapWithIndex(data, (idx, d) => [Obj.magic(idx), convertNanToNull(d), nullConstantSeries])
   }
 
   React.useEffect1(() => {
