@@ -43,9 +43,7 @@ let adjustSize = (timeseries: BenchmarkData.timeseries, units: LineGraph.DataRow
   let maxValue = Array.fold_left((a, b) => a < b ? b : a, 0., avgs)
   let (_, newUnits) = formatSize(maxValue, units)
   let adjustedTimeseries = Belt.Array.map(timeseries, value => {
-    Belt.Array.map(value, v =>
-      v == LineGraph.DataRow.floatNull ? v : changeSizeUnits(v, units, newUnits)
-    )
+    Belt.Array.map(value, v => Js.Float.isNaN(v) ? v : changeSizeUnits(v, units, newUnits))
   })
   (adjustedTimeseries, newUnits)
 }
