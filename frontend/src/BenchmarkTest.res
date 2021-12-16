@@ -164,16 +164,17 @@ let make = (
         ~comparison=(comparisonTimeseries, comparisonMetadata),
         (timeseries, metadata),
       )
-      let delta = Belt.Option.map(delta, delta =>
-        delta == 0.0 ? "Same as main" : deltaToString(delta) ++ " vs main"
-      )
+      let subTitle = switch delta {
+      | Some(delta) => delta == 0.0 ? "Same as main" : deltaToString(delta) ++ " vs main"
+      | _ => BeltHelpers.Array.lastExn(metadata)["description"]
+      }
 
       <div key=metricName>
         {Topbar.anchor(~id="line-graph-" ++ testName ++ "-" ++ metricName)}
         <LineGraph
           onXLabelClick={AppHelpers.goToCommitLink(~repoId)}
           title=metricName
-          subTitle=?delta
+          subTitle=?Some(subTitle)
           xTicks
           data={timeseries->Belt.Array.sliceToEnd(-20)}
           units={(metadata->BeltHelpers.Array.lastExn)["units"]}

@@ -68,7 +68,12 @@ let adjust = (data: BenchmarkData.t) => {
           let (ts, newUnits) = adjustSize(timeseries, units)
           let md =
             metadata->Belt.Array.map(x =>
-              {"commit": x["commit"], "runAt": x["runAt"], "units": newUnits}
+              {
+                "commit": x["commit"],
+                "runAt": x["runAt"],
+                "units": newUnits,
+                "description": x["description"],
+              }
             )
           (ts, md)
         }
