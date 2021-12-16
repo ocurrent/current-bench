@@ -1,5 +1,5 @@
 .PHONY: start-production
-start-production: update-version-info
+start-production: update-version-info validate-env
 	docker-compose \
 		--project-name="current-bench" \
 		--file=./environments/production.docker-compose.yaml \
@@ -31,6 +31,11 @@ redeploy-production: \
 	stop-production \
 	start-production
 
+# Validate docker-compose env files
+.PHONY: validate-env
+validate-env:
+	./scripts/validate-env.sh
+
 # Make sure the fake testing repo is initialised.
 ./local-test-repo/.git:
 	cd ./local-test-repo/ && git init && git add . && git commit -m "Initial commit."
@@ -52,7 +57,7 @@ run-migrations:
 		--database=postgresql://docker:docker@db:5432/docker
 
 .PHONY: start-development
-start-development: ./local-test-repo/.git update-version-info
+start-development: ./local-test-repo/.git update-version-info validate-env
 	docker-compose \
 		--project-name="current-bench" \
 		--file=./environments/development.docker-compose.yaml \
