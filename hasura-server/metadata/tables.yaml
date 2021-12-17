@@ -38,7 +38,7 @@
       - run_job_id
       - failed
       - cancelled
-      - cancel_reason
+      - reason
       - pr_title
       - worker
       - docker_image

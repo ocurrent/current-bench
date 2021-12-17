@@ -1347,18 +1347,6 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
-            "name": "cancel_reason",
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "description": null
-          },
-          {
-            "args": [],
-            "isDeprecated": false,
-            "deprecationReason": null,
             "name": "cancelled",
             "type": {
               "kind": "SCALAR",
@@ -1447,6 +1435,18 @@
             "type": {
               "kind": "SCALAR",
               "name": "Int",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "reason",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
               "ofType": null
             },
             "description": null
@@ -2023,16 +2023,6 @@
             "description": null
           },
           {
-            "name": "cancel_reason",
-            "defaultValue": null,
-            "type": {
-              "kind": "INPUT_OBJECT",
-              "name": "String_comparison_exp",
-              "ofType": null
-            },
-            "description": null
-          },
-          {
             "name": "cancelled",
             "defaultValue": null,
             "type": {
@@ -2098,6 +2088,16 @@
             "type": {
               "kind": "INPUT_OBJECT",
               "name": "Int_comparison_exp",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "reason",
+            "defaultValue": null,
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "String_comparison_exp",
               "ofType": null
             },
             "description": null
@@ -2228,16 +2228,6 @@
             "description": null
           },
           {
-            "name": "cancel_reason",
-            "defaultValue": null,
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "description": null
-          },
-          {
             "name": "cancelled",
             "defaultValue": null,
             "type": {
@@ -2303,6 +2293,16 @@
             "type": {
               "kind": "SCALAR",
               "name": "Int",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "reason",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
               "ofType": null
             },
             "description": null
@@ -2393,18 +2393,6 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
-            "name": "cancel_reason",
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "description": null
-          },
-          {
-            "args": [],
-            "isDeprecated": false,
-            "deprecationReason": null,
             "name": "commit",
             "type": {
               "kind": "SCALAR",
@@ -2457,6 +2445,18 @@
             "type": {
               "kind": "SCALAR",
               "name": "Int",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "reason",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
               "ofType": null
             },
             "description": null
@@ -2534,16 +2534,6 @@
             "description": null
           },
           {
-            "name": "cancel_reason",
-            "defaultValue": null,
-            "type": {
-              "kind": "ENUM",
-              "name": "order_by",
-              "ofType": null
-            },
-            "description": null
-          },
-          {
             "name": "commit",
             "defaultValue": null,
             "type": {
@@ -2585,6 +2575,16 @@
           },
           {
             "name": "pull_number",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "reason",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -2679,18 +2679,6 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
-            "name": "cancel_reason",
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "description": null
-          },
-          {
-            "args": [],
-            "isDeprecated": false,
-            "deprecationReason": null,
             "name": "commit",
             "type": {
               "kind": "SCALAR",
@@ -2743,6 +2731,18 @@
             "type": {
               "kind": "SCALAR",
               "name": "Int",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "reason",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
               "ofType": null
             },
             "description": null
@@ -2820,16 +2820,6 @@
             "description": null
           },
           {
-            "name": "cancel_reason",
-            "defaultValue": null,
-            "type": {
-              "kind": "ENUM",
-              "name": "order_by",
-              "ofType": null
-            },
-            "description": null
-          },
-          {
             "name": "commit",
             "defaultValue": null,
             "type": {
@@ -2871,6 +2861,16 @@
           },
           {
             "name": "pull_number",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "reason",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -3094,16 +3094,6 @@
             "description": null
           },
           {
-            "name": "cancel_reason",
-            "defaultValue": null,
-            "type": {
-              "kind": "ENUM",
-              "name": "order_by",
-              "ofType": null
-            },
-            "description": null
-          },
-          {
             "name": "cancelled",
             "defaultValue": null,
             "type": {
@@ -3165,6 +3155,16 @@
           },
           {
             "name": "pull_number",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "reason",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -3269,12 +3269,6 @@
           {
             "isDeprecated": false,
             "deprecationReason": null,
-            "name": "cancel_reason",
-            "description": "column name"
-          },
-          {
-            "isDeprecated": false,
-            "deprecationReason": null,
             "name": "cancelled",
             "description": "column name"
           },
@@ -3312,6 +3306,12 @@
             "isDeprecated": false,
             "deprecationReason": null,
             "name": "pull_number",
+            "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "reason",
             "description": "column name"
           },
           {
@@ -3365,16 +3365,6 @@
             "description": null
           },
           {
-            "name": "cancel_reason",
-            "defaultValue": null,
-            "type": {
-              "kind": "SCALAR",
-              "name": "String",
-              "ofType": null
-            },
-            "description": null
-          },
-          {
             "name": "cancelled",
             "defaultValue": null,
             "type": {
@@ -3440,6 +3430,16 @@
             "type": {
               "kind": "SCALAR",
               "name": "Int",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "reason",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
               "ofType": null
             },
             "description": null
@@ -3779,12 +3779,6 @@
           {
             "isDeprecated": false,
             "deprecationReason": null,
-            "name": "cancel_reason",
-            "description": "column name"
-          },
-          {
-            "isDeprecated": false,
-            "deprecationReason": null,
             "name": "cancelled",
             "description": "column name"
           },
@@ -3822,6 +3816,12 @@
             "isDeprecated": false,
             "deprecationReason": null,
             "name": "pull_number",
+            "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "reason",
             "description": "column name"
           },
           {

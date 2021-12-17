@@ -119,7 +119,7 @@ UPDATE
   benchmark_metadata
   SET
     cancelled = true,
-    cancel_reason = '%s'
+    reason = '%s'
     WHERE id = %s
 |}
       reason serial_id
