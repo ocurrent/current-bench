@@ -25,7 +25,7 @@ query ($repoId: String!,
     run_job_id
     failed
     cancelled
-    cancel_reason
+    reason
     pr_title
     worker
     docker_image
@@ -213,7 +213,7 @@ let make = (~repoId, ~pullNumber=?, ~worker, ~benchmarks: GetBenchmarks.t, ~setO
             <span>
               <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray900)]> "Cancelled" </Text>
               <Text sx=[Sx.text.blockDisplay, Sx.text.xs, Sx.text.color(Sx.gray600)]>
-                {lastCommitInfo.cancel_reason->Belt.Option.getWithDefault("Unknown Reason")}
+                {lastCommitInfo.reason->Belt.Option.getWithDefault("Unknown Reason")}
               </Text>
             </span>
           | Pass =>
