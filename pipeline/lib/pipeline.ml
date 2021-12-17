@@ -107,14 +107,22 @@ let pipeline ~ocluster ~conninfo ~repository env =
       ~options:docker_options ocluster dockerfile
   in
   let worker_job_id = Current_util.get_job_id ocluster_worker in
+  let output =
+    Json_stream.save ~conninfo ~repository ~worker ~docker_image worker_job_id
+  in
   let+ () =
     record_pipeline_stage ~stage:"build_job_id" ~serial_id ~conninfo
       ocluster_worker worker_job_id
   and+ () =
     record_pipeline_stage ~stage:"run_job_id" ~serial_id ~conninfo
       ocluster_worker worker_job_id
-  and+ _output =
-    Json_stream.save ~conninfo ~repository ~worker ~docker_image worker_job_id
+  and+ () =
+    Current.state output >>| function
+    | Error (`Msg m) ->
+        let stage = "json_stream_save" in
+        Logs.err (fun log -> log "Error in %s stage: %s\n\n" stage m);
+        Storage.record_stage_failure ~stage ~serial_id ~reason:m ~conninfo
+    | _ -> ()
   in
   ()
 

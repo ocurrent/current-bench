@@ -1,5 +1,7 @@
 let validate_json json_list =
-  Current_bench_json.(validate (List.map of_json json_list))
+  try Current_bench_json.(validate (List.map of_json json_list))
+  with Failure m ->
+    Fmt.failwith "Benchmark JSON validation failed with error: %s" m
 
 let db_save ~conninfo benchmark output =
   Storage.with_db ~conninfo (fun db ->
