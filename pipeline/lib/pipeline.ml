@@ -76,7 +76,7 @@ let record_pipeline_stage ~stage ~serial_id ~conninfo image job_id =
       Storage.record_stage_start ~stage ~job_id ~serial_id ~conninfo
   | Some _, Error (`Msg m) ->
       Logs.err (fun log -> log "Error in %s stage: \n%s\n" stage m);
-      Storage.record_stage_failure ~stage ~serial_id ~conninfo
+      Storage.record_stage_failure ~stage ~serial_id ~reason:m ~conninfo
   | _ -> ()
 
 module Env = Custom_dockerfile.Env
