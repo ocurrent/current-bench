@@ -208,7 +208,13 @@ let make = (~repoId, ~pullNumber=?, ~worker, ~benchmarks: GetBenchmarks.t, ~setO
         <Column spacing=Sx.sm>
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Status" </Text>
           {switch status {
-          | Fail => <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.red300)]> "Failed" </Text>
+          | Fail =>
+            <span>
+              <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.red300)]> "Failed" </Text>
+              <Text sx=[Sx.text.blockDisplay, Sx.text.xs, Sx.text.color(Sx.gray600)]>
+                {lastCommitInfo.reason->Belt.Option.getWithDefault("")}
+              </Text>
+            </span>
           | Cancel =>
             <span>
               <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray900)]> "Cancelled" </Text>
