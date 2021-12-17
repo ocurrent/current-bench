@@ -27,7 +27,7 @@ let setup_metadata ~repository ~worker ~docker_image
     VALUES
     (%s, %s, %s, %s, %s, %s, %s, %s)
     ON CONFLICT(repo_id, commit, worker, docker_image)
-    DO UPDATE set build_job_id=NULL, run_job_id=NULL, failed=false
+    DO UPDATE set build_job_id=NULL, run_job_id=NULL, failed=false, cancelled=false, reason=''
     RETURNING id;
     |}
       run_at repo_id commit branch pull_number title worker docker_image
