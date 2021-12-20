@@ -158,29 +158,33 @@ module WorkersSelect = {
 
     let idx = idx_opt->Belt.Option.getWithDefault(0)
 
-    <Column>
-      <Text color=Sx.gray700 weight=#bold uppercase=true size=#sm> "Environment" </Text>
-      <Select
-        name="worker-image"
-        value={string_of_int(idx)}
-        placeholder="Select a worker"
-        onChange={e => {
-          let idx = int_of_string(ReactEvent.Form.target(e)["value"])
-          let w = benchmarks[idx]
-          setWorker(_ => (w.worker, w.docker_image));
-        }}>
-        {
-          benchmarks
-          ->Belt.Array.mapWithIndex((i, run) => {
-              let idx = string_of_int(i)
-              <option key={idx} value={idx}>
-                { (run.docker_image ++ " (" ++ run.worker ++ ")")->Rx.text }
-              </option>
-            })
-          ->Rx.array
-        }
-      </Select>
-    </Column>
+    switch Belt.Array.length(benchmarks) {
+    | 0 | 1 => <></>
+    | _ =>
+        <Column>
+          <Text color=Sx.gray700 weight=#bold uppercase=true size=#sm> "Environment" </Text>
+          <Select
+            name="worker-image"
+            value={string_of_int(idx)}
+            placeholder="Select a worker"
+            onChange={e => {
+              let idx = int_of_string(ReactEvent.Form.target(e)["value"])
+              let w = benchmarks[idx]
+              setWorker(_ => (w.worker, w.docker_image));
+            }}>
+            {
+              benchmarks
+              ->Belt.Array.mapWithIndex((i, run) => {
+                  let idx = string_of_int(i)
+                  <option key={idx} value={idx}>
+                    { (run.docker_image ++ " (" ++ run.worker ++ ")")->Rx.text }
+                  </option>
+                })
+              ->Rx.array
+            }
+          </Select>
+        </Column>
+      }
   }
 }
 
