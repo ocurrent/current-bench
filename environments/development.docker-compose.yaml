@@ -82,6 +82,7 @@ services:
       - "/app/entrypoint.sh"
       - "/mnt/project/reload.sh"
       - "/app/bin/current-bench-pipeline"
+      - "--repositories=/mnt/environments/development.conf"
       - "--local-repo=/app/local-test-repo"
       - "--verbose"
       - "--port=${OCAML_BENCH_PIPELINE_PORT?required}"
@@ -120,7 +121,7 @@ services:
       - "cb_worker.exe"
       - "--name=development-worker"
       - "--state-dir=/app/state"
-      - "--ocluster-pool=./capnp-secrets/pool-linux.cap"
+      - "--ocluster-pool=./capnp-secrets/pool-autumn.cap"
       - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU?required}"
     volumes:
       - ../capnp-secrets:/app/capnp-secrets

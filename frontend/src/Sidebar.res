@@ -134,14 +134,104 @@ module SidebarMenu = {
   }
 }
 
+module WorkersSelect = {
+
+  open BenchmarkQueryHelpers.GetWorkers
+
+  @react.component
+  let make = (~worker, ~setWorker, ~benchmarks) : React.element => {
+
+    let idx_opt = {
+      benchmarks
+      ->Belt.Array.getIndexBy((w) => worker == (w.worker, w.docker_image))
+    }
+
+    React.useEffect1(() => {
+      switch idx_opt {
+        | None =>
+          let first = benchmarks[0]
+          setWorker(_ => (first.worker, first.docker_image))
+        | _ => ()
+      };
+      None
+    }, [idx_opt]);
+
+    let idx = idx_opt->Belt.Option.getWithDefault(0)
+
+    switch Belt.Array.length(benchmarks) {
+    | 0 | 1 => <></>
+    | _ =>
+        <Column>
+          <Text color=Sx.gray700 weight=#bold uppercase=true size=#sm> "Environment" </Text>
+          <Select
+            name="worker-image"
+            value={string_of_int(idx)}
+            placeholder="Select a worker"
+            onChange={e => {
+              let idx = int_of_string(ReactEvent.Form.target(e)["value"])
+              let w = benchmarks[idx]
+              setWorker(_ => (w.worker, w.docker_image));
+            }}>
+            {
+              benchmarks
+              ->Belt.Array.mapWithIndex((i, run) => {
+                  let idx = string_of_int(i)
+                  <option key={idx} value={idx}>
+                    { (run.docker_image ++ " (" ++ run.worker ++ ")")->Rx.text }
+                  </option>
+                })
+              ->Rx.array
+            }
+          </Select>
+        </Column>
+      }
+  }
+}
+
+module Workers = {
+  @react.component
+  let make = (~worker, ~setWorker, ~repoId) : React.element => {
+    let ({ReScriptUrql.Hooks.response: response}, _) = {
+      ReScriptUrql.Hooks.useQuery(
+        ~query=module(BenchmarkQueryHelpers.GetWorkers),
+        { repoId: repoId }
+      )
+    }
+
+    switch response {
+    | Empty => <div> {"Something went wrong!"->Rx.text} </div>
+    | Error({networkError: Some(_)}) => <div> {"Network Error"->Rx.text} </div>
+    | Error({networkError: None}) => <div> {"Unknown Error"->Rx.text} </div>
+    | Fetching => Rx.text("Loading...")
+    | Data(data)
+    | PartialData(data, _) =>
+      let benchmarks = data.benchmarks
+      <WorkersSelect worker setWorker benchmarks />
+    }
+  }
+}
+
 @react.component
 let make = (
   ~repoIds,
+  ~worker,
+  ~setWorker,
   ~selectedRepoId=?,
-  ~onSelectRepoId,
   ~selectedPull=?,
   ~selectedBenchmarkName=?,
-) => {
+  ~onSelectRepoId,
+) : React.element => {
+
+  let menu =
+    switch selectedRepoId {
+    | None => Rx.null
+    | Some(repoId) =>
+        <>
+          <Workers worker setWorker repoId />
+          <SidebarMenu repoId ?selectedPull ?selectedBenchmarkName />
+        </>
+    }
+
   <Column
     spacing=Sx.xl
     sx=[
@@ -181,9 +271,6 @@ let make = (
         ->Rx.array}
       </Select>
     </Column>
-    {switch selectedRepoId {
-    | Some(repoId) => <SidebarMenu repoId ?selectedPull ?selectedBenchmarkName />
-    | None => Rx.null
-    }}
+    menu
   </Column>
 }

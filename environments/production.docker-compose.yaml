@@ -84,6 +84,7 @@ services:
     build:
       context: ../cluster
     command:
+      - "--repositories=/app/production.conf"
       - "--capnp-secret-key-file=./capnp-secrets/key.pem"
       - "--capnp-listen-address=tcp:0.0.0.0:${OCAML_BENCH_CLUSTER_PORT?required}"
       - "--capnp-public-address=tcp:cluster:${OCAML_BENCH_CLUSTER_PORT?required}"
@@ -102,9 +103,8 @@ services:
       - "cb_worker.exe"
       - "--name=development-worker"
       - "--state-dir=/app/state"
-      - "--ocluster-pool=./capnp-secrets/pool-linux.cap"
+      - "--ocluster-pool=./capnp-secrets/pool-autumn.cap"
       - "--docker-cpu=${OCAML_BENCH_DOCKER_CPU?required}"
-      - "--multicore-repositories=${OCAML_BENCH_MULTICORE_REPOSITORIES}"
     volumes:
       - ../capnp-secrets:/app/capnp-secrets
       - /var/run/docker.sock:/var/run/docker.sock

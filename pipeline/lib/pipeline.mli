@@ -1,15 +1,17 @@
 module Logging = Logging
 module Github = Current_github
 
+module Config : sig
+  type t
+
+  val of_file : Fpath.t -> t
+end
+
 module Source : sig
   type t
 
   val github :
-    token:Fpath.t ->
-    webhook_secret:string ->
-    slack_path:Fpath.t option ->
-    repo:Github.Repo_id.t ->
-    t
+    token:Fpath.t -> webhook_secret:string -> repo:Github.Repo_id.t -> t
 
   val local : Fpath.t -> t
 
@@ -17,7 +19,7 @@ module Source : sig
 end
 
 val v :
-  current_config:Current.Config.t ->
+  config:Config.t ->
   server:Conduit_lwt_unix.server ->
   sources:Source.t list ->
   string ->

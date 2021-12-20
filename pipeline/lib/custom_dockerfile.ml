@@ -1,6 +1,20 @@
 open Current.Syntax
 module Docker = Current_docker.Default
 
+module Env = struct
+  type t = {
+    worker : string;
+    image : string;
+    dockerfile : [ `File of Fpath.t | `Contents of Dockerfile.t Current.t ];
+  }
+
+  let compare a b = Stdlib.compare (a.worker, a.image) (b.worker, b.image)
+
+  let pp f t = Fmt.pf f "%s %s" t.worker t.image
+
+  let find config repository = Config.find config (Repository.info repository)
+end
+
 module Get_files = struct
   type t = unit
 
@@ -50,10 +64,6 @@ let get_all_files ~repository =
   |> let> commit = Repository.src repository in
      Cache.get () { Get_files.Key.commit }
 
-let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
-
-let base = Docker.pull ~schedule:weekly "ocaml/opam"
-
 let install_opam_dependencies ~files =
   if not (List.exists (String.ends_with ~suffix:".opam") files)
   then Dockerfile.empty
@@ -81,12 +91,21 @@ let dockerfile ~base ~files =
 
 let dockerfile ~base ~files = Dockerfile.crunch (dockerfile ~base ~files)
 
-let dockerfile ~repository =
-  let custom_dockerfile = Fpath.v "bench.Dockerfile" in
-  let* files = get_all_files ~repository in
-  let dockerfile_exists = List.mem (Fpath.to_string custom_dockerfile) files in
-  if dockerfile_exists
-  then Current.return (`File custom_dockerfile)
-  else
-    let+ base = base in
-    `Contents (dockerfile ~base ~files)
+let dockerfiles ~config ~repository =
+  let custom_dockerfile = "bench.Dockerfile" in
+  let+ files = get_all_files ~repository in
+  let dockerfile_exists = List.mem custom_dockerfile files in
+  List.map
+    (fun conf ->
+      let image, dockerfile =
+        if dockerfile_exists
+        then (custom_dockerfile, `File (Fpath.v custom_dockerfile))
+        else
+          let image = conf.Config.image in
+          ( image,
+            `Contents
+              (let+ base = Config.find_image config image in
+               dockerfile ~base ~files) )
+      in
+      { Env.worker = conf.Config.worker; image; dockerfile })
+    (Env.find config repository)

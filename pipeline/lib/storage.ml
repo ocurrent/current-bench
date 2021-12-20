@@ -2,7 +2,8 @@ let with_db ~conninfo fn =
   let db = new Postgresql.connection ~conninfo () in
   Fun.protect ~finally:(fun () -> db#finish) (fun () -> fn db)
 
-let setup_metadata ~repository (db : Postgresql.connection) =
+let setup_metadata ~repository ~worker ~docker_image
+    (db : Postgresql.connection) =
   Logs.debug (fun log -> log "Inserting metada....");
   let run_at = Sql_util.time (Ptime_clock.now ()) in
   let repo_id = Sql_util.string (Repository.info repository) in
@@ -10,6 +11,8 @@ let setup_metadata ~repository (db : Postgresql.connection) =
   let branch = Sql_util.(option string) (Repository.branch repository) in
   let pull_number = Sql_util.(option int) (Repository.pull_number repository) in
   let title = Sql_util.(option string) (Repository.title repository) in
+  let worker = Sql_util.string worker in
+  let docker_image = Sql_util.string docker_image in
   let query =
     (*
       When setting up metadata, we are only insert the details that we know at th
@@ -20,14 +23,14 @@ let setup_metadata ~repository (db : Postgresql.connection) =
     Fmt.str
       {|
     INSERT INTO
-    benchmark_metadata(run_at, repo_id, commit, branch, pull_number, pr_title)
+    benchmark_metadata(run_at, repo_id, commit, branch, pull_number, pr_title, worker, docker_image)
     VALUES
-    (%s, %s, %s, %s, %s, %s)
-    ON CONFLICT(repo_id, commit) DO UPDATE
-    set build_job_id=NULL, run_job_id=NULL, failed = false
+    (%s, %s, %s, %s, %s, %s, %s, %s)
+    ON CONFLICT(repo_id, commit, worker, docker_image)
+    DO UPDATE set build_job_id=NULL, run_job_id=NULL, failed=false
     RETURNING id;
     |}
-      run_at repo_id commit branch pull_number title
+      run_at repo_id commit branch pull_number title worker docker_image
   in
   try
     let result = db#exec query in
@@ -49,8 +52,8 @@ let setup_metadata ~repository (db : Postgresql.connection) =
           Fmt.exn exn);
     -1
 
-let setup_metadata ~repository ~conninfo =
-  with_db ~conninfo (setup_metadata ~repository)
+let setup_metadata ~repository ~conninfo ~worker ~docker_image =
+  with_db ~conninfo (setup_metadata ~repository ~worker ~docker_image)
 
 let record_stage_start ~stage ~job_id ~serial_id (db : Postgresql.connection) =
   Logs.debug (fun log -> log "Recording build start...");

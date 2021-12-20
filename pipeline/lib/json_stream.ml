@@ -98,7 +98,12 @@ let job_output_stream job_id =
           aux ())
 
 module Save = struct
-  type t = { conninfo : string; repository : Repository.t }
+  type t = {
+    conninfo : string;
+    repository : Repository.t;
+    worker : string;
+    docker_image : string;
+  }
 
   let id = "db-save"
 
@@ -115,7 +120,8 @@ module Save = struct
 
   let auto_cancel = true
 
-  let publish { conninfo; repository } job worker_job_id () =
+  let publish { conninfo; repository; worker; docker_image } job worker_job_id
+      () =
     let open Lwt.Infix in
     Current.Job.start job ~level:Current.Level.Above_average >>= fun () ->
     let run_at = Ptime_clock.now () in
@@ -127,8 +133,8 @@ module Save = struct
     let duration = Ptime.diff (Ptime_clock.now ()) run_at in
     let () =
       db_save ~conninfo
-        (Models.Benchmark.make ~duration ~run_at ~repository ?build_job_id
-           ?run_job_id)
+        (Models.Benchmark.make ~duration ~run_at ~repository ~worker
+           ~docker_image ?build_job_id ?run_job_id)
         output
     in
     Lwt.return (Ok output)
@@ -136,10 +142,11 @@ end
 
 module SC = Current_cache.Output (Save)
 
-let save ~conninfo ~repository job_id =
+let save ~conninfo ~repository ~worker ~docker_image job_id =
   let open Current.Syntax in
   Current.component "db-save"
   |> let> job_id = job_id in
      match job_id with
      | None -> Current_incr.const (Error (`Active `Ready), None)
-     | Some job_id -> SC.set { Save.conninfo; repository } job_id ()
+     | Some job_id ->
+         SC.set { Save.conninfo; repository; worker; docker_image } job_id ()

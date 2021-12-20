@@ -22,27 +22,16 @@ module Source = struct
       @@ Arg.info ~doc:"The GitHub secret to secure webhooks."
            [ "github-webhook-secret" ]
     in
-    let slack_path =
-      let doc =
-        "File containing the Slack endpoint URI to use for result \
-         notifications."
-      in
-      Arg.(value & opt (some file) None & info [ "s"; "slack" ] ~doc)
-    in
     Term.(
-      const (fun repo token webhook_secret slack_path ->
+      const (fun repo token webhook_secret ->
           match (repo, token) with
           | Some repo, Some token ->
               let token = Fpath.v token in
-              let slack_path = Option.map Fpath.v slack_path in
-              [
-                Pipeline.Source.github ~repo ~token ~webhook_secret ~slack_path;
-              ]
+              [ Pipeline.Source.github ~repo ~token ~webhook_secret ]
           | _ -> [])
       $ repo
       $ github_token_path
-      $ github_webhook_secret
-      $ slack_path)
+      $ github_webhook_secret)
 
   let local =
     let doc = "Path to a Git repository on disk" in
@@ -118,11 +107,20 @@ let conninfo =
   @@ Arg.info ~doc:"Connection info for Postgres DB" ~docv:"PATH"
        [ "conn-info" ]
 
+let config_file =
+  let arg =
+    Arg.required
+    @@ Arg.opt Arg.(some path) None
+    @@ Arg.info ~doc:"Config file for repositories" ~docv:"PATH"
+         [ "repositories" ]
+  in
+  Term.(const Pipeline.Config.of_file $ arg)
+
 let cmd : (unit, [ `Msg of string ]) result Term.t =
   Term.(
-    const (fun current_config server conninfo () sources ->
-        Pipeline.v ~current_config ~server ~sources conninfo ())
-    $ Current.Config.cmdliner
+    const (fun config server conninfo () sources ->
+        Pipeline.v ~config ~server ~sources conninfo ())
+    $ config_file
     $ Current_web.cmdliner
     $ conninfo
     $ setup_log

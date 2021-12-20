@@ -18,6 +18,8 @@
       - duration
       - build_job_id
       - run_job_id
+      - worker
+      - docker_image
       filter: {}
 
 - table:
@@ -38,4 +40,6 @@
       - cancelled
       - cancel_reason
       - pr_title
+      - worker
+      - docker_image
       filter: {}

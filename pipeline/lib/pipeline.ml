@@ -3,9 +3,9 @@ module Git = Current_git
 module Github = Current_github
 module Docker = Current_docker.Default
 module Docker_util = Current_util.Docker_util
-module Slack = Current_slack
 module Logging = Logging
 module Benchmark = Models.Benchmark
+module Config = Config
 
 let ( >>| ) x f = Current.map f x
 
@@ -13,14 +13,13 @@ module Source = struct
   type github = {
     token : Fpath.t;
     webhook_secret : string;
-    slack_path : Fpath.t option;
     repo : Github.Repo_id.t;
   }
 
   type t = Github of github | Local of Fpath.t | Github_app of Github.App.t
 
-  let github ~token ~webhook_secret ~slack_path ~repo =
-    Github { token; webhook_secret; slack_path; repo }
+  let github ~token ~webhook_secret ~repo =
+    Github { token; webhook_secret; repo }
 
   let local path = Local path
 
@@ -31,9 +30,6 @@ module Source = struct
     | Github g -> Some g.webhook_secret
     | Github_app g -> Some (Github.App.webhook_secret g)
 end
-
-let read_channel_uri p =
-  Util.read_fpath p |> String.trim |> Uri.of_string |> Current_slack.channel
 
 let github_status_of_state url = function
   | Ok _ -> Github.Api.Status.v ~url `Success ~description:"Passed"
@@ -49,15 +45,6 @@ let github_set_status ~repository result =
       >>| github_status_of_state status_url
       |> Github.Api.Commit.set_status (Current.return head) "ocaml-benchmarks"
       |> Current.ignore_value
-
-let slack_post ~repository (output : string Current.t) =
-  match Repository.slack_path repository with
-  | None -> Current.ignore_value output
-  | Some path ->
-      Current.component "slack post"
-      |> let** _ = output in
-         let channel = read_channel_uri path in
-         Slack.post channel ~key:"output" output
 
 let setup_on_cancel_hook ~stage ~job_id ~serial_id ~conninfo =
   let jobs = Current.Job.jobs () in
@@ -92,13 +79,18 @@ let record_pipeline_stage ~stage ~serial_id ~conninfo image job_id =
       Storage.record_stage_failure ~stage ~serial_id ~conninfo
   | _ -> ()
 
-let pipeline ~ocluster ~conninfo ~repository =
-  let serial_id = Storage.setup_metadata ~repository ~conninfo in
-  let* dockerfile = Custom_dockerfile.dockerfile ~repository in
+module Env = Custom_dockerfile.Env
+
+let pipeline ~ocluster ~conninfo ~repository env =
+  let worker = env.Env.worker in
+  let docker_image = env.Env.image in
+  let serial_id =
+    Storage.setup_metadata ~repository ~conninfo ~worker ~docker_image
+  in
   let docker_options = Cluster_api.Docker.Spec.defaults in
   let dockerfile =
-    match dockerfile with
-    | `Contents d -> `Contents (Current.return (Dockerfile.string_of_t d))
+    match env.Env.dockerfile with
+    | `Contents d -> `Contents (Current.map Dockerfile.string_of_t d)
     | `File filename -> `Path (Fpath.to_string filename)
   in
   let src =
@@ -109,27 +101,37 @@ let pipeline ~ocluster ~conninfo ~repository =
       let open Current_git.Commit_id in
       v ~repo:"git://pipeline/" ~gref:(gref commit) ~hash:(hash commit)
   in
-  let worker =
-    Current_ocluster.build ~pool:"linux"
+  let ocluster_worker =
+    Current_ocluster.build ~pool:worker
       ~src:(Current.return [ src ])
       ~options:docker_options ocluster dockerfile
   in
-  let worker_job_id = Current_util.get_job_id worker in
+  let worker_job_id = Current_util.get_job_id ocluster_worker in
   let+ () =
-    record_pipeline_stage ~stage:"build_job_id" ~serial_id ~conninfo worker
-      worker_job_id
+    record_pipeline_stage ~stage:"build_job_id" ~serial_id ~conninfo
+      ocluster_worker worker_job_id
   and+ () =
-    record_pipeline_stage ~stage:"run_job_id" ~serial_id ~conninfo worker
-      worker_job_id
-  and+ output = Json_stream.save ~conninfo ~repository worker_job_id in
-  output
+    record_pipeline_stage ~stage:"run_job_id" ~serial_id ~conninfo
+      ocluster_worker worker_job_id
+  and+ _output =
+    Json_stream.save ~conninfo ~repository ~worker ~docker_image worker_job_id
+  in
+  ()
 
-let pipeline ~ocluster ~conninfo repository =
-  let p = pipeline ~ocluster ~conninfo ~repository in
-  let* () = p |> slack_post ~repository |> github_set_status ~repository in
+let pipeline ~config ~ocluster ~conninfo ~repository =
+  Current.list_iter
+    (module Custom_dockerfile.Env)
+    (fun env ->
+      let* env = env in
+      pipeline ~ocluster ~conninfo ~repository env)
+    (Custom_dockerfile.dockerfiles ~config ~repository)
+
+let pipeline ~config ~ocluster ~conninfo repository =
+  let p = pipeline ~config ~ocluster ~conninfo ~repository in
+  let* () = p |> github_set_status ~repository in
   Current.ignore_value p
 
-let github_repositories ?slack_path repo =
+let github_repositories repo =
   let* refs =
     Current.component "Get PRs"
     |> let> api, repo = repo in
@@ -146,7 +148,7 @@ let github_repositories ?slack_path repo =
   let ref_map = Github.Api.all_refs refs in
   let title_map = refs_with_title in
   let+ _, repo = repo in
-  let repository = Repository.v ?slack_path ~name:repo.name ~owner:repo.owner in
+  let repository = Repository.v ~name:repo.name ~owner:repo.owner in
   Github.Api.Ref_map.fold
     (fun key head lst ->
       let title =
@@ -183,11 +185,11 @@ let repositories = function
                 None)
       in
       [ Repository.v ?branch ~src ~commit ~name:"local" ~owner:"local" () ]
-  | Github { repo; slack_path; token; webhook_secret } ->
+  | Github { repo; token; webhook_secret } ->
       let token = token |> Util.read_fpath |> String.trim in
       let api = Current_github.Api.of_oauth ~token ~webhook_secret in
       let repo = Current.return (api, repo) in
-      github_repositories ?slack_path repo
+      github_repositories repo
   | Github_app app ->
       let+ repos =
         Github.App.installations app
@@ -210,17 +212,17 @@ let exists ~conninfo repository =
   db#finish;
   exists
 
-let process_pipeline ~ocluster ~conninfo ~sources () =
+let process_pipeline ~config ~ocluster ~conninfo ~sources () =
   Current.list_iter ~collapse_key:"pipeline"
     (module Repository)
     (fun repo ->
       let* repository = repo in
       if exists ~conninfo repository
       then Current.ignore_value repo
-      else pipeline ~ocluster ~conninfo repository)
+      else pipeline ~config ~ocluster ~conninfo repository)
     (repositories sources)
 
-let v ~current_config ~server:mode ~sources conninfo () =
+let v ~config ~server:mode ~sources conninfo () =
   Db_util.check_connection ~conninfo;
   let cap_path = "/app/submission.cap" in
   let vat = Capnp_rpc_unix.client_only_vat () in
@@ -230,8 +232,8 @@ let v ~current_config ~server:mode ~sources conninfo () =
     | Ok sr -> sr
   in
   let ocluster = Current_ocluster.(v (Connection.create sr)) in
-  let pipeline = process_pipeline ~ocluster ~conninfo ~sources in
-  let engine = Current.Engine.create ~config:current_config pipeline in
+  let pipeline = process_pipeline ~config ~ocluster ~conninfo ~sources in
+  let engine = Current.Engine.create pipeline in
   let webhook =
     match List.find_map Source.webhook_secret sources with
     | None -> []

@@ -1387,6 +1387,22 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "docker_image",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "failed",
             "type": {
               "kind": "SCALAR",
@@ -1476,6 +1492,22 @@
               "kind": "SCALAR",
               "name": "String",
               "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "worker",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
             },
             "description": null
           }
@@ -2021,6 +2053,16 @@
             "description": null
           },
           {
+            "name": "docker_image",
+            "defaultValue": null,
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "String_comparison_exp",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
             "name": "failed",
             "defaultValue": null,
             "type": {
@@ -2089,6 +2131,16 @@
               "ofType": null
             },
             "description": null
+          },
+          {
+            "name": "worker",
+            "defaultValue": null,
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "String_comparison_exp",
+              "ofType": null
+            },
+            "description": null
           }
         ],
         "kind": "INPUT_OBJECT",
@@ -2115,7 +2167,7 @@
           {
             "isDeprecated": false,
             "deprecationReason": null,
-            "name": "benchmark_metadata_repo_id_commit_key",
+            "name": "unique_run",
             "description": "unique or primary key constraint"
           }
         ],
@@ -2206,6 +2258,16 @@
             "description": null
           },
           {
+            "name": "docker_image",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
             "name": "failed",
             "defaultValue": null,
             "type": {
@@ -2267,6 +2329,16 @@
           },
           {
             "name": "run_job_id",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "worker",
             "defaultValue": null,
             "type": {
               "kind": "SCALAR",
@@ -2345,6 +2417,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "docker_image",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "id",
             "type": {
               "kind": "SCALAR",
@@ -2412,6 +2496,18 @@
               "ofType": null
             },
             "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "worker",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
           }
         ]
       },
@@ -2449,6 +2545,16 @@
           },
           {
             "name": "commit",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "docker_image",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -2509,6 +2615,16 @@
           },
           {
             "name": "run_job_id",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "worker",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -2587,6 +2703,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "docker_image",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "id",
             "type": {
               "kind": "SCALAR",
@@ -2654,6 +2782,18 @@
               "ofType": null
             },
             "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "worker",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
           }
         ]
       },
@@ -2691,6 +2831,16 @@
           },
           {
             "name": "commit",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "docker_image",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -2751,6 +2901,16 @@
           },
           {
             "name": "run_job_id",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "worker",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -2964,6 +3124,16 @@
             "description": null
           },
           {
+            "name": "docker_image",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
             "name": "failed",
             "defaultValue": null,
             "type": {
@@ -3025,6 +3195,16 @@
           },
           {
             "name": "run_job_id",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "worker",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -3107,6 +3287,12 @@
           {
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "docker_image",
+            "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "failed",
             "description": "column name"
           },
@@ -3144,6 +3330,12 @@
             "isDeprecated": false,
             "deprecationReason": null,
             "name": "run_job_id",
+            "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "worker",
             "description": "column name"
           }
         ],
@@ -3194,6 +3386,16 @@
           },
           {
             "name": "commit",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "docker_image",
             "defaultValue": null,
             "type": {
               "kind": "SCALAR",
@@ -3264,6 +3466,16 @@
           },
           {
             "name": "run_job_id",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "worker",
             "defaultValue": null,
             "type": {
               "kind": "SCALAR",
@@ -3585,6 +3797,12 @@
           {
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "docker_image",
+            "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "failed",
             "description": "column name"
           },
@@ -3622,6 +3840,12 @@
             "isDeprecated": false,
             "deprecationReason": null,
             "name": "run_job_id",
+            "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "worker",
             "description": "column name"
           }
         ],
@@ -3891,6 +4115,22 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "docker_image",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "duration",
             "type": {
               "kind": "SCALAR",
@@ -4021,6 +4261,22 @@
               "ofType": {
                 "kind": "SCALAR",
                 "name": "Int",
+                "ofType": null
+              }
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "worker",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
                 "ofType": null
               }
             },
@@ -4601,6 +4857,16 @@
             "description": null
           },
           {
+            "name": "docker_image",
+            "defaultValue": null,
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "String_comparison_exp",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
             "name": "duration",
             "defaultValue": null,
             "type": {
@@ -4686,6 +4952,16 @@
             "type": {
               "kind": "INPUT_OBJECT",
               "name": "Int_comparison_exp",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "worker",
+            "defaultValue": null,
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "String_comparison_exp",
               "ofType": null
             },
             "description": null
@@ -4867,6 +5143,16 @@
             "description": null
           },
           {
+            "name": "docker_image",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
             "name": "duration",
             "defaultValue": null,
             "type": {
@@ -4955,6 +5241,16 @@
               "ofType": null
             },
             "description": null
+          },
+          {
+            "name": "worker",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
           }
         ],
         "kind": "INPUT_OBJECT",
@@ -5015,6 +5311,18 @@
             "isDeprecated": false,
             "deprecationReason": null,
             "name": "commit",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "docker_image",
             "type": {
               "kind": "SCALAR",
               "name": "String",
@@ -5105,6 +5413,18 @@
               "ofType": null
             },
             "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "worker",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
           }
         ]
       },
@@ -5142,6 +5462,16 @@
           },
           {
             "name": "commit",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "docker_image",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -5212,6 +5542,16 @@
           },
           {
             "name": "version",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "worker",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -5290,6 +5630,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "docker_image",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "pull_number",
             "type": {
               "kind": "SCALAR",
@@ -5369,6 +5721,18 @@
               "ofType": null
             },
             "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "worker",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
           }
         ]
       },
@@ -5406,6 +5770,16 @@
           },
           {
             "name": "commit",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "docker_image",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -5476,6 +5850,16 @@
           },
           {
             "name": "version",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "worker",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -5679,6 +6063,16 @@
             "description": null
           },
           {
+            "name": "docker_image",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
             "name": "duration",
             "defaultValue": null,
             "type": {
@@ -5760,6 +6154,16 @@
           },
           {
             "name": "version",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "worker",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -5832,6 +6236,12 @@
           {
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "docker_image",
+            "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "duration",
             "description": "column name"
           },
@@ -5882,6 +6292,12 @@
             "deprecationReason": null,
             "name": "version",
             "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "worker",
+            "description": "column name"
           }
         ],
         "description": "select columns of table \"benchmarks\"",
@@ -5921,6 +6337,16 @@
           },
           {
             "name": "commit",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "docker_image",
             "defaultValue": null,
             "type": {
               "kind": "SCALAR",
@@ -6015,6 +6441,16 @@
             "type": {
               "kind": "SCALAR",
               "name": "Int",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "worker",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
               "ofType": null
             },
             "description": null
@@ -6414,6 +6850,12 @@
           {
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "docker_image",
+            "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "duration",
             "description": "column name"
           },
@@ -6463,6 +6905,12 @@
             "isDeprecated": false,
             "deprecationReason": null,
             "name": "version",
+            "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "worker",
             "description": "column name"
           }
         ],
