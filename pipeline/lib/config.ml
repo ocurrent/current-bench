@@ -1,10 +1,14 @@
 module Docker = Current_docker.Default
 module Images = Map.Make (String)
 
+let default_worker = "autumn"
+
+let default_docker = "ocaml/opam:debian-11-ocaml-4.13"
+
 type repo = {
   name : string;
-  worker : string; [@default "autumn"]
-  image : string; [@default "ocaml/opam"]
+  worker : string; [@default default_worker]
+  image : string; [@default default_docker]
 }
 [@@deriving yojson]
 
@@ -26,7 +30,7 @@ let make_images repos =
     (fun acc repo ->
       let img = repo.image in
       pull img acc)
-    (pull "ocaml/opam" Images.empty)
+    (pull default_docker Images.empty)
     repos
 
 let make repos = { repos; images = make_images repos }
@@ -40,7 +44,7 @@ let of_file filename : t =
 
 let find t name =
   match List.filter (fun r -> r.name = name) t.repos with
-  | [] -> [ { name; worker = "autumn"; image = "ocaml/opam" } ]
+  | [] -> [ { name; worker = default_worker; image = default_docker } ]
   | configs -> configs
 
 let find_image t image_name = Images.find image_name t.images
