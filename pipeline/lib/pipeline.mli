@@ -20,7 +20,6 @@ end
 
 val v :
   config:Config.t ->
-  current_config:Current.Config.t ->
   server:Conduit_lwt_unix.server ->
   sources:Source.t list ->
   string ->

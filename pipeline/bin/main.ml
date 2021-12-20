@@ -118,10 +118,9 @@ let config_file =
 
 let cmd : (unit, [ `Msg of string ]) result Term.t =
   Term.(
-    const (fun config current_config server conninfo () sources ->
-        Pipeline.v ~config ~current_config ~server ~sources conninfo ())
+    const (fun config server conninfo () sources ->
+        Pipeline.v ~config ~server ~sources conninfo ())
     $ config_file
-    $ Current.Config.cmdliner
     $ Current_web.cmdliner
     $ conninfo
     $ setup_log

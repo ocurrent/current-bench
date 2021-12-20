@@ -222,7 +222,7 @@ let process_pipeline ~config ~ocluster ~conninfo ~sources () =
       else pipeline ~config ~ocluster ~conninfo repository)
     (repositories sources)
 
-let v ~config ~current_config ~server:mode ~sources conninfo () =
+let v ~config ~server:mode ~sources conninfo () =
   Db_util.check_connection ~conninfo;
   let cap_path = "/app/submission.cap" in
   let vat = Capnp_rpc_unix.client_only_vat () in
@@ -233,7 +233,7 @@ let v ~config ~current_config ~server:mode ~sources conninfo () =
   in
   let ocluster = Current_ocluster.(v (Connection.create sr)) in
   let pipeline = process_pipeline ~config ~ocluster ~conninfo ~sources in
-  let engine = Current.Engine.create ~config:current_config pipeline in
+  let engine = Current.Engine.create pipeline in
   let webhook =
     match List.find_map Source.webhook_secret sources with
     | None -> []
