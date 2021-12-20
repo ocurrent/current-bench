@@ -66,6 +66,12 @@ module DataRow = {
     }
   }
 
+  let map = (xs: array<(string, float)>): t => {
+    open Belt.Map.String
+    let m = fromArray(xs)
+    [getWithDefault(m, "min", nan), getWithDefault(m, "avg", nan), getWithDefault(m, "max", nan)]
+  }
+
   let valueWithErrorBars = (~mid, ~low, ~high): t => [low, mid, high]
 
   let dummyValue = [nan, nan, nan]
