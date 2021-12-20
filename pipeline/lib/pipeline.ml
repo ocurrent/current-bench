@@ -210,7 +210,7 @@ let exists ~conninfo repository =
   let db = new Postgresql.connection ~conninfo () in
   let exists = Benchmark.Db.exists db repository in
   db#finish;
-  false && exists
+  exists
 
 let process_pipeline ~config ~ocluster ~conninfo ~sources () =
   Current.list_iter ~collapse_key:"pipeline"
