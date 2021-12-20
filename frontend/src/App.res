@@ -67,6 +67,7 @@ module Benchmark = {
     switch value {
     | Float(x) => LineGraph.DataRow.single(x)
     | Floats(xs) => LineGraph.DataRow.many(Array.of_list(xs))
+    | Assoc(xs) => LineGraph.DataRow.map(Array.of_list(xs))
     }
   }
 

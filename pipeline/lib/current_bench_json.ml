@@ -64,7 +64,10 @@ let scanf fmt fn ~str = try Some (Scanf.sscanf str fmt fn) with _ -> None
 module V2 = struct
   let version = 2
 
-  type value = Float of float | Floats of float list
+  type value =
+    | Float of float
+    | Floats of float list
+    | Assoc of (string * float) list
 
   type metric = {
     name : string;
@@ -94,6 +97,16 @@ module V2 = struct
     | `List vs ->
         let vs, units = List.split @@ List.map value_of_json vs in
         (Floats vs, units)
+    | `Assoc vs ->
+        let vs, units =
+          List.split
+          @@ List.map
+               (fun (x, y) ->
+                 let v, u = value_of_json y in
+                 ((x, v), u))
+               vs
+        in
+        (Assoc vs, units)
     | v ->
         let v, unit = value_of_json v in
         (Float v, [ unit ])
@@ -101,6 +114,7 @@ module V2 = struct
   let json_of_value = function
     | Float f -> `Float f
     | Floats fs -> `List (List.map (fun f -> `Float f) fs)
+    | Assoc fs -> `Assoc (List.map (fun (x, f) -> (x, `Float f)) fs)
 
   let rec find_units = function
     | [] -> ""
