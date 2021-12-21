@@ -99,11 +99,13 @@ module V2 = struct
         (Floats vs, units)
     | `Assoc vs ->
         let vs, units =
+          let keys = List.map (fun (key, _) -> key) vs in
+          if not (List.mem "avg" keys) then failwith "V2: Missing key *avg* in value";
           List.split
           @@ List.map
-               (fun (x, y) ->
-                 let v, u = value_of_json y in
-                 ((x, v), u))
+               (fun (key, v) ->
+                 let value, units = value_of_json v in
+                 ((key, value), units))
                vs
         in
         (Assoc vs, units)
