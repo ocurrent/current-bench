@@ -20,53 +20,64 @@ let deltaToString = n =>
     n->Js.Float.toPrecisionWithPrecision(~digits=6) ++ "%"
   }
 
-let renderMetricOverviewRow = (
-  ~comparison as (comparisonTimeseries: array<LineGraph.DataRow.t>, _comparisonMetadata)=([], []),
-  ~testName,
-  ~metricName,
-  (timeseries, _),
-) => {
-  if Belt.Array.length(timeseries) == 0 {
-    React.null
-  } else {
-    let last_value = BeltHelpers.Array.lastExn(timeseries)->LineGraph.DataRow.toValue
-    let (vsMasterAbs, vsMasterRel) = switch BeltHelpers.Array.last(comparisonTimeseries) {
-    | Some(lastComparisonRow) =>
-      let lastComparisonY = lastComparisonRow->LineGraph.DataRow.toValue
-      (
-        Js.Float.toPrecisionWithPrecision(~digits=6)(lastComparisonY),
-        calcDelta(last_value, lastComparisonY)->deltaToString,
-      )
-    | _ => ("NA", "NA")
-    }
+type metricRow = {delta: option<float>, last_value: option<float>, comparison_value: option<float>}
 
-    <Table.Row key=metricName>
-      <Table.Col>
-        <a href={"#line-graph-" ++ testName ++ "-" ++ metricName}> {Rx.text(metricName)} </a>
-      </Table.Col>
-      <Table.Col sx=[Sx.text.right]>
-        {Rx.text(last_value->Js.Float.toPrecisionWithPrecision(~digits=6))}
-      </Table.Col>
-      <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterAbs)} </Table.Col>
-      <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterRel)} </Table.Col>
-    </Table.Row>
-  }
-}
-
-let getMetricDelta = (
+let getRowData = (
   ~comparison as (comparisonTimeseries, _comparisonMetadata)=([], []),
   (timeseries, _metadata),
 ) => {
   if Belt.Array.length(timeseries) == 0 {
-    None
+    let d = {delta: None, last_value: None, comparison_value: None}
+    d
   } else {
     let last_value = BeltHelpers.Array.lastExn(timeseries)->LineGraph.DataRow.toValue
 
     switch BeltHelpers.Array.last(comparisonTimeseries) {
     | Some(lastComparisonRow) =>
       let lastComparisonY = lastComparisonRow->LineGraph.DataRow.toValue
-      Some(calcDelta(last_value, lastComparisonY))
-    | _ => None
+      let d = {
+        delta: Some(calcDelta(last_value, lastComparisonY)),
+        comparison_value: Some(lastComparisonY),
+        last_value: Some(last_value),
+      }
+      d
+    | _ =>
+      let d = {delta: None, last_value: Some(last_value), comparison_value: None}
+      d
+    }
+  }
+}
+
+let renderMetricOverviewRow = (
+  ~comparison as (comparisonTimeseries: array<LineGraph.DataRow.t>, _comparisonMetadata)=([], []),
+  ~testName,
+  ~metricName,
+  (timeseries, metadata),
+) => {
+  let row = getRowData(
+    ~comparison=(comparisonTimeseries, _comparisonMetadata),
+    (timeseries, metadata),
+  )
+  switch row.last_value {
+  | None => React.null
+  | Some(last_value) => {
+      let (vsMasterAbs, vsMasterRel) = switch (row.comparison_value, row.delta) {
+      | (Some(y), Some(delta)) => (
+          Js.Float.toPrecisionWithPrecision(~digits=6)(y),
+          delta->deltaToString,
+        )
+      | _ => ("NA", "NA")
+      }
+      <Table.Row key=metricName>
+        <Table.Col>
+          <a href={"#line-graph-" ++ testName ++ "-" ++ metricName}> {Rx.text(metricName)} </a>
+        </Table.Col>
+        <Table.Col sx=[Sx.text.right]>
+          {Rx.text(last_value->Js.Float.toPrecisionWithPrecision(~digits=6))}
+        </Table.Col>
+        <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterAbs)} </Table.Col>
+        <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterRel)} </Table.Col>
+      </Table.Row>
     }
   }
 }
@@ -159,11 +170,11 @@ let make = (
       } else {
         []
       }
-      let delta = getMetricDelta(
+      let row = getRowData(
         ~comparison=(comparisonTimeseries, comparisonMetadata),
         (timeseries, metadata),
       )
-      let subTitle = switch delta {
+      let subTitle = switch row.delta {
       | Some(delta) => delta == 0.0 ? "Same as main" : deltaToString(delta) ++ " vs main"
       | _ => BeltHelpers.Array.lastExn(metadata)["description"]
       }
