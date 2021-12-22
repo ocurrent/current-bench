@@ -20,17 +20,23 @@ let deltaToString = n =>
     n->Js.Float.toPrecisionWithPrecision(~digits=6) ++ "%"
   }
 
-type metricRow = {delta: option<float>, last_value: option<float>, comparison_value: option<float>}
+type metricRow = {
+  delta: option<float>,
+  last_value: option<float>,
+  comparison_value: option<float>,
+  trend: string,
+}
 
 let getRowData = (
   ~comparison as (comparisonTimeseries, _comparisonMetadata)=([], []),
   (timeseries, _metadata),
 ) => {
   if Belt.Array.length(timeseries) == 0 {
-    let d = {delta: None, last_value: None, comparison_value: None}
+    let d = {delta: None, last_value: None, comparison_value: None, trend: ""}
     d
   } else {
     let last_value = BeltHelpers.Array.lastExn(timeseries)->LineGraph.DataRow.toValue
+    let trend = BeltHelpers.Array.lastExn(_metadata)["trend"]
 
     switch BeltHelpers.Array.last(comparisonTimeseries) {
     | Some(lastComparisonRow) =>
@@ -39,12 +45,31 @@ let getRowData = (
         delta: Some(calcDelta(last_value, lastComparisonY)),
         comparison_value: Some(lastComparisonY),
         last_value: Some(last_value),
+        trend: trend,
       }
       d
     | _ =>
-      let d = {delta: None, last_value: Some(last_value), comparison_value: None}
+      let d = {
+        delta: None,
+        last_value: Some(last_value),
+        comparison_value: None,
+        trend: trend,
+      }
       d
     }
+  }
+}
+
+let isFavourableDelta = row => {
+  let ascending =
+    row.trend == "higher-is-better"
+      ? Some(true)
+      : row.trend == "lower-is-better"
+      ? Some(false)
+      : None
+  switch (row.delta, ascending) {
+  | (Some(delta), Some(ascending)) => delta == 0. ? None : Some(delta > 0. == ascending)
+  | _ => None
   }
 }
 
@@ -68,6 +93,11 @@ let renderMetricOverviewRow = (
         )
       | _ => ("NA", "NA")
       }
+      let color = switch isFavourableDelta(row) {
+      | Some(true) => Sx.green300
+      | Some(false) => Sx.red300
+      | None => Sx.black
+      }
       <Table.Row key=metricName>
         <Table.Col>
           <a href={"#line-graph-" ++ testName ++ "-" ++ metricName}> {Rx.text(metricName)} </a>
@@ -76,7 +106,7 @@ let renderMetricOverviewRow = (
           {Rx.text(last_value->Js.Float.toPrecisionWithPrecision(~digits=6))}
         </Table.Col>
         <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterAbs)} </Table.Col>
-        <Table.Col sx=[Sx.text.right]> {Rx.text(vsMasterRel)} </Table.Col>
+        <Table.Col sx=[Sx.text.right, Sx.text.color(color)]> {Rx.text(vsMasterRel)} </Table.Col>
       </Table.Row>
     }
   }

@@ -8,6 +8,7 @@ type byMetricName = Map.String.t<(
     "runAt": Js.Date.t,
     "units": LineGraph.DataRow.units,
     "description": string,
+    "trend": string,
   }>,
 )>
 type byTestName = Map.String.t<(int, byMetricName)>
@@ -25,6 +26,7 @@ let add = (
   ~value: LineGraph.DataRow.t,
   ~units: LineGraph.DataRow.units,
   ~description,
+  ~trend,
 ) => {
   // Unwrap
   let (_, byMetricName) = Map.String.getWithDefault(byTestName, testName, (0, Map.String.empty))
@@ -34,7 +36,13 @@ let add = (
   let timeseries = BeltHelpers.Array.add(timeseries, value)
   let metadata = BeltHelpers.Array.add(
     metadata,
-    {"commit": commit, "runAt": runAt, "units": units, "description": description},
+    {
+      "commit": commit,
+      "runAt": runAt,
+      "units": units,
+      "description": description,
+      "trend": trend,
+    },
   )
 
   // Wrap
