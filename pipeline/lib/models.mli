@@ -48,8 +48,8 @@ module Benchmark : sig
   val pp : t Fmt.t
 
   module Db : sig
-    val insert : Postgresql.connection -> t -> unit
+    val insert : conninfo:Db_util.t -> t -> unit
 
-    val exists : Postgresql.connection -> Repository.t -> bool
+    val exists : conninfo:Db_util.t -> Repository.t -> bool
   end
 end

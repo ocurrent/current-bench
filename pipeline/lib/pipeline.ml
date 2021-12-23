@@ -1,8 +1,6 @@
 open Current.Syntax
 module Git = Current_git
 module Github = Current_github
-module Docker = Current_docker.Default
-module Docker_util = Current_util.Docker_util
 module Logging = Logging
 module Benchmark = Models.Benchmark
 module Config = Config
@@ -65,6 +63,14 @@ let setup_on_cancel_hook ~stage ~job_id ~serial_id ~conninfo =
             serial_id)
   | None -> Logs.debug (fun log -> log "Job already stopped: %s\n" job_id)
 
+let get_job_id x =
+  Current.with_context x (fun () ->
+      let open Current.Syntax in
+      let+ md = Current.Analysis.metadata x in
+      match md with
+      | Some { Current.Metadata.job_id; _ } -> job_id
+      | None -> None)
+
 let record_pipeline_stage ~stage ~serial_id ~conninfo image job_id =
   let+ job_id = job_id and+ state = Current.state image in
   match (job_id, state) with
@@ -106,7 +112,7 @@ let pipeline ~ocluster ~conninfo ~repository env =
       ~src:(Current.return [ src ])
       ~options:docker_options ocluster dockerfile
   in
-  let worker_job_id = Current_util.get_job_id ocluster_worker in
+  let worker_job_id = get_job_id ocluster_worker in
   let output =
     Json_stream.save ~conninfo ~repository ~worker ~docker_image worker_job_id
   in
@@ -214,18 +220,12 @@ let repositories sources =
   let repos = Current.list_seq (List.map repositories sources) in
   Current.map List.concat repos
 
-let exists ~conninfo repository =
-  let db = new Postgresql.connection ~conninfo () in
-  let exists = Benchmark.Db.exists db repository in
-  db#finish;
-  exists
-
 let process_pipeline ~config ~ocluster ~conninfo ~sources () =
   Current.list_iter ~collapse_key:"pipeline"
     (module Repository)
     (fun repo ->
       let* repository = repo in
-      if exists ~conninfo repository
+      if Benchmark.Db.exists ~conninfo repository
       then Current.ignore_value repo
       else pipeline ~config ~ocluster ~conninfo repository)
     (repositories sources)

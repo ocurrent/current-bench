@@ -4,15 +4,14 @@ let validate_json json_list =
     Fmt.failwith "Benchmark JSON validation failed with error: %s" m
 
 let db_save ~conninfo benchmark output =
-  Storage.with_db ~conninfo (fun db ->
-      output
-      |> Json_util.parse_many
-      |> validate_json
-      |> Hashtbl.iter (fun benchmark_name (version, results) ->
-             results
-             |> List.mapi (fun test_index res ->
-                    benchmark ~version ~benchmark_name ~test_index res)
-             |> List.iter (Models.Benchmark.Db.insert db)))
+  output
+  |> Util.parse_jsons
+  |> validate_json
+  |> Hashtbl.iter (fun benchmark_name (version, results) ->
+         results
+         |> List.mapi (fun test_index res ->
+                benchmark ~version ~benchmark_name ~test_index res)
+         |> List.iter (Models.Benchmark.Db.insert ~conninfo))
 
 let max_log_chunk_size = 102400L (* 100K at a time *)
 

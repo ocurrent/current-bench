@@ -43,7 +43,7 @@ services:
         VITE_OCAML_BENCH_GRAPHQL_URL: "${OCAML_BENCH_GRAPHQL_URL?required}"
         VITE_CURRENT_BENCH_VERSION: "${CURRENT_BENCH_VERSION?required}"
     ports:
-      - "${OCAML_BENCH_FRONTEND_PORT?required}:${OCAML_BENCH_FRONTEND_PORT?required}"
+      - "80:${OCAML_BENCH_FRONTEND_PORT?required}"
     restart: always
     depends_on:
       - "graphql-engine"
@@ -64,8 +64,10 @@ services:
         "${OCAML_BENCH_PIPELINE_PORT?required}:${OCAML_BENCH_PIPELINE_PORT?required}",
       ]
     command:
-      - "current-bench-pipeline"
+      - "/app/entrypoint.sh"
+      - "/app/bin/current-bench-pipeline"
       - "--verbosity=debug"
+      - "--repositories=/app/production.conf"
       - "--port=${OCAML_BENCH_PIPELINE_PORT?required}"
       - "--conn-info=host=db user=docker port=5432 dbname=docker password=${OCAML_BENCH_DB_PASSWORD?required}"
       - "--github-app-id=${OCAML_BENCH_GITHUB_APP_ID}"
@@ -84,7 +86,6 @@ services:
     build:
       context: ../cluster
     command:
-      - "--repositories=/app/production.conf"
       - "--capnp-secret-key-file=./capnp-secrets/key.pem"
       - "--capnp-listen-address=tcp:0.0.0.0:${OCAML_BENCH_CLUSTER_PORT?required}"
       - "--capnp-public-address=tcp:cluster:${OCAML_BENCH_CLUSTER_PORT?required}"
