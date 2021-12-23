@@ -100,7 +100,8 @@ module V2 = struct
     | `Assoc vs ->
         let vs, units =
           let keys = List.map (fun (key, _) -> key) vs in
-          if not (List.mem "avg" keys) then failwith "V2: Missing key *avg* in value";
+          if not (List.mem "avg" keys)
+          then failwith "V2: Missing key *avg* in value";
           List.split
           @@ List.map
                (fun (key, v) ->
