@@ -71,4 +71,4 @@ build: [
   ]
 ]
 
-available: [ os-distribution != "alpine" | os-version >= "3.14" ]
+available: [ os-distribution != "alpine" ]
