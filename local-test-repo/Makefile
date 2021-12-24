@@ -10,13 +10,15 @@ define BENCH_DATA_1
           "name": "time",
           "value": 8.02,
           "units": "secs",
-          "description": "The total time to do awesome $job"
+          "description": "The total time to do awesome $$job",
+          "trend": "lower-is-better"
         },
         {
           "name": "ops_per_sec",
           "value": 690.0,
           "units": "num/sec",
-          "description": "The number of awesome things done in a second"
+          "description": "The number of awesome things done in a second",
+          "trend": "higher-is-better"
         },
         {
           "name": "mbs_per_sec",
@@ -90,4 +92,4 @@ endef
 export BENCH_DATA_1
 export BENCH_DATA_2
 bench:
-	@echo "$$BENCH_DATA_1" | jq -M .
+        @echo "$$BENCH_DATA_1" | jq -M .
