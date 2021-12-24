@@ -204,9 +204,32 @@ let make = (
         ~comparison=(comparisonTimeseries, comparisonMetadata),
         (timeseries, metadata),
       )
-      let subTitle = switch row.delta {
-      | Some(delta) => delta == 0.0 ? "Same as main" : deltaToString(delta) ++ " vs main"
-      | _ => BeltHelpers.Array.lastExn(metadata)["description"]
+      let subTitle: LineGraph.elementOrString = switch row.delta {
+      | Some(delta) => {
+          let subTitleText = delta == 0.0 ? "Same as main" : deltaToString(delta) ++ " vs main"
+          switch (isFavourableDelta(row), delta == 0.0) {
+          | (Some(val), false) =>
+            let color = val ? Sx.green300 : Sx.red300
+            let icon = delta > 0. ? Icon.upArrow : Icon.downArrow
+            let elem =
+              <span className={Sx.make([Sx.d.flex, Sx.flex.row, Sx.items.stretch])}>
+                <span className={Sx.make([Sx.mr.md, Sx.text.color(color)])}> {icon} </span>
+                <Text
+                  sx=[
+                    Sx.d.inlineBlock,
+                    Sx.leadingNone,
+                    Sx.text.sm,
+                    Sx.text.color(color),
+                    [Css.minHeight(#em(1.0))],
+                  ]>
+                  {subTitleText}
+                </Text>
+              </span>
+            Element(elem)
+          | _ => String(subTitleText)
+          }
+        }
+      | _ => String(BeltHelpers.Array.lastExn(metadata)["description"])
       }
 
       let oldMetrics =
@@ -218,7 +241,7 @@ let make = (
         <LineGraph
           onXLabelClick={AppHelpers.goToCommitLink(~repoId)}
           title=metricName
-          subTitle=?Some(subTitle)
+          subTitle
           xTicks
           data={timeseries->Belt.Array.sliceToEnd(-20)}
           units={(metadata->BeltHelpers.Array.lastExn)["units"]}
