@@ -1,7 +1,5 @@
 let db_save ~conninfo benchmark output =
   output
-  |> Util.parse_jsons
-  |> Current_bench_json.of_list
   |> Current_bench_json.to_list
   |> List.iter (fun (benchmark_name, version, results) ->
          results
@@ -122,18 +120,26 @@ module Save = struct
     let open Lwt.Infix in
     Current.Job.start job ~level:Current.Level.Above_average >>= fun () ->
     let run_at = Ptime_clock.now () in
-    let json_stream = job_output_stream worker_job_id in
-    Lwt_stream.fold List.rev_append json_stream [] >>= fun outputs ->
-    let output = String.concat "\n" (List.rev outputs) in
     let build_job_id = Some worker_job_id in
     let run_job_id = Some worker_job_id in
-    let duration = Ptime.diff (Ptime_clock.now ()) run_at in
-    let () =
-      db_save ~conninfo
-        (Models.Benchmark.make ~duration ~run_at ~repository ~worker
-           ~docker_image ?build_job_id ?run_job_id)
-        output
-    in
+    let json_stream = job_output_stream worker_job_id in
+    Lwt_stream.fold
+      (fun jsons acc ->
+        let jsons = String.concat "\n" jsons in
+        let jsons = Util.parse_jsons jsons in
+        let jsons = Current_bench_json.of_list jsons in
+        let acc = Current_bench_json.Latest.merge acc jsons in
+        let duration = Ptime.diff (Ptime_clock.now ()) run_at in
+        let () =
+          db_save ~conninfo
+            (Models.Benchmark.make ~duration ~run_at ~repository ~worker
+               ~docker_image ?build_job_id ?run_job_id)
+            acc
+        in
+        acc)
+      json_stream []
+    >>= fun _acc ->
+    let output = "" in
     Lwt.return (Ok output)
 end
 

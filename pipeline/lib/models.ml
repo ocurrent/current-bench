@@ -112,7 +112,8 @@ module Benchmark = struct
       Fmt.str
         {|INSERT INTO benchmarks(version, run_at, duration, repo_id, commit, branch, pull_number, build_job_id, run_job_id, worker, docker_image, benchmark_name, test_name,  test_index, metrics)
           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-          ON CONFLICT (commit, test_name, run_job_id) DO NOTHING
+          ON CONFLICT (commit, test_name, run_job_id)
+          DO UPDATE SET metrics = EXCLUDED.metrics
         |}
         version run_at duration repository commit branch pull_number
         build_job_id run_job_id worker docker_image benchmark_name test_name
