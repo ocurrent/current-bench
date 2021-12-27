@@ -135,7 +135,13 @@ module V2 = struct
       Json.get "description" t |> Json.to_string_option |> default ""
     in
     let value, units = value_of_json ~units (Json.get "value" t) in
-    { name = Json.get "name" t |> Json.to_string; description; value; units }
+    let name = Json.get "name" t |> Json.to_string in
+    { name; description; value; units }
+
+  let metric_of_json_v1 (name, value) =
+    let value, units = value_of_json value in
+    let description = "" in
+    { name; description; value; units }
 
   let json_of_metric m =
     `Assoc
@@ -152,10 +158,15 @@ module V2 = struct
     `Assoc
       [ ("name", `String m.test_name); ("metrics", json_of_metrics m.metrics) ]
 
+  let metrics_of_json = function
+    | `List lst -> List.map metric_of_json lst
+    | `Assoc lst -> List.map metric_of_json_v1 lst
+    | _ -> invalid_arg "Json: expected a list or an object"
+
   let result_of_json t =
     {
       test_name = Json.get "name" t |> Json.to_string;
-      metrics = Json.get "metrics" t |> Json.to_list |> List.map metric_of_json;
+      metrics = Json.get "metrics" t |> metrics_of_json;
     }
 
   let of_json t =
@@ -165,43 +176,9 @@ module V2 = struct
     }
 end
 
-module V1 = struct
-  let version = 1
-
-  type value = V2.value
-
-  type metric = V2.metric
-
-  type result = V2.result
-
-  type t = V2.t
-
-  let metric_of_json (name, value) =
-    let value, units = V2.value_of_json value in
-    let description = "" in
-    { V2.name; description; value; units }
-
-  let result_of_json t =
-    {
-      V2.test_name = Json.get "name" t |> Json.to_string;
-      metrics = Json.get "metrics" t |> Json.to_assoc |> List.map metric_of_json;
-    }
-
-  let of_json t =
-    {
-      V2.benchmark_name = Json.get "name" t |> Json.to_string_option;
-      results = Json.get "results" t |> Json.to_list |> List.map result_of_json;
-    }
-
-  let to_v2 t = t
-end
-
 module Latest = V2
 
-let of_json json =
-  match Json.get "version" json with
-  | `Int 2 -> V2.of_json json
-  | _ -> V1.to_v2 @@ V1.of_json json
+let of_json json = Latest.of_json json
 
 let validate t =
   let tbl = Hashtbl.create 16 in
