@@ -78,6 +78,7 @@ let make = (
   ~testName,
   ~comparison=Belt.Map.String.empty,
   ~dataByMetricName: Belt.Map.String.t<(array<LineGraph.DataRow.t>, 'a)>,
+  ~lastCommit
 ) => {
   let metric_table = {
     <Table sx=[Sx.mb.xl2]>
@@ -167,7 +168,11 @@ let make = (
       | _ => BeltHelpers.Array.lastExn(metadata)["description"]
       }
 
-      <div key=metricName>
+      let oldMetrics =
+        metadata
+        ->Belt.Array.every((m) => { Some(m["commit"]) != lastCommit })
+
+      <div key=metricName  className={Sx.make(oldMetrics ? [Sx.opacity25] : [])}>
         {Topbar.anchor(~id="line-graph-" ++ testName ++ "-" ++ metricName)}
         <LineGraph
           onXLabelClick={AppHelpers.goToCommitLink(~repoId)}
