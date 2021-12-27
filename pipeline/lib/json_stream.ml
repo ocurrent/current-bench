@@ -1,13 +1,9 @@
-let validate_json json_list =
-  try Current_bench_json.(validate (List.map of_json json_list))
-  with Failure m ->
-    Fmt.failwith "Benchmark JSON validation failed with error: %s" m
-
 let db_save ~conninfo benchmark output =
   output
   |> Util.parse_jsons
-  |> validate_json
-  |> Hashtbl.iter (fun benchmark_name (version, results) ->
+  |> Current_bench_json.of_list
+  |> Current_bench_json.to_list
+  |> List.iter (fun (benchmark_name, version, results) ->
          results
          |> List.mapi (fun test_index res ->
                 benchmark ~version ~benchmark_name ~test_index res)

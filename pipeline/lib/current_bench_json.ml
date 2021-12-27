@@ -80,6 +80,57 @@ module V2 = struct
 
   type t = { benchmark_name : string option; results : result list }
 
+  type ts = t list
+
+  let to_floats = function
+    | Float x -> [ x ]
+    | Floats xs -> xs
+    | Assoc lst -> List.map snd lst
+
+  let merge_value v0 v1 =
+    match (v0, v1) with
+    | Assoc _, _ | _, Assoc _ ->
+        invalid_arg "Multiple metrics: merge is not possible on min/avg/max"
+    | _ -> Floats (to_floats v0 @ to_floats v1)
+
+  let longest_string s0 s1 =
+    if String.length s0 > String.length s1 then s0 else s1
+
+  let merge_metric m0 m1 =
+    {
+      name = m0.name;
+      description = longest_string m0.description m1.description;
+      value = merge_value m0.value m1.value;
+      units = longest_string m0.units m1.units;
+    }
+
+  let rec add_metric ms m =
+    match ms with
+    | [] -> [ m ]
+    | m' :: ms when m'.name = m.name -> merge_metric m' m :: ms
+    | m' :: ms -> m' :: add_metric ms m
+
+  let merge_result r0 r1 =
+    { r0 with metrics = List.fold_left add_metric r0.metrics r1.metrics }
+
+  let rec add_results rs r =
+    match rs with
+    | [] -> [ r ]
+    | r' :: rs when r'.test_name = r.test_name -> merge_result r' r :: rs
+    | r' :: rs -> r' :: add_results rs r
+
+  let merge_benchmark t0 t1 =
+    { t0 with results = List.fold_left add_results t0.results t1.results }
+
+  let rec add ts t =
+    match ts with
+    | [] -> [ t ]
+    | t' :: ts when t'.benchmark_name = t.benchmark_name ->
+        merge_benchmark t' t :: ts
+    | t' :: ts -> t' :: add ts t
+
+  let merge ts0 ts1 = List.fold_left add ts0 ts1
+
   let value_of_json = function
     | `Float x -> (x, "")
     | `Int x -> (float_of_int x, "")
@@ -178,20 +229,18 @@ end
 
 module Latest = V2
 
+let version = 2
+
 let of_json json = Latest.of_json json
 
-let validate t =
-  let tbl = Hashtbl.create 16 in
-  let open Latest in
-  List.iter
-    (fun result ->
-      let key = result.benchmark_name in
-      match Hashtbl.find_opt tbl key with
-      | Some _ ->
-          failwith
-            "This benchmark name already exists, please create a unique name"
-      | None ->
-          Hashtbl.add tbl key
-            (Latest.version, List.map json_of_result result.results))
-    t;
-  tbl
+let of_list jsons =
+  List.fold_left
+    (fun acc json -> Latest.merge acc [ Latest.of_json json ])
+    [] jsons
+
+let to_list ts =
+  List.map
+    (fun { Latest.benchmark_name; results } ->
+      let results = List.map Latest.json_of_result results in
+      (benchmark_name, version, results))
+    ts
