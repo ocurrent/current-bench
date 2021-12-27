@@ -38,6 +38,7 @@
       - run_job_id
       - failed
       - cancelled
+      - success
       - reason
       - pr_title
       - worker

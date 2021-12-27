@@ -96,6 +96,7 @@ module Save = struct
   type t = {
     conninfo : string;
     repository : Repository.t;
+    serial_id : int;
     worker : string;
     docker_image : string;
   }
@@ -115,8 +116,8 @@ module Save = struct
 
   let auto_cancel = true
 
-  let publish { conninfo; repository; worker; docker_image } job worker_job_id
-      () =
+  let publish { conninfo; repository; serial_id; worker; docker_image } job
+      worker_job_id () =
     let open Lwt.Infix in
     Current.Job.start job ~level:Current.Level.Above_average >>= fun () ->
     let run_at = Ptime_clock.now () in
@@ -139,17 +140,20 @@ module Save = struct
         acc)
       json_stream []
     >>= fun _acc ->
+    Storage.record_success ~conninfo ~serial_id;
     let output = "" in
     Lwt.return (Ok output)
 end
 
 module SC = Current_cache.Output (Save)
 
-let save ~conninfo ~repository ~worker ~docker_image job_id =
+let save ~conninfo ~repository ~serial_id ~worker ~docker_image job_id =
   let open Current.Syntax in
   Current.component "db-save"
   |> let> job_id = job_id in
      match job_id with
      | None -> Current_incr.const (Error (`Active `Ready), None)
      | Some job_id ->
-         SC.set { Save.conninfo; repository; worker; docker_image } job_id ()
+         SC.set
+           { Save.conninfo; repository; serial_id; worker; docker_image }
+           job_id ()
