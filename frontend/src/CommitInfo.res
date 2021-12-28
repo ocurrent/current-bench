@@ -154,10 +154,6 @@ let make = (~repoId, ~pullNumber=?, ~worker, ~setLastCommit) => {
   | PartialData(data, _) =>
     let lastCommitInfo = data.lastCommitInfo[0]
     setLastCommit(Some(lastCommitInfo.commit))
-    let lastBenchmark = Belt.Array.get(
-      benchmarks.benchmarks,
-      Belt.Array.length(benchmarks.benchmarks) - 1,
-    )
     let sameBuildJobLog = switch (lastCommitInfo.build_job_id, lastCommitInfo.run_job_id) {
     | (Some(buildID), Some(jobID)) => buildID == jobID
     | (_, _) => false
@@ -228,28 +224,6 @@ let make = (~repoId, ~pullNumber=?, ~worker, ~setLastCommit) => {
           }}
         </Column>
       </Row>
-      {switch status {
-      | Fail
-      | Cancel
-      | Running =>
-        switch lastBenchmark {
-        | None => Rx.null
-        | Some(benchmark) => <>
-            <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.yellow600)]>
-              "Metrics for an older commit "
-            </Text>
-            {renderCommitLink(
-              ~style=[Sx.text.bold, Sx.text.xs, Sx.p.zero],
-              repoId,
-              benchmark.commit,
-            )}
-            <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.yellow600)]>
-              " are shown below"
-            </Text>
-          </>
-        }
-      | _ => Rx.null
-      }}
     </>
   }
 }
