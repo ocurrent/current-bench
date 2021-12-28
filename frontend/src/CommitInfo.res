@@ -5,8 +5,8 @@ module GetLastCommitInfo = %graphql(`
 query ($repoId: String!,
        $pullNumber: Int,
        $isMaster: Boolean!,
-       $worker: String!,
-       $dockerImage: String!) {
+       $worker: String,
+       $dockerImage: String) {
   lastCommitInfo: benchmark_metadata(
       limit: 1,
       where: {_and: [{pull_number: {_eq: $pullNumber}},
@@ -102,7 +102,10 @@ let buildStatus = (lastCommitInfo: GetLastCommitInfo.t_lastCommitInfo, noCommitM
 
 @react.component
 let make = (~repoId, ~pullNumber=?, ~worker, ~benchmarks: GetBenchmarks.t, ~setOldMetrics) => {
-  let (worker, dockerImage) = worker
+  let (worker, dockerImage) = switch worker {
+    | None => (None, None)
+    | Some((worker, dockerImage)) => (Some(worker), Some(dockerImage))
+  }
   let ({ReScriptUrql.Hooks.response: response}, _) = {
     ReScriptUrql.Hooks.useQuery(
       ~query=module(GetLastCommitInfo),
