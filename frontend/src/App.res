@@ -22,7 +22,10 @@ let makeGetBenchmarksVariables = (
 ): GetBenchmarks.t_variables => {
   let isMaster = Belt.Option.isNone(pullNumber)
   let isDefaultBenchmark = Belt.Option.isNone(benchmarkName)
-  let (worker, dockerImage) = worker
+  let (worker, dockerImage) = switch worker {
+    | None => (None, None)
+    | Some((worker, dockerImage)) => (Some(worker), Some(dockerImage))
+  }
   let comparisonLimit = isMaster ? 0 : 50
   {
     repoId: repoId,
@@ -210,7 +213,7 @@ module ErrorView = {
 
 module RepoView = {
   @react.component
-  let make = (~repoId=?, ~pullNumber=?, ~benchmarkName=?) => {
+  let make = (~repoId=?, ~pullNumber=?, ~benchmarkName=?, ~worker) => {
     let ({ReScriptUrql.Hooks.response: response}, _) = {
       ReScriptUrql.Hooks.useQuery(~query=module(GetAllRepos), ())
     }
@@ -218,7 +221,14 @@ module RepoView = {
     let ((startDate, endDate), setDateRange) = React.useState(getDefaultDateRange)
     let onSelectDateRange = (startDate, endDate) => setDateRange(_ => (startDate, endDate))
 
-    let (worker, setWorker) = React.useState(() => ("autumn", "ocaml/opam"))
+    let setWorker = (f) => {
+      switch repoId {
+        | None => ()
+        | Some(repoId) =>
+          let worker = f(worker)
+          AppRouter.Repo({repoId, benchmarkName, worker})->AppRouter.go
+      }
+    }
 
     switch response {
     | Empty => <div> {"Something went wrong!"->Rx.text} </div>
@@ -238,7 +248,7 @@ module RepoView = {
           selectedPull=?pullNumber
           selectedBenchmarkName=?benchmarkName
           onSelectRepoId={repoId =>
-            AppRouter.Repo({repoId: repoId, benchmarkName: None})->AppRouter.go}
+            AppRouter.Repo({repoId: repoId, benchmarkName: None, worker})->AppRouter.go}
         />
       }
 
@@ -266,7 +276,7 @@ module RepoView = {
             <Row sx=[Sx.w.auto, Sx.text.noUnderline] alignY=#center>
               <Text weight=#semibold> "/" </Text>
               {
-                let href = AppRouter.Repo({repoId: repoId, benchmarkName: None})->AppRouter.path
+                let href = AppRouter.Repo({repoId: repoId, benchmarkName: None, worker})->AppRouter.path
                 <Link href text="main" />
               }
               {pullNumber->Rx.onSome(pullNumber => {
@@ -274,6 +284,7 @@ module RepoView = {
                   repoId: repoId,
                   pullNumber: pullNumber,
                   benchmarkName: None,
+                  worker
                 })->AppRouter.path
                 <>
                   <Text weight=#semibold> "/" </Text>
@@ -286,12 +297,14 @@ module RepoView = {
                   AppRouter.Repo({
                     repoId: repoId,
                     benchmarkName: Some(benchmarkName),
+                    worker
                   })
                 | Some(pullNumber) =>
                   AppRouter.RepoPull({
                     repoId: repoId,
                     pullNumber: pullNumber,
                     benchmarkName: Some(benchmarkName),
+                    worker
                   })
                 }->AppRouter.path
                 <> <Text weight=#semibold> "/" </Text> <Link href text={benchmarkName} /> </>
@@ -324,9 +337,9 @@ let make = () => {
 
   switch route {
   | Error({reason}) => <ErrorView msg={reason} />
-  | Ok(Main) => <RepoView />
-  | Ok(Repo({repoId, benchmarkName})) => <RepoView repoId ?benchmarkName />
-  | Ok(RepoPull({repoId, pullNumber, benchmarkName})) =>
-    <RepoView repoId pullNumber ?benchmarkName />
+  | Ok(Main) => <RepoView worker={None} />
+  | Ok(Repo({repoId, benchmarkName, worker})) => <RepoView repoId ?benchmarkName worker />
+  | Ok(RepoPull({repoId, pullNumber, benchmarkName, worker})) =>
+    <RepoView repoId pullNumber ?benchmarkName worker />
   }
 }

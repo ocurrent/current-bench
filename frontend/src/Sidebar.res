@@ -27,6 +27,7 @@ module PullsMenu = {
     ~pullsMenuData: array<SidebarMenuData.t_pullsMenuData>,
     ~selectedPull=?,
     ~selectedBenchmarkName=?,
+    ~worker
   ) => {
     let pullNumberInfos = pullsMenuData->Belt.Array.keepMap(obj =>
     switch obj.pull_number {
@@ -53,6 +54,7 @@ module PullsMenu = {
             repoId: repoId,
             pullNumber: pullNumber,
             benchmarkName: selectedBenchmarkName,
+            worker
           })->AppRouter.path}
           text={pullToString((pullNumber, prTitle, None))}
         />
@@ -69,6 +71,7 @@ module BenchmarksMenu = {
     ~benchmarksMenuData: array<SidebarMenuData.t_benchmarksMenuData>,
     ~selectedPull=?,
     ~selectedBenchmarkName=?,
+    ~worker
   ) => {
     benchmarksMenuData
     ->Belt.Array.mapWithIndex((i, {benchmark_name: benchmarkName}) => {
@@ -77,12 +80,14 @@ module BenchmarksMenu = {
         AppRouter.Repo({
           repoId: repoId,
           benchmarkName: benchmarkName,
+          worker
         })
       | Some(pullNumber) =>
         AppRouter.RepoPull({
           repoId: repoId,
           pullNumber: pullNumber,
           benchmarkName: benchmarkName,
+          worker
         })
       }
 
@@ -100,7 +105,7 @@ module BenchmarksMenu = {
 
 module SidebarMenu = {
   @react.component
-  let make = (~repoId, ~selectedPull=?, ~selectedBenchmarkName=?) => {
+  let make = (~repoId, ~selectedPull=?, ~selectedBenchmarkName=?, ~worker) => {
     let ({ReScriptUrql.Hooks.response: response}, _) = {
       ReScriptUrql.Hooks.useQuery(
         ~query=module(SidebarMenuData),
@@ -121,13 +126,13 @@ module SidebarMenu = {
         | true =>
           <Column>
             <Text color=Sx.gray700 weight=#bold uppercase=true size=#sm> "Benchmarks" </Text>
-            <BenchmarksMenu repoId benchmarksMenuData ?selectedPull ?selectedBenchmarkName />
+            <BenchmarksMenu repoId benchmarksMenuData ?selectedPull ?selectedBenchmarkName worker />
           </Column>
         | false => Rx.null
         }}
         <Column>
           <Text color=Sx.gray700 weight=#bold uppercase=true size=#sm> "Pull Requests" </Text>
-          <PullsMenu repoId pullsMenuData ?selectedPull ?selectedBenchmarkName />
+          <PullsMenu repoId pullsMenuData ?selectedPull ?selectedBenchmarkName worker />
         </Column>
       </>
     }
@@ -143,14 +148,14 @@ module WorkersSelect = {
 
     let idx_opt = {
       benchmarks
-      ->Belt.Array.getIndexBy((w) => worker == (w.worker, w.docker_image))
+      ->Belt.Array.getIndexBy((w) => worker == Some((w.worker, w.docker_image)))
     }
 
     React.useEffect1(() => {
       switch idx_opt {
         | None =>
           let first = benchmarks[0]
-          setWorker(_ => (first.worker, first.docker_image))
+          setWorker(_ => Some((first.worker, first.docker_image)))
         | _ => ()
       };
       None
@@ -170,7 +175,7 @@ module WorkersSelect = {
             onChange={e => {
               let idx = int_of_string(ReactEvent.Form.target(e)["value"])
               let w = benchmarks[idx]
-              setWorker(_ => (w.worker, w.docker_image));
+              setWorker(_ => Some((w.worker, w.docker_image)));
             }}>
             {
               benchmarks
@@ -228,7 +233,7 @@ let make = (
     | Some(repoId) =>
         <>
           <Workers worker setWorker repoId />
-          <SidebarMenu repoId ?selectedPull ?selectedBenchmarkName />
+          <SidebarMenu repoId ?selectedPull ?selectedBenchmarkName worker />
         </>
     }
 
