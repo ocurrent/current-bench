@@ -110,7 +110,7 @@ let make = (
     </Table>
   }
 
-  let metric_graphs = React.useMemo1(() => {
+  let metric_graphs = React.useMemo2(() => {
     dataByMetricName
     ->Belt.Map.String.mapWithKey((metricName, (timeseries, metadata)) => {
       let (comparisonTimeseries, comparisonMetadata) = Belt.Map.String.getWithDefault(
@@ -188,7 +188,7 @@ let make = (
     })
     ->Belt.Map.String.valuesToArray
     ->Rx.array
-  }, [dataByMetricName])
+  }, (dataByMetricName, lastCommit))
 
   <details className={Sx.make([Sx.w.full])} open_=true>
     <summary
