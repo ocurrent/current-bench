@@ -1,6 +1,5 @@
 let sizeUnits = ["bytes", "kb", "mb", "gb", "tb", "pb", "eb", "zb", "yb"]
-// FIXME: Should include other units too?!
-let sizeRegex = %re("/(gb|mb|kb|bytes)\w*/i")
+let sizeRegex = %re("/(yb|zb|eb|pb|tb|gb|mb|kb|bytes)\w*/i")
 let isSize = x => Js.Re.exec_(sizeRegex, x)->Belt.Option.isSome
 
 let getUnitsIndex = units => {
