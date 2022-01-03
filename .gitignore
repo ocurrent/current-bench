@@ -4,3 +4,4 @@ _build
 environments/cb-dev-test.pem
 environments/github.secret
 capnp-secrets
+/prometheus/scripts/node_exporter*
