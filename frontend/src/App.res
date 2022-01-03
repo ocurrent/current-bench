@@ -101,7 +101,7 @@ module Benchmark = {
   }
 
   @react.component
-  let make = React.memo((~repoId, ~pullNumber, ~data: GetBenchmarks.t, ~oldMetrics=false) => {
+  let make = React.memo((~repoId, ~pullNumber, ~data: GetBenchmarks.t, ~lastCommit) => {
     let benchmarkDataByTestName = React.useMemo2(() => {
       data.benchmarks->makeBenchmarkData->AdjustMetricUnit.adjust
     }, (data.benchmarks, makeBenchmarkData))
@@ -123,13 +123,13 @@ module Benchmark = {
       ->Belt.Map.String.valuesToArray
     }, [benchmarkDataByTestName])
 
-    <Column spacing=Sx.xl sx={oldMetrics ? [Sx.opacity25] : []}>
+    <Column spacing=Sx.xl>
       {graphsData
       ->Belt.List.fromArray
       ->Belt.List.sort(((_, _, _, idx1), (_, _, _, idx2)) => idx1 - idx2)
       ->Belt.List.toArray
       ->Belt.Array.map(((dataByMetricName, comparison, testName, _)) =>
-        <BenchmarkTest repoId pullNumber key={testName} testName dataByMetricName comparison />
+        <BenchmarkTest repoId pullNumber key={testName} testName dataByMetricName comparison lastCommit />
       )
       ->Rx.array(~empty=<Message text="No data for selected interval." />)}
     </Column>
@@ -148,7 +148,7 @@ module BenchmarkView = {
       )
     }
 
-    let (oldMetrics, setOldMetrics) = React.useState(() => false)
+    let (lastCommit, setLastCommit) = React.useState(() => None)
 
     switch response {
     | Empty => <div> {"Something went wrong!"->Rx.text} </div>
@@ -158,8 +158,8 @@ module BenchmarkView = {
     | Data(data)
     | PartialData(data, _) =>
       <Block sx=[Sx.px.xl2, Sx.py.xl2, Sx.w.full, Sx.minW.zero]>
-        <CommitInfo repoId worker ?pullNumber benchmarks=data setOldMetrics />
-        <Benchmark repoId pullNumber data oldMetrics />
+        <CommitInfo repoId worker ?pullNumber setLastCommit />
+        <Benchmark repoId pullNumber data lastCommit />
       </Block>
     }
   }

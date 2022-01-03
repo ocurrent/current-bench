@@ -1,0 +1,2 @@
+ALTER TABLE benchmark_metadata
+ADD COLUMN success BOOLEAN DEFAULT FALSE;

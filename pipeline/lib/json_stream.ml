@@ -1,13 +1,7 @@
-let validate_json json_list =
-  try Current_bench_json.(validate (List.map of_json json_list))
-  with Failure m ->
-    Fmt.failwith "Benchmark JSON validation failed with error: %s" m
-
 let db_save ~conninfo benchmark output =
   output
-  |> Util.parse_jsons
-  |> validate_json
-  |> Hashtbl.iter (fun benchmark_name (version, results) ->
+  |> Current_bench_json.to_list
+  |> List.iter (fun (benchmark_name, version, results) ->
          results
          |> List.mapi (fun test_index res ->
                 benchmark ~version ~benchmark_name ~test_index res)
@@ -102,6 +96,7 @@ module Save = struct
   type t = {
     conninfo : string;
     repository : Repository.t;
+    serial_id : int;
     worker : string;
     docker_image : string;
   }
@@ -121,33 +116,44 @@ module Save = struct
 
   let auto_cancel = true
 
-  let publish { conninfo; repository; worker; docker_image } job worker_job_id
-      () =
+  let publish { conninfo; repository; serial_id; worker; docker_image } job
+      worker_job_id () =
     let open Lwt.Infix in
     Current.Job.start job ~level:Current.Level.Above_average >>= fun () ->
     let run_at = Ptime_clock.now () in
-    let json_stream = job_output_stream worker_job_id in
-    Lwt_stream.fold List.rev_append json_stream [] >>= fun outputs ->
-    let output = String.concat "\n" (List.rev outputs) in
     let build_job_id = Some worker_job_id in
     let run_job_id = Some worker_job_id in
-    let duration = Ptime.diff (Ptime_clock.now ()) run_at in
-    let () =
-      db_save ~conninfo
-        (Models.Benchmark.make ~duration ~run_at ~repository ~worker
-           ~docker_image ?build_job_id ?run_job_id)
-        output
-    in
+    let json_stream = job_output_stream worker_job_id in
+    Lwt_stream.fold
+      (fun jsons acc ->
+        let jsons = String.concat "\n" jsons in
+        let jsons = Util.parse_jsons jsons in
+        let jsons = Current_bench_json.of_list jsons in
+        let acc = Current_bench_json.Latest.merge acc jsons in
+        let duration = Ptime.diff (Ptime_clock.now ()) run_at in
+        let () =
+          db_save ~conninfo
+            (Models.Benchmark.make ~duration ~run_at ~repository ~worker
+               ~docker_image ?build_job_id ?run_job_id)
+            acc
+        in
+        acc)
+      json_stream []
+    >>= fun _acc ->
+    Storage.record_success ~conninfo ~serial_id;
+    let output = "" in
     Lwt.return (Ok output)
 end
 
 module SC = Current_cache.Output (Save)
 
-let save ~conninfo ~repository ~worker ~docker_image job_id =
+let save ~conninfo ~repository ~serial_id ~worker ~docker_image job_id =
   let open Current.Syntax in
   Current.component "db-save"
   |> let> job_id = job_id in
      match job_id with
      | None -> Current_incr.const (Error (`Active `Ready), None)
      | Some job_id ->
-         SC.set { Save.conninfo; repository; worker; docker_image } job_id ()
+         SC.set
+           { Save.conninfo; repository; serial_id; worker; docker_image }
+           job_id ()

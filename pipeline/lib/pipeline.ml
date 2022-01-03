@@ -114,7 +114,8 @@ let pipeline ~ocluster ~conninfo ~repository env =
   in
   let worker_job_id = get_job_id ocluster_worker in
   let output =
-    Json_stream.save ~conninfo ~repository ~worker ~docker_image worker_job_id
+    Json_stream.save ~conninfo ~repository ~serial_id ~worker ~docker_image
+      worker_job_id
   in
   let+ () =
     record_pipeline_stage ~stage:"build_job_id" ~serial_id ~conninfo

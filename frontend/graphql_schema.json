@@ -1499,6 +1499,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "success",
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "worker",
             "type": {
               "kind": "NON_NULL",
@@ -2133,6 +2145,16 @@
             "description": null
           },
           {
+            "name": "success",
+            "defaultValue": null,
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "Boolean_comparison_exp",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
             "name": "worker",
             "defaultValue": null,
             "type": {
@@ -2333,6 +2355,16 @@
             "type": {
               "kind": "SCALAR",
               "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "success",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
               "ofType": null
             },
             "description": null
@@ -3204,6 +3236,16 @@
             "description": null
           },
           {
+            "name": "success",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
             "name": "worker",
             "defaultValue": null,
             "type": {
@@ -3330,6 +3372,12 @@
             "isDeprecated": false,
             "deprecationReason": null,
             "name": "run_job_id",
+            "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "success",
             "description": "column name"
           },
           {
@@ -3470,6 +3518,16 @@
             "type": {
               "kind": "SCALAR",
               "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "success",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
               "ofType": null
             },
             "description": null
@@ -3840,6 +3898,12 @@
             "isDeprecated": false,
             "deprecationReason": null,
             "name": "run_job_id",
+            "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "success",
             "description": "column name"
           },
           {

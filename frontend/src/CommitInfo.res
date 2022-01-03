@@ -1,5 +1,4 @@
 open Components
-open BenchmarkQueryHelpers
 
 module GetLastCommitInfo = %graphql(`
 query ($repoId: String!,
@@ -25,6 +24,7 @@ query ($repoId: String!,
     run_job_id
     failed
     cancelled
+    success
     reason
     pr_title
     worker
@@ -88,20 +88,20 @@ let renderCommitLink = (~style=linkStyle, repoId, commit) =>
 
 type status = Cancel | Fail | Pass | Running
 
-let buildStatus = (lastCommitInfo: GetLastCommitInfo.t_lastCommitInfo, noCommitMetrics) => {
+let buildStatus = (lastCommitInfo: GetLastCommitInfo.t_lastCommitInfo) => {
   if lastCommitInfo.cancelled->Belt.Option.getWithDefault(false) {
     Cancel
   } else if lastCommitInfo.failed->Belt.Option.getWithDefault(false) {
     Fail
-  } else if noCommitMetrics {
-    Running
-  } else {
+  } else if lastCommitInfo.success->Belt.Option.getWithDefault(false) {
     Pass
+  } else {
+    Running
   }
 }
 
 @react.component
-let make = (~repoId, ~pullNumber=?, ~worker, ~benchmarks: GetBenchmarks.t, ~setOldMetrics) => {
+let make = (~repoId, ~pullNumber=?, ~worker, ~setLastCommit) => {
   let (worker, dockerImage) = switch worker {
     | None => (None, None)
     | Some((worker, dockerImage)) => (Some(worker), Some(dockerImage))
@@ -116,57 +116,49 @@ let make = (~repoId, ~pullNumber=?, ~worker, ~benchmarks: GetBenchmarks.t, ~setO
   // NOTE: This function needs to be called in all the branches of the switch,
   // if not we see a React Warning about a change in the order of Hooks called
   // by CommitInfo. (See https://reactjs.org/link/rules-of-hooks)
-  let showingOldMetrics = flag => {
+  let setLastCommit = flag => {
     // NOTE: We cannot directly call `setOldMetrics(_ => noCommitMetrics)` in
     // the success branch, since it is not recommended to update a component
     // (`App$BenchmarkView`) while rendering a different component
     // (`CommitInfo`). So, we wrap it in useEffect. (See
     // https://reactjs.org/link/setstate-in-render)
     React.useEffect(() => {
-      setOldMetrics(_ => flag)
+      setLastCommit(_ => flag)
       None
     })
   }
 
   switch response {
   | Empty => {
-      showingOldMetrics(false)
+      setLastCommit(None)
       <div> {"Something went wrong!"->Rx.text} </div>
     }
   | Error({networkError: Some(_)}) => {
-      showingOldMetrics(false)
+      setLastCommit(None)
       <div> {"Network Error"->Rx.text} </div>
     }
   | Error({networkError: None}) => {
-      showingOldMetrics(false)
+      setLastCommit(None)
       <div> {"Unknown Error"->Rx.text} </div>
     }
   | Fetching => {
-      showingOldMetrics(false)
+      setLastCommit(None)
       Rx.text("Loading...")
     }
   | Data({lastCommitInfo: []})
   | PartialData({lastCommitInfo: []}, _) => {
-      showingOldMetrics(false)
+      setLastCommit(None)
       Rx.null
     }
   | Data(data)
   | PartialData(data, _) =>
     let lastCommitInfo = data.lastCommitInfo[0]
-    let lastBenchmark = Belt.Array.get(
-      benchmarks.benchmarks,
-      Belt.Array.length(benchmarks.benchmarks) - 1,
-    )
-    let noCommitMetrics = switch lastBenchmark {
-    | None => true
-    | Some(benchmark) => benchmark.commit != lastCommitInfo.commit
-    }
+    setLastCommit(Some(lastCommitInfo.commit))
     let sameBuildJobLog = switch (lastCommitInfo.build_job_id, lastCommitInfo.run_job_id) {
     | (Some(buildID), Some(jobID)) => buildID == jobID
     | (_, _) => false
     }
-    showingOldMetrics(noCommitMetrics)
-    let status = buildStatus(lastCommitInfo, noCommitMetrics)
+    let status = buildStatus(lastCommitInfo)
     <>
       {switch lastCommitInfo.pull_number {
       | Some(pullNumber) => {
@@ -232,28 +224,6 @@ let make = (~repoId, ~pullNumber=?, ~worker, ~benchmarks: GetBenchmarks.t, ~setO
           }}
         </Column>
       </Row>
-      {switch status {
-      | Fail
-      | Cancel
-      | Running =>
-        switch lastBenchmark {
-        | None => Rx.null
-        | Some(benchmark) => <>
-            <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.yellow600)]>
-              "Metrics for an older commit "
-            </Text>
-            {renderCommitLink(
-              ~style=[Sx.text.bold, Sx.text.xs, Sx.p.zero],
-              repoId,
-              benchmark.commit,
-            )}
-            <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.yellow600)]>
-              " are shown below"
-            </Text>
-          </>
-        }
-      | _ => Rx.null
-      }}
     </>
   }
 }

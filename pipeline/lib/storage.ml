@@ -23,10 +23,11 @@ let setup_metadata ~repository ~worker ~docker_image
         ON CONFLICT(repo_id, commit, worker, docker_image)
         DO UPDATE
         SET build_job_id = NULL,
-            run_job_id=NULL,
-            failed=false,
-            cancelled=false,
-            reason=''
+            run_job_id = NULL,
+            failed = false,
+            cancelled = false,
+            success = false,
+            reason = ''
         RETURNING id;
       |}
       run_at repo_id commit branch pull_number title worker docker_image
@@ -128,3 +129,27 @@ let record_cancel ~stage ~serial_id ~reason (db : Postgresql.connection) =
 
 let record_cancel ~stage ~serial_id ~reason ~conninfo =
   Db_util.with_db ~conninfo (record_cancel ~stage ~serial_id ~reason)
+
+let record_success ~serial_id (db : Postgresql.connection) =
+  Logs.debug (fun log -> log "Recording stage success...");
+  let serial_id = Db_util.int serial_id in
+  let query =
+    Fmt.str
+      {|UPDATE benchmark_metadata
+        SET success = true
+        WHERE id = %s
+      |}
+      serial_id
+  in
+  try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
+  | Postgresql.Error err ->
+      Logs.err (fun log ->
+          log "Database error while recording stage success %s: %s" serial_id
+            (Postgresql.string_of_error err))
+  | exn ->
+      Logs.err (fun log ->
+          log "Unknown error while recording stage success %s:\n%a" serial_id
+            Fmt.exn exn)
+
+let record_success ~serial_id ~conninfo =
+  Db_util.with_db ~conninfo (record_success ~serial_id)
