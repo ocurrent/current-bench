@@ -8,8 +8,11 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - ./alerts.yml:/etc/prometheus/alerts.yml
+      - ./scripts:/scripts
       - prometheus-data:/prometheus
-    command: --web.enable-lifecycle  --config.file=/etc/prometheus/prometheus.yml
+    entrypoint: ["/scripts/start-prometheus.sh"]
+    environment:
+      - OCAML_BENCH_CLUSTER_POOLS=${OCAML_BENCH_CLUSTER_POOLS?required}
 
   alertmanager:
     image: prom/alertmanager:v0.23.0
