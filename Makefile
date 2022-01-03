@@ -104,3 +104,7 @@ start-prometheus-alertmanager:
 stop-prometheus-alertmanager:
 	cd ./prometheus/ && \
 	docker-compose --env-file=../environments/production.env down
+
+.PHONY: start-node-exporter
+start-node-exporter:
+	./prometheus/scripts/start-node-exporter.sh --web.listen-address 0.0.0.0:10080
