@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.32.1
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus-data:/prometheus
+    command: --web.enable-lifecycle  --config.file=/etc/prometheus/prometheus.yml
+
+  alertmanager:
+    image: prom/alertmanager:v0.23.0
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager.yml:/config/alertmanager.yml
+      - ./scripts:/scripts
+      - alertmanager-data:/data
+    entrypoint: ["/scripts/start-alertmanager.sh"]
+    environment:
+      - ALERTMANAGER_SLACK_API_URL=${ALERTMANAGER_SLACK_API_URL?required}
+
+volumes:
+  prometheus-data:
+  alertmanager-data:
