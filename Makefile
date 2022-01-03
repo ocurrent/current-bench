@@ -94,3 +94,13 @@ rebuild-pipeline: ./local-test-repo/.git
 .PHONY: bench
 bench:
 	@cd ./local-test-repo/ && make -s bench
+
+.PHONY: start-prometheus-alertmanager
+start-prometheus-alertmanager:
+	cd ./prometheus/ && \
+	docker-compose --env-file=../environments/production.env up --detach
+
+.PHONY: stop-prometheus-alertmanager
+stop-prometheus-alertmanager:
+	cd ./prometheus/ && \
+	docker-compose --env-file=../environments/production.env down
