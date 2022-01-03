@@ -1,0 +1,26 @@
+global:
+  scrape_interval: 5s # By default, scrape targets every 15 seconds.
+
+  # Attach these labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+    monitor: 'current-bench-monitor'
+
+scrape_configs:
+  - job_name: 'prometheus'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['localhost:9090', 'alertmanager:9093']
+  - job_name: 'node'
+    scrape_interval: 5s
+    static_configs:
+      - targets: [ $PROMETHEUS_SCRAPE_TARGETS ]
+
+alerting:
+  alertmanagers:
+    - scheme: http
+      static_configs:
+        - targets: [ 'alertmanager:9093' ]
+
+rule_files:
+  - /etc/prometheus/alerts.yml
