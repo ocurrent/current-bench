@@ -171,9 +171,9 @@ let make = (
       Belt.Map.Int.set(acc, index, tick)
     })
 
-    let annotations = if Belt.Array.length(comparisonTimeseries) > 0 {
-      let firstPullX = Belt.Array.length(comparisonTimeseries)
-      [
+    let firstPullX = Belt.Array.length(comparisonTimeseries)
+    let annotations = switch firstPullX > 0 {
+    | true => [
         {
           "series": "value",
           "x": firstPullX,
@@ -192,8 +192,7 @@ let make = (
           },
         },
       ]
-    } else {
-      []
+    | _ => []
     }
     let row = getRowData(
       ~comparison=(comparisonTimeseries, comparisonMetadata),
