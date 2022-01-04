@@ -272,11 +272,15 @@ let containerSx = [Sx.w.full, Sx.border.xs, Sx.border.color(Sx.gray300), Sx.roun
 
 open Components
 
+type elementOrString =
+    | String(string)
+    | Element(React.element)
+
 @react.component
 let make = React.memo((
   ~sx as uSx=[],
   ~title=?,
-  ~subTitle=?,
+  ~subTitle: elementOrString=String(""),
   ~xTicks: option<Belt.Map.Int.t<string>>=?,
   ~yLabel: option<string>=?,
   ~labels: option<array<string>>=?,
@@ -323,7 +327,11 @@ let make = React.memo((
     // See: https://github.com/danvk/dygraphs/issues/506
     let data = Belt.Array.concat(data, [DataRow.dummyValue])
     let nullConstantSeries = convertNanToNull(constantSeries)
-    Belt.Array.mapWithIndex(data, (idx, d) => [Obj.magic(idx), convertNanToNull(d), nullConstantSeries])
+    Belt.Array.mapWithIndex(data, (idx, d) => [
+      Obj.magic(idx),
+      convertNanToNull(d),
+      nullConstantSeries,
+    ])
   }
 
   React.useEffect1(() => {
@@ -406,9 +414,13 @@ let make = React.memo((
   | Some(title) =>
     <Column spacing=Sx.lg sx=[Sx.w.auto]>
       <Text sx=[Sx.leadingNone, Sx.text.bold, Sx.text.xl]> title </Text>
-      <Text sx=[Sx.leadingNone, Sx.text.sm, Sx.text.color(Sx.gray600), [Css.minHeight(#em(1.0))]]>
-        {Belt.Option.getWithDefault(subTitle, "")}
-      </Text>
+      {switch subTitle {
+      | String(text) =>
+        <Text sx=[Sx.leadingNone, Sx.text.sm, Sx.text.color(Sx.gray600), [Css.minHeight(#em(1.0))]]>
+          {text}
+        </Text>
+      | Element(elem) => elem
+      }}
     </Column>
   | None => React.null
   }

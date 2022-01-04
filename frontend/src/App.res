@@ -94,6 +94,7 @@ module Benchmark = {
             ~value=toLineGraph(metric.value),
             ~units=metric.units,
             ~description=metric.description,
+            ~trend=metric.trend,
           )
         }, acc, result.metrics)
       }, acc, item.results)

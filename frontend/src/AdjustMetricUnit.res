@@ -68,6 +68,7 @@ let adjust = (data: BenchmarkData.t) => {
                 "runAt": x["runAt"],
                 "units": newUnits,
                 "description": x["description"],
+                "trend": x["trend"],
               }
             )
           (ts, md)

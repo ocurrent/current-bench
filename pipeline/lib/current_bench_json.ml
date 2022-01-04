@@ -74,6 +74,7 @@ module V2 = struct
     description : string;
     value : value;
     units : string;
+    trend : string;
   }
 
   type result = { test_name : string; metrics : metric list }
@@ -102,6 +103,7 @@ module V2 = struct
       description = longest_string m0.description m1.description;
       value = merge_value m0.value m1.value;
       units = longest_string m0.units m1.units;
+      trend = longest_string m0.trend m1.trend;
     }
 
   let rec add_metric ms m =
@@ -182,17 +184,26 @@ module V2 = struct
 
   let metric_of_json t =
     let units = Json.get "units" t |> Json.to_string_option |> default "" in
+    let trend = Json.get "trend" t |> Json.to_string_option |> default "" in
     let description =
       Json.get "description" t |> Json.to_string_option |> default ""
     in
     let value, units = value_of_json ~units (Json.get "value" t) in
     let name = Json.get "name" t |> Json.to_string in
-    { name; description; value; units }
+    (match trend with
+    | "lower-is-better" | "higher-is-better" | "" -> ()
+    | _ ->
+        failwith
+        @@ "V2: trend should be lower-is-better, higher-is-better or not set. "
+        ^ trend
+        ^ " is not valid.");
+    { name; description; value; units; trend }
 
   let metric_of_json_v1 (name, value) =
     let value, units = value_of_json value in
     let description = "" in
-    { name; description; value; units }
+    let trend = "" in
+    { name; description; value; units; trend }
 
   let json_of_metric m =
     `Assoc
@@ -201,6 +212,7 @@ module V2 = struct
         ("description", `String m.description);
         ("value", json_of_value m.value);
         ("units", `String m.units);
+        ("trend", `String m.trend);
       ]
 
   let json_of_metrics metrics = `List (List.map json_of_metric metrics)
