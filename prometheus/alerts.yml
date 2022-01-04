@@ -18,3 +18,12 @@ groups:
       annotations:
         summary: Prometheus target missing (instance {{ $labels.instance }})
         description: "A Prometheus target has disappeared. An exporter might be crashed.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+
+    - alert: HostOutOfDiskSpace
+      expr: (node_filesystem_avail_bytes * 100) / node_filesystem_size_bytes < 10 and ON (instance, device, mountpoint) node_filesystem_readonly == 0
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: Host out of disk space (instance {{ $labels.instance }})
+        description: "Disk is almost full (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
