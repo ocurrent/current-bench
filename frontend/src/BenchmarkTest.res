@@ -119,7 +119,7 @@ let make = (
   ~testName,
   ~comparison=Belt.Map.String.empty,
   ~dataByMetricName: Belt.Map.String.t<(array<LineGraph.DataRow.t>, 'a)>,
-  ~lastCommit
+  ~lastCommit,
 ) => {
   let metric_table = {
     <Table sx=[Sx.mb.xl2]>
@@ -151,105 +151,102 @@ let make = (
     </Table>
   }
 
+  let renderMetricGraph = (metricName, (timeseries, metadata)) => {
+    let (comparisonTimeseries, comparisonMetadata) = Belt.Map.String.getWithDefault(
+      comparison,
+      metricName,
+      ([], []),
+    )
+
+    let timeseries: array<LineGraph.DataRow.t> = Belt.Array.concat(comparisonTimeseries, timeseries)
+    let metadata = Belt.Array.concat(comparisonMetadata, metadata)
+
+    let xTicks = Belt.Array.reduceWithIndex(timeseries, Belt.Map.Int.empty, (acc, _, index) => {
+      let tick = switch Belt.Array.get(metadata, index) {
+      | Some(xMetadata) =>
+        let xValue = xMetadata["commit"]
+        DataHelpers.trimCommit(xValue)
+      | None => "Unknown"
+      }
+      Belt.Map.Int.set(acc, index, tick)
+    })
+
+    let annotations = if Belt.Array.length(comparisonTimeseries) > 0 {
+      let firstPullX = Belt.Array.length(comparisonTimeseries)
+      [
+        {
+          "series": "value",
+          "x": firstPullX,
+          "icon": branchIcon,
+          "text": "Open PR on GitHub",
+          "width": 21,
+          "height": 21,
+          "clickHandler": (_annotation, _point, _dygraph, _event) => {
+            switch pullNumber {
+            | Some(pullNumber) =>
+              DomHelpers.window->DomHelpers.windowOpen(
+                "https://github.com/" ++ repoId ++ "/pull/" ++ string_of_int(pullNumber),
+              )
+            | None => ()
+            }
+          },
+        },
+      ]
+    } else {
+      []
+    }
+    let row = getRowData(
+      ~comparison=(comparisonTimeseries, comparisonMetadata),
+      (timeseries, metadata),
+    )
+    let subTitle: LineGraph.elementOrString = switch row.delta {
+    | Some(delta) => {
+        let subTitleText = delta == 0.0 ? "Same as main" : deltaToString(delta) ++ " vs main"
+        switch (isFavourableDelta(row), delta == 0.0) {
+        | (Some(val), false) =>
+          let color = val ? Sx.green300 : Sx.red300
+          let icon = delta > 0. ? Icon.upArrow : Icon.downArrow
+          let elem =
+            <span className={Sx.make([Sx.d.flex, Sx.flex.row, Sx.items.stretch])}>
+              <span className={Sx.make([Sx.mr.md, Sx.text.color(color)])}> {icon} </span>
+              <Text
+                sx=[
+                  Sx.d.inlineBlock,
+                  Sx.leadingNone,
+                  Sx.text.sm,
+                  Sx.text.color(color),
+                  [Css.minHeight(#em(1.0))],
+                ]>
+                {subTitleText}
+              </Text>
+            </span>
+          Element(elem)
+        | _ => String(subTitleText)
+        }
+      }
+    | _ => String(BeltHelpers.Array.lastExn(metadata)["description"])
+    }
+
+    let oldMetrics = metadata->Belt.Array.every(m => {Some(m["commit"]) != lastCommit})
+
+    <div key=metricName className={Sx.make(oldMetrics ? [Sx.opacity25] : [])}>
+      {Topbar.anchor(~id="line-graph-" ++ testName ++ "-" ++ metricName)}
+      <LineGraph
+        onXLabelClick={AppHelpers.goToCommitLink(~repoId)}
+        title=metricName
+        subTitle
+        xTicks
+        data={timeseries->Belt.Array.sliceToEnd(-20)}
+        units={(metadata->BeltHelpers.Array.lastExn)["units"]}
+        annotations
+        labels=["idx", "value"]
+      />
+    </div>
+  }
+
   let metric_graphs = React.useMemo2(() => {
     dataByMetricName
-    ->Belt.Map.String.mapWithKey((metricName, (timeseries, metadata)) => {
-      let (comparisonTimeseries, comparisonMetadata) = Belt.Map.String.getWithDefault(
-        comparison,
-        metricName,
-        ([], []),
-      )
-
-      let timeseries: array<LineGraph.DataRow.t> = Belt.Array.concat(
-        comparisonTimeseries,
-        timeseries,
-      )
-      let metadata = Belt.Array.concat(comparisonMetadata, metadata)
-
-      let xTicks = Belt.Array.reduceWithIndex(timeseries, Belt.Map.Int.empty, (acc, _, index) => {
-        let tick = switch Belt.Array.get(metadata, index) {
-        | Some(xMetadata) =>
-          let xValue = xMetadata["commit"]
-          DataHelpers.trimCommit(xValue)
-        | None => "Unknown"
-        }
-        Belt.Map.Int.set(acc, index, tick)
-      })
-
-      let annotations = if Belt.Array.length(comparisonTimeseries) > 0 {
-        let firstPullX = Belt.Array.length(comparisonTimeseries)
-        [
-          {
-            "series": "value",
-            "x": firstPullX,
-            "icon": branchIcon,
-            "text": "Open PR on GitHub",
-            "width": 21,
-            "height": 21,
-            "clickHandler": (_annotation, _point, _dygraph, _event) => {
-              switch pullNumber {
-              | Some(pullNumber) =>
-                DomHelpers.window->DomHelpers.windowOpen(
-                  "https://github.com/" ++ repoId ++ "/pull/" ++ string_of_int(pullNumber),
-                )
-              | None => ()
-              }
-            },
-          },
-        ]
-      } else {
-        []
-      }
-      let row = getRowData(
-        ~comparison=(comparisonTimeseries, comparisonMetadata),
-        (timeseries, metadata),
-      )
-      let subTitle: LineGraph.elementOrString = switch row.delta {
-      | Some(delta) => {
-          let subTitleText = delta == 0.0 ? "Same as main" : deltaToString(delta) ++ " vs main"
-          switch (isFavourableDelta(row), delta == 0.0) {
-          | (Some(val), false) =>
-            let color = val ? Sx.green300 : Sx.red300
-            let icon = delta > 0. ? Icon.upArrow : Icon.downArrow
-            let elem =
-              <span className={Sx.make([Sx.d.flex, Sx.flex.row, Sx.items.stretch])}>
-                <span className={Sx.make([Sx.mr.md, Sx.text.color(color)])}> {icon} </span>
-                <Text
-                  sx=[
-                    Sx.d.inlineBlock,
-                    Sx.leadingNone,
-                    Sx.text.sm,
-                    Sx.text.color(color),
-                    [Css.minHeight(#em(1.0))],
-                  ]>
-                  {subTitleText}
-                </Text>
-              </span>
-            Element(elem)
-          | _ => String(subTitleText)
-          }
-        }
-      | _ => String(BeltHelpers.Array.lastExn(metadata)["description"])
-      }
-
-      let oldMetrics =
-        metadata
-        ->Belt.Array.every((m) => { Some(m["commit"]) != lastCommit })
-
-      <div key=metricName  className={Sx.make(oldMetrics ? [Sx.opacity25] : [])}>
-        {Topbar.anchor(~id="line-graph-" ++ testName ++ "-" ++ metricName)}
-        <LineGraph
-          onXLabelClick={AppHelpers.goToCommitLink(~repoId)}
-          title=metricName
-          subTitle
-          xTicks
-          data={timeseries->Belt.Array.sliceToEnd(-20)}
-          units={(metadata->BeltHelpers.Array.lastExn)["units"]}
-          annotations
-          labels=["idx", "value"]
-        />
-      </div>
-    })
+    ->Belt.Map.String.mapWithKey(renderMetricGraph)
     ->Belt.Map.String.valuesToArray
     ->Rx.array
   }, (dataByMetricName, lastCommit))
