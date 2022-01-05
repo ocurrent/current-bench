@@ -132,6 +132,35 @@ let makeAnnotation = (x, series, repoId, pullNumber) => {
   }
 }
 
+let makeSubTitle = (row, description): LineGraph.elementOrString =>
+  switch row.delta {
+  | Some(delta) => {
+      let subTitleText = delta == 0.0 ? "Same as main" : deltaToString(delta) ++ " vs main"
+      switch (isFavourableDelta(row), delta == 0.0) {
+      | (Some(val), false) =>
+        let color = val ? Sx.green300 : Sx.red300
+        let icon = delta > 0. ? Icon.upArrow : Icon.downArrow
+        let elem =
+          <span className={Sx.make([Sx.d.flex, Sx.flex.row, Sx.items.stretch])}>
+            <span className={Sx.make([Sx.mr.md, Sx.text.color(color)])}> {icon} </span>
+            <Text
+              sx=[
+                Sx.d.inlineBlock,
+                Sx.leadingNone,
+                Sx.text.sm,
+                Sx.text.color(color),
+                [Css.minHeight(#em(1.0))],
+              ]>
+              {subTitleText}
+            </Text>
+          </span>
+        Element(elem)
+      | _ => String(subTitleText)
+      }
+    }
+  | _ => String(description)
+  }
+
 @react.component
 let make = (
   ~repoId,
@@ -193,34 +222,8 @@ let make = (
       ~comparison=(comparisonTimeseries, comparisonMetadata),
       (timeseries, metadata),
     )
-    let subTitle: LineGraph.elementOrString = switch row.delta {
-    | Some(delta) => {
-        let subTitleText = delta == 0.0 ? "Same as main" : deltaToString(delta) ++ " vs main"
-        switch (isFavourableDelta(row), delta == 0.0) {
-        | (Some(val), false) =>
-          let color = val ? Sx.green300 : Sx.red300
-          let icon = delta > 0. ? Icon.upArrow : Icon.downArrow
-          let elem =
-            <span className={Sx.make([Sx.d.flex, Sx.flex.row, Sx.items.stretch])}>
-              <span className={Sx.make([Sx.mr.md, Sx.text.color(color)])}> {icon} </span>
-              <Text
-                sx=[
-                  Sx.d.inlineBlock,
-                  Sx.leadingNone,
-                  Sx.text.sm,
-                  Sx.text.color(color),
-                  [Css.minHeight(#em(1.0))],
-                ]>
-                {subTitleText}
-              </Text>
-            </span>
-          Element(elem)
-        | _ => String(subTitleText)
-        }
-      }
-    | _ => String(BeltHelpers.Array.lastExn(metadata)["description"])
-    }
-
+    let description = BeltHelpers.Array.lastExn(metadata)["description"]
+    let subTitle: LineGraph.elementOrString = makeSubTitle(row, description)
     let oldMetrics = metadata->Belt.Array.every(m => {Some(m["commit"]) != lastCommit})
     let units = (metadata->BeltHelpers.Array.lastExn)["units"]
     let data = timeseries->Belt.Array.sliceToEnd(-20)
