@@ -112,6 +112,26 @@ let renderMetricOverviewRow = (
   }
 }
 
+let makeAnnotation = (x, series, repoId, pullNumber) => {
+  {
+    "series": series,
+    "x": x,
+    "icon": branchIcon,
+    "text": "Open PR on GitHub",
+    "width": 21,
+    "height": 21,
+    "clickHandler": (_annotation, _point, _dygraph, _event) => {
+      switch pullNumber {
+      | Some(pullNumber) =>
+        DomHelpers.window->DomHelpers.windowOpen(
+          "https://github.com/" ++ repoId ++ "/pull/" ++ string_of_int(pullNumber),
+        )
+      | None => ()
+      }
+    },
+  }
+}
+
 @react.component
 let make = (
   ~repoId,
@@ -169,29 +189,6 @@ let make = (
       Belt.Map.Int.set(acc, index, tick)
     })
 
-    let firstPullX = Belt.Array.length(comparisonTimeseries)
-    let annotations = switch firstPullX > 0 {
-    | true => [
-        {
-          "series": "value",
-          "x": firstPullX,
-          "icon": branchIcon,
-          "text": "Open PR on GitHub",
-          "width": 21,
-          "height": 21,
-          "clickHandler": (_annotation, _point, _dygraph, _event) => {
-            switch pullNumber {
-            | Some(pullNumber) =>
-              DomHelpers.window->DomHelpers.windowOpen(
-                "https://github.com/" ++ repoId ++ "/pull/" ++ string_of_int(pullNumber),
-              )
-            | None => ()
-            }
-          },
-        },
-      ]
-    | _ => []
-    }
     let row = getRowData(
       ~comparison=(comparisonTimeseries, comparisonMetadata),
       (timeseries, metadata),
@@ -228,6 +225,9 @@ let make = (
     let units = (metadata->BeltHelpers.Array.lastExn)["units"]
     let data = timeseries->Belt.Array.sliceToEnd(-20)
     let labels = ["idx", "value"]
+    let firstPullX = Belt.Array.length(comparisonTimeseries)
+    let annotations =
+      firstPullX > 0 ? [makeAnnotation(firstPullX, "value", repoId, pullNumber)] : []
     let title = metricName
     let onXLabelClick = AppHelpers.goToCommitLink(~repoId)
     let id = `line-graph-${testName}-${title}`
