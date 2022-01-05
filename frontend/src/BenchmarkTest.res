@@ -225,19 +225,16 @@ let make = (
     }
 
     let oldMetrics = metadata->Belt.Array.every(m => {Some(m["commit"]) != lastCommit})
+    let units = (metadata->BeltHelpers.Array.lastExn)["units"]
+    let data = timeseries->Belt.Array.sliceToEnd(-20)
+    let labels = ["idx", "value"]
+    let title = metricName
+    let onXLabelClick = AppHelpers.goToCommitLink(~repoId)
+    let id = `line-graph-${testName}-${title}`
 
     <div key=metricName className={Sx.make(oldMetrics ? [Sx.opacity25] : [])}>
-      {Topbar.anchor(~id="line-graph-" ++ testName ++ "-" ++ metricName)}
-      <LineGraph
-        onXLabelClick={AppHelpers.goToCommitLink(~repoId)}
-        title=metricName
-        subTitle
-        xTicks
-        data={timeseries->Belt.Array.sliceToEnd(-20)}
-        units={(metadata->BeltHelpers.Array.lastExn)["units"]}
-        annotations
-        labels=["idx", "value"]
-      />
+      {Topbar.anchor(~id)}
+      <LineGraph onXLabelClick title subTitle xTicks data units annotations labels />
     </div>
   }
 
