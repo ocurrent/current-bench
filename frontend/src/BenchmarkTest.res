@@ -163,9 +163,7 @@ let make = (
 
     let xTicks = Belt.Array.reduceWithIndex(timeseries, Belt.Map.Int.empty, (acc, _, index) => {
       let tick = switch Belt.Array.get(metadata, index) {
-      | Some(xMetadata) =>
-        let xValue = xMetadata["commit"]
-        DataHelpers.trimCommit(xValue)
+      | Some(m) => DataHelpers.trimCommit(m["commit"])
       | None => "Unknown"
       }
       Belt.Map.Int.set(acc, index, tick)
