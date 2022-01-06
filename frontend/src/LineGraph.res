@@ -138,10 +138,11 @@ module Legend = {
         ("<div>" ++ labelHTML ++ "&ndash; </div>") ++
         ("<div>" ++ " <b>" ++ yHTML ++ "</b>" ++ "</div>" ++ "</div>"))
       }
+      let statsIndex = 1  // data.series contains legend entries for each line we show (currently, data and stats)
       let legend = Array.mapi((idx, unit: t) => {
         // Add extra header for overall stats
-        let extraHeader = switch unit.label {
-        | "mean" => "<b>Overall Stats</b>"
+        let extraHeader = switch idx == statsIndex {
+        | true => "<b>Overall Stats</b>"
         | _ => ""
         }
         // We check if the data point was originally a multi-value data point,
@@ -156,7 +157,7 @@ module Legend = {
         let rawToFloat = x =>
           x->Js.Nullable.toOption->Belt.Option.getExn->Js.Float.toPrecisionWithPrecision(~digits=4)
         let extraHTML = switch multiValue {
-        | true if unit.label != "mean" =>
+        | true if idx < statsIndex =>
           row(unit.dashHTML, "min", min->rawToFloat) ++ row(unit.dashHTML, "max", max->rawToFloat)
         | _ => ""
         }
