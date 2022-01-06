@@ -20,7 +20,7 @@ let computeMean = xs => {
     None
   } else {
     let (total, count) = Array.fold_left(
-      ((total, count), x) => Js.Float.isNaN(x) ? (total, count +. 1.) : (total +. x, count +. 1.),
+      ((total, count), x) => Js.Float.isNaN(x) ? (total, count) : (total +. x, count +. 1.),
       (0., 0.),
       xs,
     )
