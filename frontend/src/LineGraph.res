@@ -312,7 +312,7 @@ let make = React.memo((
     DataRow.valueWithErrorBars(~mid=mean, ~low=mean -. stdDev, ~high=mean +. stdDev)
   }
   let labels = labels->Belt.Option.map(labels => {
-    labels->BeltHelpers.Array.add("mean")
+    Belt.Array.concatMany([["idx"], labels, ["mean"]])
   })
 
   let makeDygraphData = (data: array<DataRow.t>) => {

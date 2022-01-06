@@ -227,7 +227,7 @@ let make = (
     let oldMetrics = metadata->Belt.Array.every(m => {Some(m["commit"]) != lastCommit})
     let units = (metadata->BeltHelpers.Array.lastExn)["units"]
     let data = timeseries->Belt.Array.sliceToEnd(-20)
-    let labels = ["idx", "value"]
+    let labels = ["value"]
     let firstPullX = Belt.Array.length(comparisonTimeseries)
     let annotations =
       firstPullX > 0 ? [makeAnnotation(firstPullX, "value", repoId, pullNumber)] : []
