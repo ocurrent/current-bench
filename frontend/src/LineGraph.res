@@ -404,7 +404,7 @@ let make = React.memo((
     None
   }, (data, annotations))
 
-  let lastValue = data->Belt.Array.getExn(Belt.Array.length(data) - 1)
+  let lastValue = data->BeltHelpers.Array.lastExn
 
   let left = switch title {
   | Some(title) =>
