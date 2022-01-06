@@ -270,8 +270,8 @@ let containerSx = [Sx.w.full, Sx.border.xs, Sx.border.color(Sx.gray300), Sx.roun
 open Components
 
 type elementOrString =
-    | String(string)
-    | Element(React.element)
+  | String(string)
+  | Element(React.element)
 
 @react.component
 let make = React.memo((
