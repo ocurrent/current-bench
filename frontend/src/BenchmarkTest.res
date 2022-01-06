@@ -161,6 +161,69 @@ let makeSubTitle = (row, description): LineGraph.elementOrString =>
   | _ => String(description)
   }
 
+let getSeriesArrays = (data, comparison, metricName) => {
+  let (comparisonTimeseries, comparisonMetadata) = Belt.Map.String.getWithDefault(
+    comparison,
+    metricName,
+    ([], []),
+  )
+  let (t, m) = Belt.Map.String.getWithDefault(data, metricName, ([], []))
+  let timeseries: LineGraph.DataRow.row = Belt.Array.concat(comparisonTimeseries, t)
+  let metadata = Belt.Array.concat(comparisonMetadata, m)
+  (timeseries, metadata, comparisonTimeseries, comparisonMetadata)
+}
+
+// merge metadata for different metrics into a single one. Some metrics may be
+// missing for some commits. This function gets the list of all commits where
+// atleast one metric is present.
+let mergeMetadata = seriesArrays => {
+  let sortMerged = selectorFn => {
+    let mdArray = seriesArrays->Belt.Array.map(selectorFn)->Belt.Array.concatMany
+    let mdByCommit = mdArray->Belt.Array.reduce(Belt.Map.String.empty, (acc, md) => {
+      Belt.Map.String.set(acc, md["commit"], md)
+    })
+    let sorted =
+      mdByCommit
+      ->Belt.Map.String.valuesToArray
+      ->Belt.SortArray.stableSortBy((a, b) =>
+        compare(Js.Date.getTime(a["runAt"]), Js.Date.getTime(b["runAt"]))
+      )
+    (sorted, mdByCommit)
+  }
+  // Merge and sort comparison metadata
+  let (sortedCompareMd, compareMdByCommit) = sortMerged(((_, _, _, cmd)) => cmd)
+  // Merge and sort metadata
+  let (sortedMd, _) = sortMerged(((_, md, _, _)) => md)
+  // Ensure that comparison metadata is before normal metadata
+  sortedCompareMd->Belt.Array.concat(
+    sortedMd->Belt.Array.keep(x => !Belt.Map.String.has(compareMdByCommit, x["commit"])),
+  )
+}
+
+// Fill in NaN values when a metric is missing for a specific commit
+let fillMissingValues = (seriesArrays, mergedMetadata) => {
+  let n = Belt.Array.length(mergedMetadata)
+  seriesArrays->Belt.Array.map(((ts, md, _, _)) =>
+    switch Belt.Array.length(md) < n {
+    | false => ts
+    | true => {
+        let mergedCommits = mergedMetadata->Belt.Array.map(m => m["commit"])
+        let ts_ = Belt.Array.make(n, [Js.Float._NaN, Js.Float._NaN, Js.Float._NaN])
+        ignore(
+          md->Belt.Array.mapWithIndex((idx, m) => {
+            let idx_ = mergedCommits->Belt.Array.getIndexBy(c => c == m["commit"])
+            switch idx_ {
+            | Some(i) => Belt.Array.set(ts_, i, Belt.Array.getExn(ts, idx))
+            | _ => false
+            }
+          }),
+        )
+        ts_
+      }
+    }
+  )
+}
+
 @react.component
 let make = (
   ~repoId,
@@ -200,52 +263,92 @@ let make = (
     </Table>
   }
 
-  let renderMetricGraph = (metricName, (timeseries, metadata)) => {
-    let (comparisonTimeseries, comparisonMetadata) = Belt.Map.String.getWithDefault(
-      comparison,
-      metricName,
-      ([], []),
-    )
-
-    let timeseries: array<LineGraph.DataRow.t> = Belt.Array.concat(comparisonTimeseries, timeseries)
-    let metadata = Belt.Array.concat(comparisonMetadata, metadata)
-
-    let xTicks = Belt.Array.reduceWithIndex(timeseries, Belt.Map.Int.empty, (acc, _, index) => {
-      let tick = switch Belt.Array.get(metadata, index) {
-      | Some(m) => DataHelpers.trimCommit(m["commit"])
-      | None => "Unknown"
+  let metricNamesByPrefix =
+    dataByMetricName
+    ->Belt.Map.String.keysToArray
+    ->Belt.Array.reduce(Belt.Map.String.empty, (acc, key) =>
+      switch String.split_on_char('/', key) {
+      | list{prefix, _} =>
+        let arr = Belt.Map.String.getWithDefault(acc, prefix, [])
+        let _ = Js.Array.push(key, arr)
+        Belt.Map.String.set(acc, prefix, arr)
+      | _ => acc
       }
-      Belt.Map.Int.set(acc, index, tick)
-    })
-
-    let row = getRowData(
-      ~comparison=(comparisonTimeseries, comparisonMetadata),
-      (timeseries, metadata),
     )
-    let description = BeltHelpers.Array.lastExn(metadata)["description"]
-    let subTitle: LineGraph.elementOrString = makeSubTitle(row, description)
-    let oldMetrics = metadata->Belt.Array.every(m => {Some(m["commit"]) != lastCommit})
-    let units = (metadata->BeltHelpers.Array.lastExn)["units"]
-    let data = timeseries->Belt.Array.sliceToEnd(-20)
-    let labels = ["value"]
-    let firstPullX = Belt.Array.length(comparisonTimeseries)
-    let annotations =
-      firstPullX > 0 ? [makeAnnotation(firstPullX, "value", repoId, pullNumber)] : []
-    let title = metricName
-    let onXLabelClick = AppHelpers.goToCommitLink(~repoId)
-    let id = `line-graph-${testName}-${title}`
 
-    <div key=metricName className={Sx.make(oldMetrics ? [Sx.opacity25] : [])}>
-      {Topbar.anchor(~id)}
-      <LineGraph onXLabelClick title subTitle xTicks data units annotations labels />
-    </div>
+  let renderedOverlays = Belt.HashSet.String.make(
+    ~hintSize=metricNamesByPrefix->Belt.Map.String.keysToArray->Belt.Array.length,
+  )
+
+  let renderMetricGraph = metricName => {
+    let (isOverlayed, overlayPrefix) = switch String.split_on_char('/', metricName) {
+    | list{prefix, _} => (true, Some(prefix))
+    | _ => (false, None)
+    }
+    let skipRender =
+      isOverlayed && renderedOverlays->Belt.HashSet.String.has(overlayPrefix->Belt.Option.getExn)
+    if isOverlayed {
+      renderedOverlays->Belt.HashSet.String.add(overlayPrefix->Belt.Option.getExn)
+    }
+
+    switch skipRender {
+    | true => Rx.null
+    | false =>
+      let names = isOverlayed
+        ? metricNamesByPrefix->Belt.Map.String.getExn(overlayPrefix->Belt.Option.getExn)
+        : [metricName]
+      let suffixes = isOverlayed
+        ? names->Belt.Array.map(x => Js.String.split("/", x)[1])
+        : [metricName]
+      let seriesArrays =
+        names->Belt.Array.map(x => getSeriesArrays(dataByMetricName, comparison, x))
+      // FIXME: Validate that units are same on all the overlays? (ideally, in the current_bench_json.ml)
+      // This could also be broken by the code that adjusts size metrics, even if validated in the pipeline
+      let (timeseries, metadata, comparisonTimeseries, comparisonMetadata) = seriesArrays[0]
+      let mergedMetadata = isOverlayed ? mergeMetadata(seriesArrays) : metadata
+      let tsArrays = fillMissingValues(seriesArrays, mergedMetadata)
+      let xTicks = mergedMetadata->Belt.Array.reduceWithIndex(Belt.Map.Int.empty, (
+        acc,
+        m,
+        index,
+      ) => {
+        Belt.Map.Int.set(acc, index, DataHelpers.trimCommit(m["commit"]))
+      })
+      let subTitle: LineGraph.elementOrString = switch isOverlayed {
+      | false =>
+        let description = BeltHelpers.Array.lastExn(mergedMetadata)["description"]
+        let row = getRowData(
+          ~comparison=(comparisonTimeseries, comparisonMetadata),
+          (timeseries, metadata),
+        )
+        makeSubTitle(row, description)
+      | true =>
+        let s = Belt.Array.joinWith(suffixes, ", ", identity)
+        String(`Overlay: ${s}`)
+      }
+
+      let oldMetrics = mergedMetadata->Belt.Array.every(m => {Some(m["commit"]) != lastCommit})
+      let units = (mergedMetadata->BeltHelpers.Array.lastExn)["units"]
+      let dataSet = tsArrays->Belt.Array.map(ts => ts->Belt.Array.sliceToEnd(-20))
+      let labels = suffixes
+      let firstPullX = Belt.Array.length(comparisonTimeseries)
+      let annotations =
+        firstPullX > 0
+          ? labels->Belt.Array.map(x => makeAnnotation(firstPullX, x, repoId, pullNumber))
+          : []
+      let title = isOverlayed ? overlayPrefix->Belt.Option.getExn : metricName
+      let onXLabelClick = AppHelpers.goToCommitLink(~repoId)
+      let id = `line-graph-${testName}-${title}`
+
+      <div key=metricName className={Sx.make(oldMetrics ? [Sx.opacity25] : [])}>
+        {Topbar.anchor(~id)}
+        <LineGraph onXLabelClick title subTitle xTicks dataSet units annotations labels />
+      </div>
+    }
   }
 
   let metric_graphs = React.useMemo2(() => {
-    dataByMetricName
-    ->Belt.Map.String.mapWithKey(renderMetricGraph)
-    ->Belt.Map.String.valuesToArray
-    ->Rx.array
+    dataByMetricName->Belt.Map.String.keysToArray->Belt.Array.map(renderMetricGraph)->Rx.array
   }, (dataByMetricName, lastCommit))
 
   <details className={Sx.make([Sx.w.full])} open_=true>
