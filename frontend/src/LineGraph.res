@@ -206,6 +206,7 @@ let defaultOptions = (
     },
     "series": {
       "mean": {
+        "color": "#888888",
         "strokeWidth": 1.0,
         "strokePattern": [3, 2],
         "highlightCircleSize": 0,
@@ -222,7 +223,7 @@ let defaultOptions = (
     "customBars": true,
     "fillGraph": false,
     "pointClickCallback": Js.Null.fromOption(onClick),
-    "colors": ["#0F6FDE", "#888888"],
+    "colors": ["#0F6FDE"],
     // "animatedZooms": true,
     "digitsAfterDecimal": 3,
     "hideOverlayOnMouseOut": true,
