@@ -290,9 +290,8 @@ let make = (
         : [metricName]
       let seriesArrays =
         names->Belt.Array.map(x => getSeriesArrays(dataByMetricName, comparison, x))
-      // FIXME: Validate that units are same on all the overlays? (ideally, in the current_bench_json.ml)
-      // This could also be broken by the code that adjusts size metrics, even if validated in the pipeline
       let (timeseries, metadata, comparisonTimeseries, comparisonMetadata) = seriesArrays[0]
+      // FIXME: Validate that units are same on all the overlays? (ideally, in the current_bench_json.ml)
       let mergedMetadata = isOverlayed ? mergeMetadata(seriesArrays) : metadata
       let tsArrays = fillMissingValues(seriesArrays, mergedMetadata)
       let xTicks = mergedMetadata->Belt.Array.reduceWithIndex(Belt.Map.Int.empty, (

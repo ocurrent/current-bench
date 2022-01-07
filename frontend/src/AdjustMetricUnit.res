@@ -1,3 +1,5 @@
+open MetricHierarchyHelpers
+
 let sizeUnits = ["bytes", "kb", "mb", "gb", "tb", "pb", "eb", "zb", "yb"]
 let sizeRegex = %re("/(yb|zb|eb|pb|tb|gb|mb|kb|bytes)\w*/i")
 let isSize = x => Js.Re.exec_(sizeRegex, x)->Belt.Option.isSome
@@ -49,8 +51,9 @@ let adjustSize = (timeseries: BenchmarkData.timeseries, units: LineGraph.DataRow
 
 let adjust = (data: BenchmarkData.t) => {
   data->Belt.Map.String.mapWithKey((_, (testIndex, dataByMetricName)) => {
+    let metricNamesByPrefix = groupMetricNamesByPrefix(dataByMetricName)
     let adjustedDataByMetricName = dataByMetricName->Belt.Map.String.mapWithKey((
-      _,
+      metricName,
       (timeseries, metadata),
     ) => {
       let isSizeMetric = switch Belt.Array.size(metadata) {
@@ -59,18 +62,36 @@ let adjust = (data: BenchmarkData.t) => {
       }
       switch isSizeMetric {
       | true => {
+          let prefix = getMetricPrefix(metricName)
           let units = metadata[0]["units"]
-          let (ts, newUnits) = adjustSize(timeseries, units)
-          let md =
-            metadata->Belt.Array.map(x =>
-              {
-                "commit": x["commit"],
-                "runAt": x["runAt"],
-                "units": newUnits,
-                "description": x["description"],
-                "trend": x["trend"],
-              }
-            )
+          // We concatenate the timeseries for all metrics in the hierarchy to correctly adjust units 
+          let hierarchyTimeseries = switch prefix {
+          | Some(prefix) =>
+            let names =
+              metricNamesByPrefix
+              ->Belt.Map.String.getExn(prefix)
+              ->Belt.SortArray.stableSortBy((a, b) => {
+                a == metricName ? -1 : b == metricName ? 1 : compare(a, b)
+              })
+            names
+            ->Belt.Array.map(x => {
+              let (t, _) = dataByMetricName->Belt.Map.String.getExn(x)
+              t
+            })
+            ->Belt.Array.concatMany
+          | None => timeseries
+          }
+          let (hts, newUnits) = adjustSize(hierarchyTimeseries, units)
+          let ts = hts->Belt.Array.slice(~offset=0, ~len=Belt.Array.length(timeseries))
+          let md = metadata->Belt.Array.map(x =>
+            {
+              "commit": x["commit"],
+              "runAt": x["runAt"],
+              "units": newUnits,
+              "description": x["description"],
+              "trend": x["trend"],
+            }
+          )
           (ts, md)
         }
       | false => (timeseries, metadata)
