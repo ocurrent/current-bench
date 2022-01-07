@@ -40,7 +40,7 @@ url_with_schema() {
 
 is_graphql_url() {
     regex='https?://.*/v1/graphql'
-    if [[ $1 =~ $regex ]]
+    if [[ $1 =~ $regex ]] || [[ $1 == '/_hasura/v1/graphql' ]]
     then
         echo "$1 is valid"
     else
