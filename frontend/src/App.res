@@ -159,7 +159,7 @@ module BenchmarkView = {
     | Data(data)
     | PartialData(data, _) =>
       <Block sx=[Sx.px.xl2, Sx.py.xl2, Sx.w.full, Sx.minW.zero]>
-        <CommitInfo repoId worker ?pullNumber setLastCommit />
+        <CommitInfo repoId worker ?pullNumber benchmarks=data setLastCommit />
         <Benchmark repoId pullNumber data lastCommit />
       </Block>
     }

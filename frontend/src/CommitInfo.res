@@ -1,4 +1,5 @@
 open Components
+open BenchmarkQueryHelpers
 
 module GetLastCommitInfo = %graphql(`
 query ($repoId: String!,
@@ -101,7 +102,8 @@ let buildStatus = (lastCommitInfo: GetLastCommitInfo.t_lastCommitInfo) => {
 }
 
 @react.component
-let make = (~repoId, ~pullNumber=?, ~worker, ~setLastCommit) => {
+let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setLastCommit) => {
+  let benchmarks = benchmarks.benchmarks
   let (worker, dockerImage) = switch worker {
     | None => (None, None)
     | Some((worker, dockerImage)) => (Some(worker), Some(dockerImage))
@@ -153,7 +155,17 @@ let make = (~repoId, ~pullNumber=?, ~worker, ~setLastCommit) => {
   | Data(data)
   | PartialData(data, _) =>
     let lastCommitInfo = data.lastCommitInfo[0]
-    setLastCommit(Some(lastCommitInfo.commit))
+    let lastBenchmark = Belt.Array.get(
+      benchmarks,
+      Belt.Array.length(benchmarks) - 1,
+    )
+    let (lastCommit, lastBenchmark) =
+      switch lastBenchmark {
+        | Some (lastBenchmark) when lastBenchmark.commit != lastCommitInfo.commit =>
+          (lastBenchmark.commit, Some(lastBenchmark.commit))
+        | _ => (lastCommitInfo.commit, None)
+      }
+    setLastCommit(Some(lastCommit))
     let sameBuildJobLog = switch (lastCommitInfo.build_job_id, lastCommitInfo.run_job_id) {
     | (Some(buildID), Some(jobID)) => buildID == jobID
     | (_, _) => false
@@ -224,6 +236,23 @@ let make = (~repoId, ~pullNumber=?, ~worker, ~setLastCommit) => {
           }}
         </Column>
       </Row>
+      {switch (status, lastBenchmark) {
+      | (Fail | Cancel | Running, Some(benchmark)) =>
+        <>
+          <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.yellow600)]>
+            "Metrics for an older commit "
+          </Text>
+          {renderCommitLink(
+            ~style=[Sx.text.bold, Sx.text.xs, Sx.p.zero],
+            repoId,
+            benchmark,
+          )}
+          <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.yellow600)]>
+            " are shown below"
+          </Text>
+        </>
+      | _ => Rx.null
+      }}
     </>
   }
 }
