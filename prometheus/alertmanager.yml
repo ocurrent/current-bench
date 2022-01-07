@@ -8,5 +8,5 @@ route:
 receivers:
 - name: 'slack-notifications'
   slack_configs:
-  - channel: '#c-admin'
+  - channel: '#benchmark-tooling-firehose'
     send_resolved: true
