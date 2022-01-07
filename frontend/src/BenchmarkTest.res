@@ -1,5 +1,6 @@
 open! Prelude
 open Components
+open MetricHierarchyHelpers
 
 @module("../icons/branch.svg") external branchIcon: string = "default"
 
@@ -263,28 +264,15 @@ let make = (
     </Table>
   }
 
-  let metricNamesByPrefix =
-    dataByMetricName
-    ->Belt.Map.String.keysToArray
-    ->Belt.Array.reduce(Belt.Map.String.empty, (acc, key) =>
-      switch String.split_on_char('/', key) {
-      | list{prefix, _} =>
-        let arr = Belt.Map.String.getWithDefault(acc, prefix, [])
-        let _ = Js.Array.push(key, arr)
-        Belt.Map.String.set(acc, prefix, arr)
-      | _ => acc
-      }
-    )
+  let metricNamesByPrefix = groupMetricNamesByPrefix(dataByMetricName)
 
   let renderedOverlays = Belt.HashSet.String.make(
     ~hintSize=metricNamesByPrefix->Belt.Map.String.keysToArray->Belt.Array.length,
   )
 
   let renderMetricGraph = metricName => {
-    let (isOverlayed, overlayPrefix) = switch String.split_on_char('/', metricName) {
-    | list{prefix, _} => (true, Some(prefix))
-    | _ => (false, None)
-    }
+    let overlayPrefix = getMetricPrefix(metricName)
+    let isOverlayed = overlayPrefix->Belt.Option.isSome
     let skipRender =
       isOverlayed && renderedOverlays->Belt.HashSet.String.has(overlayPrefix->Belt.Option.getExn)
     if isOverlayed {
