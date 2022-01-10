@@ -92,7 +92,7 @@ external destroy: graph => unit = "destroy"
 external updateOptions: (graph, 'options) => unit = "updateOptions"
 
 @send
-external getColors: (graph, ()) => array<string> = "getColors"
+external getColors: (graph, unit) => array<string> = "getColors"
 
 type global
 @module("dygraphs")
@@ -234,7 +234,18 @@ let defaultOptions = (
     "customBars": true,
     "fillGraph": false,
     "pointClickCallback": Js.Null.fromOption(onClick),
-    "colors": ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"],
+    "colors": [
+      "#1f77b4",
+      "#ff7f0e",
+      "#2ca02c",
+      "#d62728",
+      "#9467bd",
+      "#8c564b",
+      "#e377c2",
+      "#7f7f7f",
+      "#bcbd22",
+      "#17becf",
+    ],
     // "animatedZooms": true,
     "digitsAfterDecimal": 3,
     "hideOverlayOnMouseOut": true,
