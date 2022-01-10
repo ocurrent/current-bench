@@ -309,9 +309,7 @@ let make = (
           (timeseries, metadata),
         )
         makeSubTitle(row, description)
-      | true =>
-        let s = Belt.Array.joinWith(suffixes, ", ", identity)
-        String(`Overlay: ${s}`)
+      | true => String("")
       }
 
       let oldMetrics = mergedMetadata->Belt.Array.every(m => {Some(m["commit"]) != lastCommit})
