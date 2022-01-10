@@ -91,6 +91,9 @@ external destroy: graph => unit = "destroy"
 @send
 external updateOptions: (graph, 'options) => unit = "updateOptions"
 
+@send
+external getColors: (graph, ()) => array<string> = "getColors"
+
 type global
 @module("dygraphs")
 external global: global = "default"
@@ -305,6 +308,7 @@ let make = React.memo((
 ) => {
   let graphDivRef = React.useRef(Js.Nullable.null)
   let graphRef = React.useRef(None)
+  let (legendColors, setLegendColors) = React.useState(() => [])
 
   let intersection = Hooks.useIntersection(graphDivRef, IntersectionObserver.makeOption())
 
@@ -327,6 +331,7 @@ let make = React.memo((
 
   let nullConstantSeries = constantSeries->Belt.Array.map(convertNanToNull)
 
+  let originalLabels = labels
   let labels = labels->Belt.Option.map(labels => {
     let means = Belt.Array.length(labels) > 1 ? labels->Belt.Array.map(x => "mean:" ++ x) : ["mean"]
     Belt.Array.concatMany([["idx"], labels, means])
@@ -368,6 +373,7 @@ let make = React.memo((
       | (None, true) => {
           let graph = init(ref, makeDygraphData(dataSet), options)
           graphRef.current = Some(graph)
+          setLegendColors(_ => graph->getColors())
 
           if Array.length(annotations) > 0 {
             graph->ready(() => {
@@ -446,16 +452,54 @@ let make = React.memo((
       x->BeltHelpers.Array.lastExn->DataRow.toValue->Js.Float.toPrecisionWithPrecision(~digits=4)
     )
   let isOverlayed = lastValues->Belt.Array.length > 1
-  let rSize = isOverlayed ? Sx.text.lg : Sx.text.xl2
-  let valueText = isOverlayed
-    ? "[" ++ Belt.Array.joinWith(lastValues, ", ", identity) ++ "]"
-    : lastValues->BeltHelpers.Array.lastExn
-
-  let right =
-    <Row alignX=#right spacing=Sx.md sx=[Sx.w.auto]>
-      <Text sx=[Sx.leadingNone, rSize, Sx.text.bold, Sx.text.color(Sx.gray900)]> {valueText} </Text>
-      <Text sx=[Sx.leadingNone, rSize, Sx.text.bold, Sx.text.color(Sx.gray500)]> units </Text>
-    </Row>
+  let right = isOverlayed
+    ? <Row
+        spacing=#between
+        sx=[
+          Sx.d.inlineFlex,
+          Sx.flex.col,
+          Sx.items.start,
+          Sx.flex.wrap,
+          Sx.unsafe("width", "min-content"),
+        ]>
+        {originalLabels
+        ->Belt.Option.getWithDefault([])
+        ->Belt.Array.mapWithIndex((idx, label) => {
+          let hex =
+            legendColors
+            ->Belt.Array.get(idx)
+            ->Belt.Option.getWithDefault("#000000")
+            ->Js.String2.substr(~from=1)
+          <div
+            className={Sx.make([
+              Sx.d.inlineFlex,
+              Sx.items.center,
+              Sx.flex.noWrap,
+              Sx.unsafe("gap", "4px"),
+            ])}>
+            <span
+              className={Sx.make([
+                Sx.mr.zero,
+                Sx.text.color(Css.hex(hex)),
+              ]) ++ " dygraph-legend-line"}
+            />
+            <Text sx=[Sx.text.sm, Sx.text.color(Sx.gray900)]> {label ++ ":"} </Text>
+            <Text sx=[Sx.text.sm, Sx.text.color(Sx.gray900)]>
+              {lastValues->Belt.Array.get(idx)->Belt.Option.getWithDefault("")}
+            </Text>
+            <Text sx=[Sx.text.sm]> units </Text>
+          </div>
+        })
+        ->Rx.array(~empty=<Message text="No labels" />)}
+      </Row>
+    : <Row alignX=#right spacing=Sx.md sx=[Sx.w.auto]>
+        <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray900)]>
+          {lastValues->BeltHelpers.Array.lastExn}
+        </Text>
+        <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray500)]>
+          units
+        </Text>
+      </Row>
 
   let sx = Array.append(uSx, containerSx)
 
