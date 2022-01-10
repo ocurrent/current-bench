@@ -7,10 +7,21 @@ define BENCH_DATA_1
       "name": "bench_1_test_1",
       "metrics": [
 	{
-	  "name": "time",
-	  "value": 8.02,
+	  "name": "grammarFunctor/parsing",
+	  "value": 0.19,
 	  "units": "secs",
-	  "description": "The total time to do awesome $$job",
+	  "trend": "lower-is-better"
+	},
+	{
+	  "name": "grammarFunctor/typing",
+	  "value": 0.28,
+	  "units": "secs",
+	  "trend": "lower-is-better"
+	},
+	{
+	  "name": "grammarFunctor/generate",
+	  "value": 0.14,
+	  "units": "secs",
 	  "trend": "lower-is-better"
 	},
 	{

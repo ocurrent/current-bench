@@ -129,6 +129,8 @@ module Legend = {
     | Some(xTicks) => Belt.Map.Int.get(xTicks, data.x)
     | None => Some(data.xHTML)
     }
+    // Starting index for the stats. (data.series contains legend entries for each line we show - data followed by stats)
+    let statsIndex = Array.length(data.series) / 2
     switch xLabel {
     | Some(xLabel) =>
       let html = "<b>" ++ xLabel ++ "</b>"
@@ -140,8 +142,8 @@ module Legend = {
       }
       let legend = Array.mapi((idx, unit: t) => {
         // Add extra header for overall stats
-        let extraHeader = switch unit.label {
-        | "mean" => "<b>Overall Stats</b>"
+        let extraHeader = switch idx == statsIndex {
+        | true => "<b>Overall Stats</b>"
         | _ => ""
         }
         // We check if the data point was originally a multi-value data point,
@@ -156,7 +158,7 @@ module Legend = {
         let rawToFloat = x =>
           x->Js.Nullable.toOption->Belt.Option.getExn->Js.Float.toPrecisionWithPrecision(~digits=4)
         let extraHTML = switch multiValue {
-        | true if unit.label != "mean" =>
+        | true if idx < statsIndex =>
           row(unit.dashHTML, "min", min->rawToFloat) ++ row(unit.dashHTML, "max", max->rawToFloat)
         | _ => ""
         }
@@ -188,6 +190,20 @@ let defaultOptions = (
   let ticker = {
     xTicks->Belt.Option.map(convertTicks)->Belt.Option.map((x, ()) => x)->Js.Null.fromOption
   }
+  let statsIndex = labels->Belt.Option.getExn->Array.length / 2 + 1
+  let series =
+    labels
+    ->Belt.Option.getExn
+    ->Belt.Array.sliceToEnd(statsIndex)
+    ->Belt.Array.map(x => {
+      %raw(`{[x]: {
+        "color": "#888888",
+        "strokeWidth": 1.0,
+        "strokePattern": [3, 2],
+        "highlightCircleSize": 0,
+      }}`)
+    })
+  let series = series->Belt.Array.reduce(Js.Obj.empty(), (acc, s) => Js.Obj.assign(acc, s))
   {
     "file": data,
     "axes": {
@@ -203,13 +219,7 @@ let defaultOptions = (
         "axisLabelWidth": 55,
       },
     },
-    "series": {
-      "mean": {
-        "strokeWidth": 1.0,
-        "strokePattern": [3, 2],
-        "highlightCircleSize": 0,
-      },
-    },
+    "series": series,
     "showRoller": false,
     "rollPeriod": 1,
     "xRangePad": 0,
@@ -221,7 +231,7 @@ let defaultOptions = (
     "customBars": true,
     "fillGraph": false,
     "pointClickCallback": Js.Null.fromOption(onClick),
-    "colors": ["#0F6FDE", "#888888"],
+    "colors": ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"],
     // "animatedZooms": true,
     "digitsAfterDecimal": 3,
     "hideOverlayOnMouseOut": true,
@@ -269,8 +279,8 @@ let containerSx = [Sx.w.full, Sx.border.xs, Sx.border.color(Sx.gray300), Sx.roun
 open Components
 
 type elementOrString =
-    | String(string)
-    | Element(React.element)
+  | String(string)
+  | Element(React.element)
 
 @react.component
 let make = React.memo((
@@ -290,7 +300,7 @@ let make = React.memo((
     "width": int,
     "x": int,
   }>=[],
-  ~data,
+  ~dataSet: array<DataRow.row>,
   ~units: DataRow.units,
 ) => {
   let graphDivRef = React.useRef(Js.Nullable.null)
@@ -303,31 +313,43 @@ let make = React.memo((
     ->Belt.Option.map(IntersectionObserver.Entry.isIntersecting)
     ->Belt.Option.getWithDefault(false)
 
-  // Add constant stdDev series.
-  let constantSeries = {
+  let computeConstantSeries = data => {
     let values = data->Belt.Array.map(DataRow.toValue)
     let mean = values->computeMean->Belt.Option.getWithDefault(0.0)
     let stdDev = computeStdDev(~mean, values)
     DataRow.valueWithErrorBars(~mid=mean, ~low=mean -. stdDev, ~high=mean +. stdDev)
   }
+  let constantSeries = dataSet->Belt.Array.map(computeConstantSeries)
+
+  // Dygraph needs null values, and cannot handle NaNs correctly
+  let convertNanToNull = (xs: DataRow.t) =>
+    Belt.Array.map(xs, x => Js.Float.isNaN(x) ? Obj.magic(Js.null) : x)
+
+  let nullConstantSeries = constantSeries->Belt.Array.map(convertNanToNull)
+
   let labels = labels->Belt.Option.map(labels => {
-    labels->BeltHelpers.Array.add("mean")
+    let means = Belt.Array.length(labels) > 1 ? labels->Belt.Array.map(x => "mean:" ++ x) : ["mean"]
+    Belt.Array.concatMany([["idx"], labels, means])
   })
 
-  let makeDygraphData = (data: array<DataRow.t>) => {
-    // Dygraph needs null values, and cannot handle NaNs correctly
-    let convertNanToNull = (xs: DataRow.t) =>
-      Belt.Array.map(xs, x => Js.Float.isNaN(x) ? Obj.magic(Js.null) : x)
+  let makeDygraphData = (data: array<DataRow.row>) => {
     // Dygraph does not display the last tick, so a dummy value
     // is added a the end of the data to overcome this.
     // See: https://github.com/danvk/dygraphs/issues/506
-    let data = Belt.Array.concat(data, [DataRow.dummyValue])
-    let nullConstantSeries = convertNanToNull(constantSeries)
-    Belt.Array.mapWithIndex(data, (idx, d) => [
-      Obj.magic(idx),
-      convertNanToNull(d),
-      nullConstantSeries,
-    ])
+    let data =
+      data
+      ->Belt.Array.map(x => Belt.Array.concat(x, [DataRow.dummyValue]))
+      ->Belt.Array.map(x => x->Belt.Array.map(convertNanToNull))
+
+    let n = (data->Belt.Array.map(Belt.Array.length))[0]
+    // Data passed onto Dygraph looks like array<[idx, value1, value2, ..., stats1, stats2, ...]>
+    Belt.Array.range(0, n - 1)->Belt.Array.map(idx =>
+      Belt.Array.concatMany([
+        [Obj.magic(idx)],
+        data->Belt.Array.map(d => d[idx]),
+        nullConstantSeries,
+      ])
+    )
   }
 
   React.useEffect1(() => {
@@ -344,7 +366,7 @@ let make = React.memo((
     | Some(ref) =>
       switch (graphRef.current, isIntersecting) {
       | (None, true) => {
-          let graph = init(ref, makeDygraphData(data), options)
+          let graph = init(ref, makeDygraphData(dataSet), options)
           graphRef.current = Some(graph)
 
           if Array.length(annotations) > 0 {
@@ -385,7 +407,7 @@ let make = React.memo((
           ~yLabel?,
           ~labels?,
           ~xTicks?,
-          ~data=makeDygraphData(data),
+          ~data=makeDygraphData(dataSet),
           ~legendFormatter=Legend.format(~xTicks?),
           (),
         )
@@ -402,9 +424,7 @@ let make = React.memo((
       }
     }
     None
-  }, (data, annotations))
-
-  let lastValue = data->Belt.Array.getExn(Belt.Array.length(data) - 1)
+  }, (dataSet, annotations))
 
   let left = switch title {
   | Some(title) =>
@@ -421,12 +441,20 @@ let make = React.memo((
   | None => React.null
   }
 
+  let lastValues =
+    dataSet->Belt.Array.map(x =>
+      x->BeltHelpers.Array.lastExn->DataRow.toValue->Js.Float.toPrecisionWithPrecision(~digits=4)
+    )
+  let isOverlayed = lastValues->Belt.Array.length > 1
+  let rSize = isOverlayed ? Sx.text.lg : Sx.text.xl2
+  let valueText = isOverlayed
+    ? "[" ++ Belt.Array.joinWith(lastValues, ", ", identity) ++ "]"
+    : lastValues->BeltHelpers.Array.lastExn
+
   let right =
     <Row alignX=#right spacing=Sx.md sx=[Sx.w.auto]>
-      <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray900)]>
-        {lastValue->DataRow.toValue->Js.Float.toPrecisionWithPrecision(~digits=4)}
-      </Text>
-      <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray500)]> units </Text>
+      <Text sx=[Sx.leadingNone, rSize, Sx.text.bold, Sx.text.color(Sx.gray900)]> {valueText} </Text>
+      <Text sx=[Sx.leadingNone, rSize, Sx.text.bold, Sx.text.color(Sx.gray500)]> units </Text>
     </Row>
 
   let sx = Array.append(uSx, containerSx)

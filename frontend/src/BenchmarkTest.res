@@ -1,5 +1,6 @@
 open! Prelude
 open Components
+open MetricHierarchyHelpers
 
 @module("../icons/branch.svg") external branchIcon: string = "default"
 
@@ -112,6 +113,118 @@ let renderMetricOverviewRow = (
   }
 }
 
+let makeAnnotation = (x, series, repoId, pullNumber) => {
+  {
+    "series": series,
+    "x": x,
+    "icon": branchIcon,
+    "text": "Open PR on GitHub",
+    "width": 21,
+    "height": 21,
+    "clickHandler": (_annotation, _point, _dygraph, _event) => {
+      switch pullNumber {
+      | Some(pullNumber) =>
+        DomHelpers.window->DomHelpers.windowOpen(
+          "https://github.com/" ++ repoId ++ "/pull/" ++ string_of_int(pullNumber),
+        )
+      | None => ()
+      }
+    },
+  }
+}
+
+let makeSubTitle = (row, description): LineGraph.elementOrString =>
+  switch row.delta {
+  | Some(delta) => {
+      let subTitleText = delta == 0.0 ? "Same as main" : deltaToString(delta) ++ " vs main"
+      switch (isFavourableDelta(row), delta == 0.0) {
+      | (Some(val), false) =>
+        let color = val ? Sx.green300 : Sx.red300
+        let icon = delta > 0. ? Icon.upArrow : Icon.downArrow
+        let elem =
+          <span className={Sx.make([Sx.d.flex, Sx.flex.row, Sx.items.stretch])}>
+            <span className={Sx.make([Sx.mr.md, Sx.text.color(color)])}> {icon} </span>
+            <Text
+              sx=[
+                Sx.d.inlineBlock,
+                Sx.leadingNone,
+                Sx.text.sm,
+                Sx.text.color(color),
+                [Css.minHeight(#em(1.0))],
+              ]>
+              {subTitleText}
+            </Text>
+          </span>
+        Element(elem)
+      | _ => String(subTitleText)
+      }
+    }
+  | _ => String(description)
+  }
+
+let getSeriesArrays = (data, comparison, metricName) => {
+  let (comparisonTimeseries, comparisonMetadata) = Belt.Map.String.getWithDefault(
+    comparison,
+    metricName,
+    ([], []),
+  )
+  let (t, m) = Belt.Map.String.getWithDefault(data, metricName, ([], []))
+  let timeseries: LineGraph.DataRow.row = Belt.Array.concat(comparisonTimeseries, t)
+  let metadata = Belt.Array.concat(comparisonMetadata, m)
+  (timeseries, metadata, comparisonTimeseries, comparisonMetadata)
+}
+
+// merge metadata for different metrics into a single one. Some metrics may be
+// missing for some commits. This function gets the list of all commits where
+// atleast one metric is present.
+let mergeMetadata = seriesArrays => {
+  let sortMerged = selectorFn => {
+    let mdArray = seriesArrays->Belt.Array.map(selectorFn)->Belt.Array.concatMany
+    let mdByCommit = mdArray->Belt.Array.reduce(Belt.Map.String.empty, (acc, md) => {
+      Belt.Map.String.set(acc, md["commit"], md)
+    })
+    let sorted =
+      mdByCommit
+      ->Belt.Map.String.valuesToArray
+      ->Belt.SortArray.stableSortBy((a, b) =>
+        compare(Js.Date.getTime(a["runAt"]), Js.Date.getTime(b["runAt"]))
+      )
+    (sorted, mdByCommit)
+  }
+  // Merge and sort comparison metadata
+  let (sortedCompareMd, compareMdByCommit) = sortMerged(((_, _, _, cmd)) => cmd)
+  // Merge and sort metadata
+  let (sortedMd, _) = sortMerged(((_, md, _, _)) => md)
+  // Ensure that comparison metadata is before normal metadata
+  sortedCompareMd->Belt.Array.concat(
+    sortedMd->Belt.Array.keep(x => !Belt.Map.String.has(compareMdByCommit, x["commit"])),
+  )
+}
+
+// Fill in NaN values when a metric is missing for a specific commit
+let fillMissingValues = (seriesArrays, mergedMetadata) => {
+  let n = Belt.Array.length(mergedMetadata)
+  seriesArrays->Belt.Array.map(((ts, md, _, _)) =>
+    switch Belt.Array.length(md) < n {
+    | false => ts
+    | true => {
+        let mergedCommits = mergedMetadata->Belt.Array.map(m => m["commit"])
+        let ts_ = Belt.Array.make(n, [Js.Float._NaN, Js.Float._NaN, Js.Float._NaN])
+        ignore(
+          md->Belt.Array.mapWithIndex((idx, m) => {
+            let idx_ = mergedCommits->Belt.Array.getIndexBy(c => c == m["commit"])
+            switch idx_ {
+            | Some(i) => Belt.Array.set(ts_, i, Belt.Array.getExn(ts, idx))
+            | _ => false
+            }
+          }),
+        )
+        ts_
+      }
+    }
+  )
+}
+
 @react.component
 let make = (
   ~repoId,
@@ -119,7 +232,7 @@ let make = (
   ~testName,
   ~comparison=Belt.Map.String.empty,
   ~dataByMetricName: Belt.Map.String.t<(array<LineGraph.DataRow.t>, 'a)>,
-  ~lastCommit
+  ~lastCommit,
 ) => {
   let metric_table = {
     <Table sx=[Sx.mb.xl2]>
@@ -151,107 +264,78 @@ let make = (
     </Table>
   }
 
-  let metric_graphs = React.useMemo2(() => {
-    dataByMetricName
-    ->Belt.Map.String.mapWithKey((metricName, (timeseries, metadata)) => {
-      let (comparisonTimeseries, comparisonMetadata) = Belt.Map.String.getWithDefault(
-        comparison,
-        metricName,
-        ([], []),
-      )
+  let metricNamesByPrefix = groupMetricNamesByPrefix(dataByMetricName)
 
-      let timeseries: array<LineGraph.DataRow.t> = Belt.Array.concat(
-        comparisonTimeseries,
-        timeseries,
-      )
-      let metadata = Belt.Array.concat(comparisonMetadata, metadata)
+  let renderedOverlays = Belt.HashSet.String.make(
+    ~hintSize=metricNamesByPrefix->Belt.Map.String.keysToArray->Belt.Array.length,
+  )
 
-      let xTicks = Belt.Array.reduceWithIndex(timeseries, Belt.Map.Int.empty, (acc, _, index) => {
-        let tick = switch Belt.Array.get(metadata, index) {
-        | Some(xMetadata) =>
-          let xValue = xMetadata["commit"]
-          DataHelpers.trimCommit(xValue)
-        | None => "Unknown"
-        }
-        Belt.Map.Int.set(acc, index, tick)
+  let renderMetricGraph = metricName => {
+    let overlayPrefix = getMetricPrefix(metricName)
+    let isOverlayed = overlayPrefix->Belt.Option.isSome
+    let skipRender =
+      isOverlayed && renderedOverlays->Belt.HashSet.String.has(overlayPrefix->Belt.Option.getExn)
+    if isOverlayed {
+      renderedOverlays->Belt.HashSet.String.add(overlayPrefix->Belt.Option.getExn)
+    }
+
+    switch skipRender {
+    | true => Rx.null
+    | false =>
+      let names = isOverlayed
+        ? metricNamesByPrefix->Belt.Map.String.getExn(overlayPrefix->Belt.Option.getExn)
+        : [metricName]
+      let suffixes = isOverlayed
+        ? names->Belt.Array.map(x => Js.String.split("/", x)[1])
+        : [metricName]
+      let seriesArrays =
+        names->Belt.Array.map(x => getSeriesArrays(dataByMetricName, comparison, x))
+      let (timeseries, metadata, comparisonTimeseries, comparisonMetadata) = seriesArrays[0]
+      // FIXME: Validate that units are same on all the overlays? (ideally, in the current_bench_json.ml)
+      let mergedMetadata = isOverlayed ? mergeMetadata(seriesArrays) : metadata
+      let tsArrays = fillMissingValues(seriesArrays, mergedMetadata)
+      let xTicks = mergedMetadata->Belt.Array.reduceWithIndex(Belt.Map.Int.empty, (
+        acc,
+        m,
+        index,
+      ) => {
+        Belt.Map.Int.set(acc, index, DataHelpers.trimCommit(m["commit"]))
       })
-
-      let annotations = if Belt.Array.length(comparisonTimeseries) > 0 {
-        let firstPullX = Belt.Array.length(comparisonTimeseries)
-        [
-          {
-            "series": "value",
-            "x": firstPullX,
-            "icon": branchIcon,
-            "text": "Open PR on GitHub",
-            "width": 21,
-            "height": 21,
-            "clickHandler": (_annotation, _point, _dygraph, _event) => {
-              switch pullNumber {
-              | Some(pullNumber) =>
-                DomHelpers.window->DomHelpers.windowOpen(
-                  "https://github.com/" ++ repoId ++ "/pull/" ++ string_of_int(pullNumber),
-                )
-              | None => ()
-              }
-            },
-          },
-        ]
-      } else {
-        []
-      }
-      let row = getRowData(
-        ~comparison=(comparisonTimeseries, comparisonMetadata),
-        (timeseries, metadata),
-      )
-      let subTitle: LineGraph.elementOrString = switch row.delta {
-      | Some(delta) => {
-          let subTitleText = delta == 0.0 ? "Same as main" : deltaToString(delta) ++ " vs main"
-          switch (isFavourableDelta(row), delta == 0.0) {
-          | (Some(val), false) =>
-            let color = val ? Sx.green300 : Sx.red300
-            let icon = delta > 0. ? Icon.upArrow : Icon.downArrow
-            let elem =
-              <span className={Sx.make([Sx.d.flex, Sx.flex.row, Sx.items.stretch])}>
-                <span className={Sx.make([Sx.mr.md, Sx.text.color(color)])}> {icon} </span>
-                <Text
-                  sx=[
-                    Sx.d.inlineBlock,
-                    Sx.leadingNone,
-                    Sx.text.sm,
-                    Sx.text.color(color),
-                    [Css.minHeight(#em(1.0))],
-                  ]>
-                  {subTitleText}
-                </Text>
-              </span>
-            Element(elem)
-          | _ => String(subTitleText)
-          }
-        }
-      | _ => String(BeltHelpers.Array.lastExn(metadata)["description"])
+      let subTitle: LineGraph.elementOrString = switch isOverlayed {
+      | false =>
+        let description = BeltHelpers.Array.lastExn(mergedMetadata)["description"]
+        let row = getRowData(
+          ~comparison=(comparisonTimeseries, comparisonMetadata),
+          (timeseries, metadata),
+        )
+        makeSubTitle(row, description)
+      | true =>
+        let s = Belt.Array.joinWith(suffixes, ", ", identity)
+        String(`Overlay: ${s}`)
       }
 
-      let oldMetrics =
-        metadata
-        ->Belt.Array.every((m) => { Some(m["commit"]) != lastCommit })
+      let oldMetrics = mergedMetadata->Belt.Array.every(m => {Some(m["commit"]) != lastCommit})
+      let units = (mergedMetadata->BeltHelpers.Array.lastExn)["units"]
+      let dataSet = tsArrays->Belt.Array.map(ts => ts->Belt.Array.sliceToEnd(-20))
+      let labels = suffixes
+      let firstPullX = Belt.Array.length(comparisonTimeseries)
+      let annotations =
+        firstPullX > 0
+          ? labels->Belt.Array.map(x => makeAnnotation(firstPullX, x, repoId, pullNumber))
+          : []
+      let title = isOverlayed ? overlayPrefix->Belt.Option.getExn : metricName
+      let onXLabelClick = AppHelpers.goToCommitLink(~repoId)
+      let id = `line-graph-${testName}-${title}`
 
-      <div key=metricName  className={Sx.make(oldMetrics ? [Sx.opacity25] : [])}>
-        {Topbar.anchor(~id="line-graph-" ++ testName ++ "-" ++ metricName)}
-        <LineGraph
-          onXLabelClick={AppHelpers.goToCommitLink(~repoId)}
-          title=metricName
-          subTitle
-          xTicks
-          data={timeseries->Belt.Array.sliceToEnd(-20)}
-          units={(metadata->BeltHelpers.Array.lastExn)["units"]}
-          annotations
-          labels=["idx", "value"]
-        />
+      <div key=metricName className={Sx.make(oldMetrics ? [Sx.opacity25] : [])}>
+        {Topbar.anchor(~id)}
+        <LineGraph onXLabelClick title subTitle xTicks dataSet units annotations labels />
       </div>
-    })
-    ->Belt.Map.String.valuesToArray
-    ->Rx.array
+    }
+  }
+
+  let metric_graphs = React.useMemo2(() => {
+    dataByMetricName->Belt.Map.String.keysToArray->Belt.Array.map(renderMetricGraph)->Rx.array
   }, (dataByMetricName, lastCommit))
 
   <details className={Sx.make([Sx.w.full])} open_=true>
