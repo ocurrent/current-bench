@@ -10,7 +10,12 @@ scrape_configs:
   - job_name: 'prometheus'
     scrape_interval: 5s
     static_configs:
-      - targets: ['localhost:9090', 'alertmanager:9093']
+      - targets: ['localhost:9090']
+  - job_name: 'alertmanager'
+    scrape_interval: 5s
+    metrics_path: "/_alertmanager/metrics"
+    static_configs:
+      - targets: ['alertmanager:9093']
   - job_name: 'node'
     scrape_interval: 5s
     static_configs:
@@ -21,6 +26,10 @@ alerting:
     - scheme: http
       static_configs:
         - targets: [ 'alertmanager:9093' ]
+      relabel_configs:
+        - replacement: "_alertmanager/api/v2/alerts"
+          target_label: __alerts_path__
+
 
 rule_files:
   - /etc/prometheus/alerts.yml
