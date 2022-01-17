@@ -302,6 +302,18 @@ You have a postgres server running on your machine, kill the postgres process an
 
 4. If the database isn't getting populated, it is most likely that the `make bench` command that the pipeline runs failed. You can look for the logs in`var/job/<date>/<-docker-pread-.log>` to find out why the command failed. Once you fix it, the pipeline should start populating the database.
 
+### Configuring where to run benchmarks
+
+The `environments/production.conf` lists the repositories that can be run on remote workers:
+
+```json
+[
+  { "name": "gs0510/decompress", "worker": "grumpy", "image": "ocaml/opam:debian-11-ocaml-4.14" }
+]
+```
+
+You can repeat the same "author/repo" multiple times with different configurations. By default, unlisted repositories will run on the default local worker.
+
 ### Adding new workers to the cluster
 
 The `environments/production.env` should list the known workers with a comma separated list:
@@ -309,6 +321,8 @@ The `environments/production.env` should list the known workers with a comma sep
 ```
 OCAML_BENCH_CLUSTER_POOLS=autumn,grumpy,comanche
 ```
+
+If you change this list, you should probably update the `environments/production.conf`: New workers will not be used otherwise! And removed workers will be unavailable for the repositories that requested them.
 
 In general, each worker will have a unique pool name -- unless you are absolutely sure that their hardware and configuration are identical. After updating the list of workers and restarting the cluster, the `capnp-secrets/` directory will be updated with the new workers:
 
