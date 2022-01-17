@@ -18,6 +18,7 @@ WORKDIR /mnt/project
 
 # Build dependencies.
 COPY --chown=opam:opam pipeline/pipeline.opam pipeline.opam
+
 RUN opam install -y --deps-only -t .
 COPY --chown=opam pipeline/. .
 RUN sudo chown opam .
