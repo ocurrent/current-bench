@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   db:
-    image: current-bench-postgres:latest
+    image: ocurrent/current-bench-postgres:latest
     environment:
       - POSTGRES_DB=docker
       - POSTGRES_USER=docker
@@ -12,6 +12,7 @@ services:
       timeout: 5s
       retries: 3
     ports: ["5432:5432"]
+    expose: ["5432"]
     volumes:
       - db_data:/var/lib/postgresql/data
   graphql-engine:
@@ -27,14 +28,14 @@ services:
     volumes:
       - ../hasura-server/metadata:/hasura-metadata
   frontend:
-    image: ocurrent/current-bench-frontend:latest
+    image: ocurrent/current-bench-frontend:live
     ports:
       - "${OCAML_BENCH_FRONTEND_PORT?required}:${OCAML_BENCH_FRONTEND_PORT?required}"
     environment:
       VITE_OCAML_BENCH_GRAPHQL_URL: ${OCAML_BENCH_GRAPHQL_URL?required}
       VITE_OCAML_BENCH_PIPELINE_URL: ${OCAML_BENCH_PIPELINE_URL?required}
   pipeline:
-    image: ocurrent/current-bench-pipeline:latest
+    image: ocurrent/current-bench-pipeline:live
     volumes:
       - current-bench-data:/app/current-bench-data:ro
       - pipeline_var:/app/var
@@ -53,6 +54,7 @@ services:
       - "--github-app-id=${OCAML_BENCH_GITHUB_APP_ID}"
       - "--github-account-allowlist=${OCAML_BENCH_GITHUB_ACCOUNT_ALLOW_LIST?required}"
       - "--github-private-key-file=${OCAML_BENCH_GITHUB_PRIVATE_KEY_FILE?required}"
+      - "--github-webhook-secret-file=${OCAML_BENCH_GITHUB_WEBHOOK_SECRET_FILE?required}"
     environment:
       OCAML_BENCH_FRONTEND_URL: ${OCAML_BENCH_FRONTEND_URL?required}
 
