@@ -301,3 +301,65 @@ ERROR: for current-bench_db_1  Cannot start service db: driver failed programmin
 You have a postgres server running on your machine, kill the postgres process and run the make command again.
 
 4. If the database isn't getting populated, it is most likely that the `make bench` command that the pipeline runs failed. You can look for the logs in`var/job/<date>/<-docker-pread-.log>` to find out why the command failed. Once you fix it, the pipeline should start populating the database.
+
+### Adding new workers to the cluster
+
+The `environments/production.env` should list the known workers with a comma separated list:
+
+```
+OCAML_BENCH_CLUSTER_POOLS=autumn,grumpy,comanche
+```
+
+In general, each worker will have a unique pool name -- unless you are absolutely sure that their hardware and configuration are identical. After updating the list of workers and restarting the cluster, the `capnp-secrets/` directory will be updated with the new workers:
+
+```sh
+$ ls capnp-secrets/pool-*
+capnp-secrets/pool-autumn.cap  capnp-secrets/pool-grumpy.cap  ...
+
+$ cat capnp-secrets/pool-autumn.cap
+capnp://sha-256:Zs31_Pk9LvBWw03hIW1QvNZUopTOipwqYAmJW3sKD0Y@cluster:9000/1CJdWsiXEtdvzOnupvfOdLO_nz3MOxGz8wcDHj18mRE
+```
+
+The worker will need access to its `pool-name.cap` file to connect to the cluster.
+To deploy a new worker to a new machine, you can clone the current-bench repository and setup the worker dependencies:
+
+```sh
+$ ssh mymachine
+
+$ git clone 'https://github.com/ocurrent/current-bench'
+$ cd current-bench/worker
+$ opam install --deps-only ./cb-worker.opam
+
+$ mkdir /path/to/internal/state  # worker needs a place of storage
+```
+
+Docker should be installed and accessible to the user that will be running the worker (you can check by running `docker ps`). To keep the worker alive, it is recommended to start it with `nohup`, `screen` or `tmux`.
+
+```sh
+$ screen -ls # to list the existing sessions
+$ screen -R current-bench-worker # to recover or create the worker session
+... run the worker ...
+CTRL-A CTRL-D # to exit and keep the worker alive in the background
+```
+
+Now, from the `current-bench/worker` directory:
+
+- scp the `capnp-secrets/pool-myworker.cap` that the cluster generated
+- edit the `pool-myworker.cap` to make sure the worker has access to the cluster IP address: By default, the file reads `capnp://...@cluster:9000/...` but it should contain an accessible domain rather than "cluster": `capnp://...@123.0.1.2:9000/...` or `capnp://...@mycluster.com:9000/...`
+
+You can now run the worker with a small script:
+
+```
+#!/bin/bash
+
+dune exec --root=. ./cb_worker.exe -- \
+    --name=my-worker \
+    --state-dir=/path/to/internal/state \
+    --ocluster-pool=./pool-myworker.cap \
+    --docker-cpu=0-1,2-3
+```
+
+- The worker `--name` will show up in the build logs as `Building on <my-worker>` (for debugging)
+- The `--state-dir` should point to a directory where the worker will be able to store its data
+- The `--ocluster-pool` should be the filename created by the cluster.
+- Finally, the `--docker-cpu` is a comma separated list of CPUs available to the worker. If there are multiple choices `A,B,C` then the worker will be able to run as many benchmarks at the same time. If there are no comma, then only one benchmark will be run at a time. A range `A-B` allow for multicore benchmarks on the cpus A to B, while a single `X` cpu number is singlecore. If ranges are used, they should have the same number of CPUs and not overlap!
