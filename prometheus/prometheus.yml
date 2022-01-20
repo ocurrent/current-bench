@@ -20,6 +20,10 @@ scrape_configs:
     scrape_interval: 5s
     static_configs:
       - targets: [ $PROMETHEUS_SCRAPE_TARGETS ]
+  - job_name: 'current_bench'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['autumn.ocamllabs.io:8081']
 
 alerting:
   alertmanagers:
