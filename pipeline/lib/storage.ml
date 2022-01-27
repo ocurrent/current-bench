@@ -1,6 +1,6 @@
 let setup_metadata ~repository ~worker ~docker_image
     (db : Postgresql.connection) =
-  Logs.debug (fun log -> log "Inserting metada....");
+  Logs.debug (fun log -> log "Inserting metadata ...");
   let run_at = Db_util.time (Ptime_clock.now ()) in
   let repo_id = Db_util.string (Repository.info repository) in
   let commit = Db_util.string (Repository.commit_hash repository) in
