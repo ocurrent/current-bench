@@ -253,7 +253,13 @@ let v ~config ~server:mode ~sources conninfo () =
         in
         [ Routes.((s "webhooks" / s "github" /? nil) @--> webhook) ]
   in
-  let routes = webhook @ Current_web.routes engine in
+  let metrics_routes =
+    [
+      Routes.(
+        (s "benchmarks" / s "metrics" /? nil) @--> Api.capture_metrics conninfo);
+    ]
+  in
+  let routes = metrics_routes @ webhook @ Current_web.routes engine in
   let site =
     Current_web.Site.(v ~has_role:allow_all) ~name:"Benchmarks" routes
   in
