@@ -19,13 +19,13 @@ If you want to enroll your repository or setup this benchmark repository for you
   "results": [
     {
       "name": <name-of-the-test>,
-      "metrics": {
-        "<metric-1>": {"name": "benchmark-name", "value": benchmark-value, "units": "benchmark-unit", "description": "benchmark-description"},
-        "<metric-2>":{"name": "num_ops", "value": [0.5, 1.5,...], "units": "ops/sec", "description": "total number of ops"},
-        "<metric-3>":{"name": "time", "value": 20, "units": "sec", "description": "time for action"},
-        "<metric-4>":{"name": "data-transfer", "value": {"min": 1, "max": 25.2, "avg": 19.8}, "units": "mbps", "description": "data transfer per second"},
+      "metrics": [
+          {"name": "benchmark-name", "value": benchmark-value, "units": "benchmark-unit", "description": "benchmark-description"},
+          {"name": "num_ops", "value": [0.5, 1.5,...], "units": "ops/sec", "description": "total number of ops"},
+          {"name": "time", "value": 20, "units": "sec", "description": "time for action"},
+          {"name": "data-transfer", "value": {"min": 1, "max": 25.2, "avg": 19.8}, "units": "mbps", "description": "data transfer per second"},
         ...
-      },
+      ],
      ...
     }
   ]
