@@ -122,7 +122,8 @@ module SidebarMenu = {
     | Fetching => Rx.text("Loading...")
     | Data({benchmarksMenuData, pullsMenuData})
     | PartialData({benchmarksMenuData, pullsMenuData}, _) => <>
-        {switch Js.Array.length(benchmarksMenuData) > 1 {
+      {
+        switch Belt.Array.some(benchmarksMenuData, bm => Belt.Option.isSome(bm.benchmark_name)) {
         | true =>
           <Column>
             <Text color=Sx.gray700 weight=#bold uppercase=true size=#sm> "Benchmarks" </Text>
