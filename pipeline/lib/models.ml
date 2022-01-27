@@ -135,7 +135,7 @@ module Benchmark = struct
       let repo_id = Db_util.string @@ Repository.info repository
       and commit = Db_util.string @@ Repository.commit_hash repository in
       (* NOTE: We check if an entry exists in the benchmarks table, and not the
-         benchmarks_metadata table since we want to re-run the benchmarks if
+         benchmark_metadata table since we want to re-run the benchmarks if
          the failure occurred due to a current-bench pipeline related error
          like DB write error, running out of space, incorrectly solving opam
          dependencies, etc. *)
