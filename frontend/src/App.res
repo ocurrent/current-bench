@@ -222,8 +222,7 @@ module RepoView = {
     let ((startDate, endDate), setDateRange) = React.useState(getDefaultDateRange)
     let onSelectDateRange = (startDate, endDate) => setDateRange(_ => (startDate, endDate))
 
-    let setWorker = (f) => {
-      let worker = f(worker)
+    let setWorker = (worker) => {
       switch (repoId, pullNumber) {
         | (Some(repoId), None) =>
           AppRouter.Repo({repoId, benchmarkName, worker})->AppRouter.go
