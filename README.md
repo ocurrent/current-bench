@@ -42,6 +42,53 @@ The metadata about `repo`, `branch` and `commit` is added by the pipeline.
 Multiple concatenated JSON objects can be produced and will be interpreted as different benchmarks. The name of the benchmark is optional when there is only one output, but must be present if multiple result objects are produced.
 
 
+### Using API to submit benchmark data
+
+Benchmarks data could also be added directly to the DB without having
+`current-bench` running the benchmarks using a HTTP end-point.
+
+```sh
+curl -X POST -H 'Authorization: Bearer <token>' <scheme>://<host>/benchmarks/metrics --data-raw '
+{
+  "repo_owner": "ocurrent",
+  "repo_name": "current-bench",
+  "commit": "c66a02ea54430d99b3fefbeba4941921501796ef",
+  "pull_number": 286,
+  "run_at": "2022-01-28 12:42:02+05:30",
+  "duration": "12.45",
+  "benchmarks": [
+    {
+      "name": "benchmark-1",
+      "results": [
+        {
+          "name": "test-1",
+          "metrics": [
+            {
+              "name": "time", "value": 18, "units": "sec"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "benchmark-2",
+      "results": [
+        {
+          "name": "test-1",
+          "metrics": [
+            {
+              "name": "space", "value": 18, "units": "mb"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+'
+```
+
+
 ## Data dependencies in your project
 
 If you have a data dependency, then currently we add the dependency to the docker volume called `current-bench-data`.
