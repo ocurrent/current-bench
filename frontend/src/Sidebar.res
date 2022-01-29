@@ -156,7 +156,7 @@ module WorkersSelect = {
       switch idx_opt {
         | None =>
           let first = benchmarks[0]
-          setWorker(_ => Some((first.worker, first.docker_image)))
+          setWorker(Some((first.worker, first.docker_image)))
         | _ => ()
       };
       None
@@ -176,7 +176,7 @@ module WorkersSelect = {
             onChange={e => {
               let idx = int_of_string(ReactEvent.Form.target(e)["value"])
               let w = benchmarks[idx]
-              setWorker(_ => Some((w.worker, w.docker_image)));
+              setWorker(Some((w.worker, w.docker_image)));
             }}>
             {
               benchmarks
