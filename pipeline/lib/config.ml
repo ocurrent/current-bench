@@ -38,7 +38,8 @@ let make repos = { repos; images = make_images repos }
 let of_file filename : t =
   let filename = Fpath.to_string filename in
   let json = Yojson.Safe.from_file filename in
-  match repo_list_of_yojson json with
+  let repositories = Yojson.Safe.Util.(member "repositories" json) in
+  match repo_list_of_yojson repositories with
   | Ok repos -> make repos
   | Error err -> failwith (Printf.sprintf "Config.of_file %S : %s" filename err)
 
