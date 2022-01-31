@@ -256,7 +256,8 @@ let v ~config ~server:mode ~sources conninfo () =
   let metrics_routes =
     [
       Routes.(
-        (s "benchmarks" / s "metrics" /? nil) @--> Api.capture_metrics conninfo);
+        (s "benchmarks" / s "metrics" /? nil)
+        @--> Api.capture_metrics conninfo config.api_tokens);
     ]
   in
   let routes = metrics_routes @ webhook @ Current_web.routes engine in

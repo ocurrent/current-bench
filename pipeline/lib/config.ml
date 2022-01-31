@@ -14,7 +14,15 @@ type repo = {
 
 type repo_list = repo list [@@deriving yojson]
 
-type t = { repos : repo_list; images : Docker.Image.t Current.t Images.t }
+type api_token = { repo : string; token : string } [@@deriving yojson]
+
+type api_token_list = api_token list [@@deriving yojson]
+
+type t = {
+  repos : repo_list;
+  images : Docker.Image.t Current.t Images.t;
+  api_tokens : api_token_list;
+}
 
 let weekly = Current_cache.Schedule.v ~valid_for:(Duration.of_day 7) ()
 
@@ -33,14 +41,22 @@ let make_images repos =
     (pull default_docker Images.empty)
     repos
 
-let make repos = { repos; images = make_images repos }
+let make repos tokens =
+  { repos; images = make_images repos; api_tokens = tokens }
 
 let of_file filename : t =
   let filename = Fpath.to_string filename in
   let json = Yojson.Safe.from_file filename in
   let repositories = Yojson.Safe.Util.(member "repositories" json) in
+  let api_tokens = Yojson.Safe.Util.(member "api_tokens" json) in
+  let tokens =
+    match api_token_list_of_yojson api_tokens with
+    | Ok tokens -> tokens
+    | Error err ->
+        failwith (Printf.sprintf "Config.of_file %S : %s" filename err)
+  in
   match repo_list_of_yojson repositories with
-  | Ok repos -> make repos
+  | Ok repos -> make repos tokens
   | Error err -> failwith (Printf.sprintf "Config.of_file %S : %s" filename err)
 
 let find t name =
