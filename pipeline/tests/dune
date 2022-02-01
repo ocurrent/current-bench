@@ -1,8 +1,8 @@
 (test
  (name test)
- (libraries alcotest current current.fs current_docker current_git
-   current_github current_ocluster capnp-rpc-unix current_web dockerfile
-   fmt.tty logs logs.fmt prometheus rresult uri postgresql yojson str)
+ (libraries alcotest alcotest-lwt current current.fs current_docker
+   current_git current_github current_ocluster capnp-rpc-unix current_web
+   dockerfile fmt.tty logs logs.fmt prometheus rresult uri yojson str)
  (preprocess
   (pps ppx_deriving_yojson)))
 
