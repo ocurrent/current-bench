@@ -37,7 +37,7 @@ let branch t = t.branch
 let github_head t = t.github_head
 let id t = (t.owner, t.name)
 let info t = t.owner ^ "/" ^ t.name
-let frontend_url = Sys.getenv "OCAML_BENCH_FRONTEND_URL"
+let frontend_url () = Sys.getenv "OCAML_BENCH_FRONTEND_URL"
 
 (* $server/$repo_owner/$repo_name/pull/$pull_number *)
 let commit_status_url { owner; name; pull_number; _ } =
@@ -46,7 +46,7 @@ let commit_status_url { owner; name; pull_number; _ } =
     | None -> "/" ^ owner ^ "/" ^ name
     | Some number -> "/" ^ owner ^ "/" ^ name ^ "/pull/" ^ string_of_int number
   in
-  Uri.of_string (frontend_url ^ uri_end)
+  Uri.of_string (frontend_url () ^ uri_end)
 
 let compare a b =
   let cmp =
