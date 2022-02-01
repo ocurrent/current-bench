@@ -1,6 +1,16 @@
 open Lwt.Infix
 module Utils = Cohttp_lwt_unix
 
+exception Invalid_token
+
+exception Missing_token
+
+exception Unauthorized
+
+exception Server_config_error
+
+exception Data_validation_error of string
+
 let request_token req =
   let headers = Cohttp.Request.headers req in
   let token = Cohttp.Header.get headers "Authorization" in
@@ -12,35 +22,33 @@ let request_token req =
         let n = length token in
         let m = length "Bearer " in
         sub token m (n - m)
-      else Fmt.failwith "Invalid token"
-  | _ -> ""
+      else raise Invalid_token
+  | _ -> raise Missing_token
 
 let authenticate_token req api_tokens =
   (* This function only that the token is a valid token, and doesn't process
      the body of the request. Essentially, we only do "authentication" of the
      token. The authorization is done in a separate function.*)
-  (match api_tokens with
-  | [] -> failwith "Server configuration error: API tokens not configured."
-  | _ -> ());
+  (match api_tokens with [] -> raise Server_config_error | _ -> ());
 
   let token = request_token req in
   match token with
-  | "" -> failwith "Invalid token"
+  | "" -> raise Missing_token
   | _ ->
       List.find_opt
         (fun (t : Config.api_token) -> String.equal t.token token)
         api_tokens
 
-let authorize_token (token : Config.api_token option) repository =
+let authorize_token (api_token : Config.api_token option) repository =
   let repo_id = Repository.info repository in
-  match token with
-  | Some token ->
-      if String.equal token.repo repo_id then () else failwith "Invalid token"
-  | _ -> failwith "Invalid token"
+  match api_token with
+  | Some api_token ->
+      if String.equal api_token.repo repo_id then () else raise Unauthorized
+  | _ -> raise Invalid_token
 
 let check_key key json =
   match Yojson.Safe.Util.(member key json) with
-  | `Null -> Fmt.failwith "Key '%s' is missing" key
+  | `Null -> Data_validation_error (Fmt.str "Key '%s' is missing" key) |> raise
   | s -> s
 
 let make_benchmark_from_request ~conninfo ~body ~token =
@@ -51,13 +59,15 @@ let make_benchmark_from_request ~conninfo ~body ~token =
   let branch = member "branch" json_body |> to_string_option in
   let pull_number = member "pull_number" json_body |> to_int_option in
   (match (branch, pull_number) with
-  | None, None -> Fmt.failwith "Need either 'branch' or 'pull_number'"
+  | None, None ->
+      Data_validation_error "Need either 'branch' or 'pull_number'" |> raise
   | _ -> ());
   let commit = check_key "commit" json_body |> to_string in
   let run_at =
     check_key "run_at" json_body |> to_string |> Ptime.of_rfc3339 |> function
     | Ok (t, _, _) -> t
-    | Error (`RFC3339 (_, e)) -> Fmt.failwith "%a" Ptime.pp_rfc3339_error e
+    | Error (`RFC3339 (_, e)) ->
+        Data_validation_error (Fmt.str "%a" Ptime.pp_rfc3339_error e) |> raise
   in
   let duration =
     let d =
@@ -96,6 +106,9 @@ let make_benchmark_from_request ~conninfo ~body ~token =
              [ Current_bench_json.of_json bench ]));
   Storage.record_success ~conninfo ~serial_id
 
+let error_message msg =
+  `Assoc [ ("success", `Bool false); ("error", `String msg) ]
+
 let capture_metrics conninfo api_tokens =
   object
     inherit Current_web.Resource.t
@@ -110,12 +123,16 @@ let capture_metrics conninfo api_tokens =
           let response = `Assoc [ ("success", `Bool true) ] in
           (status, response)
         with
-        | Yojson.Json_error e | Yojson.Safe.Util.Type_error (e, _) | Failure e
-        ->
-          let response =
-            `Assoc [ ("success", `Bool false); ("error", `String e) ]
-          in
-          (`Bad_request, response)
+        | Yojson.Json_error e
+        | Yojson.Safe.Util.Type_error (e, _)
+        | Data_validation_error e ->
+            (`Bad_request, error_message e)
+        | Invalid_token -> (`Unauthorized, error_message "Invalid token")
+        | Missing_token -> (`Unauthorized, error_message "Token missing")
+        | Unauthorized ->
+            (`Forbidden, error_message "Token not valid for this repo")
+        | Server_config_error ->
+            (`Internal_server_error, error_message "API tokens not configured.")
       in
       let body =
         response |> Yojson.Safe.to_string |> Cohttp_lwt.Body.of_string
