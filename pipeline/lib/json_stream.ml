@@ -38,7 +38,7 @@ let json_step stack chr =
   | _, (('{' | '[' | '"') as chr) -> chr :: stack
   | _ -> stack
 
-let make_json_parser () = { current = Buffer.create 16; stack = [] }
+let make_json_parser () = { current = Buffer.create 16; stack = [ '\n' ] }
 
 let json_step state chr =
   match json_step state.stack chr with
@@ -50,7 +50,7 @@ let json_step state chr =
         let str = Buffer.contents state.current in
         (Some str, make_json_parser ()))
   | hd :: _ as stack ->
-      if hd <> '\n' then Buffer.add_char state.current chr;
+      if chr <> '\n' || hd = '"' then Buffer.add_char state.current chr;
       (None, { state with stack })
 
 let json_steps (parsed, state) str =
