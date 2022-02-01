@@ -69,15 +69,9 @@ let renderExternalLink = (~style=linkStyle, ~href, text) => {
 
 let url: string = %raw(`import.meta.env.VITE_OCAML_BENCH_PIPELINE_URL`)
 
-let renderJobIdLink = jobId => {
-  let shortJobId = switch String.split_on_char('/', jobId) {
-  | list{_, shortJobId} => shortJobId
-  | _ =>
-    Js.log(("Error: invalid jobId", jobId))
-    jobId
-  }
+let renderJobIdLink = (jobId, ~text) => {
   let href = url ++ "/job/" ++ jobId
-  renderExternalLink(~href, shortJobId)
+  renderExternalLink(~href, text)
 }
 
 let renderCommitLink = (~style=linkStyle, repoId, commit) =>
@@ -197,7 +191,7 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setL
           <Column spacing=Sx.sm>
             <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Build logs" </Text>
             {switch lastCommitInfo.build_job_id {
-            | Some(jobId) => renderJobIdLink(jobId)
+            | Some(jobId) => renderJobIdLink(jobId, ~text="View Build Logs")
             | None =>
               <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray700)]> "No data" </Text>
             }}
@@ -207,7 +201,10 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setL
         <Column spacing=Sx.sm>
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Execution logs" </Text>
           {switch lastCommitInfo.run_job_id {
-          | Some(jobId) => renderJobIdLink(jobId)
+          | Some(jobId) => renderJobIdLink(
+              jobId,
+              ~text=sameBuildJobLog ? "View Logs" : "View Execution Logs",
+            )
           | None =>
             <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray700)]> "No data" </Text>
           }}
