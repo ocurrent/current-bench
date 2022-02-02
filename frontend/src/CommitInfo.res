@@ -70,8 +70,9 @@ let renderExternalLink = (~style=linkStyle, ~href, text) => {
 let url: string = %raw(`import.meta.env.VITE_OCAML_BENCH_PIPELINE_URL`)
 
 let renderJobIdLink = (jobId, ~text) => {
+  let style = [Sx.text.xs]
   let href = url ++ "/job/" ++ jobId
-  renderExternalLink(~href, text)
+  renderExternalLink(~style, ~href, text)
 }
 
 let renderCommitLink = (~style=linkStyle, repoId, commit) =>
@@ -99,8 +100,8 @@ let buildStatus = (lastCommitInfo: GetLastCommitInfo.t_lastCommitInfo) => {
 let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setLastCommit) => {
   let benchmarks = benchmarks.benchmarks
   let (worker, dockerImage) = switch worker {
-    | None => (None, None)
-    | Some((worker, dockerImage)) => (Some(worker), Some(dockerImage))
+  | None => (None, None)
+  | Some((worker, dockerImage)) => (Some(worker), Some(dockerImage))
   }
   let ({ReScriptUrql.Hooks.response: response}, _) = {
     ReScriptUrql.Hooks.useQuery(
@@ -170,12 +171,15 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setL
       | Some(pullNumber) => {
           let href = AppHelpers.pullUrl(~repoId, ~pull=string_of_int(pullNumber))
           <Row sx=containerSx spacing=#between alignY=#bottom>
-            {renderExternalLink(~href, lastCommitInfo.pr_title->Belt.Option.getWithDefault("No PR Title"))}
+            {renderExternalLink(
+              ~href,
+              lastCommitInfo.pr_title->Belt.Option.getWithDefault("No PR Title"),
+            )}
           </Row>
         }
       | None => Rx.null
       }}
-      <Row sx=containerSx spacing=#between alignY=#bottom>
+      <Row sx=containerSx spacing=#between alignY=#top>
         <Column spacing=Sx.sm>
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Last Commit" </Text>
           {renderCommitLink(repoId, lastCommitInfo.commit)}
@@ -185,29 +189,6 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setL
             {"Environment (" ++ lastCommitInfo.worker ++ ")"}
           </Text>
           <Text sx=[Sx.text.bold, Sx.text.lg]> {lastCommitInfo.docker_image} </Text>
-        </Column>
-        {switch sameBuildJobLog {
-        | false =>
-          <Column spacing=Sx.sm>
-            <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Build logs" </Text>
-            {switch lastCommitInfo.build_job_id {
-            | Some(jobId) => renderJobIdLink(jobId, ~text="View Build Logs")
-            | None =>
-              <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray700)]> "No data" </Text>
-            }}
-          </Column>
-        | true => Rx.null
-        }}
-        <Column spacing=Sx.sm>
-          <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Execution logs" </Text>
-          {switch lastCommitInfo.run_job_id {
-          | Some(jobId) => renderJobIdLink(
-              jobId,
-              ~text=sameBuildJobLog ? "View Logs" : "View Execution Logs",
-            )
-          | None =>
-            <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.gray700)]> "No data" </Text>
-          }}
         </Column>
         <Column spacing=Sx.sm>
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Status" </Text>
@@ -231,6 +212,24 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setL
           | Running =>
             <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.yellow600)]> "Running" </Text>
           }}
+
+        {switch sameBuildJobLog {
+        | false =>
+            {switch lastCommitInfo.build_job_id {
+            | Some(jobId) => renderJobIdLink(jobId, ~text="View Build Logs")
+            | None => Rx.null
+            }}
+        | true => Rx.null
+        }}
+          {switch lastCommitInfo.run_job_id {
+          | Some(jobId) => renderJobIdLink(
+              jobId,
+              ~text=sameBuildJobLog ? "View Logs" : "View Execution Logs",
+            )
+          | _ =>
+            <Text sx=[Sx.text.xs, Sx.text.color(Sx.gray700)]> "No logs" </Text>
+          }}
+
         </Column>
       </Row>
       {switch (status, lastBenchmark) {
