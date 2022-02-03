@@ -1,4 +1,4 @@
-define BENCH_DATA_1
+define BENCH_DATA_B1_T1_A
 {
   "config": null,
   "version": 2,
@@ -23,7 +23,21 @@ define BENCH_DATA_1
 	  "value": 0.14,
 	  "units": "secs",
 	  "trend": "lower-is-better"
-	},
+	}
+      ]
+    }
+  ]
+}
+endef
+
+define BENCH_DATA_B1_T1_B
+{
+  "config": null,
+  "version": 2,
+  "results": [
+    {
+      "name": "bench_1_test_1",
+      "metrics": [
 	{
 	  "name": "ops_per_sec",
 	  "value": 690.0,
@@ -38,7 +52,16 @@ define BENCH_DATA_1
 	  "description": "Quantity of awesome data downloaded"
 	}
       ]
-    },
+    }
+  ]
+}
+endef
+
+define BENCH_DATA_B1_T2
+{
+  "config": null,
+  "version": 1,
+  "results": [
     {
       "name": "bench_1_test_2",
       "metrics": {
@@ -51,6 +74,17 @@ define BENCH_DATA_1
 }
 endef
 
-export BENCH_DATA_1
+export BENCH_DATA_B1_T1_A
+export BENCH_DATA_B1_T1_B
+export BENCH_DATA_B1_T2
 bench:
-	@echo "$$BENCH_DATA_1" | jq -M .
+	echo "Log message 1"
+	echo "Log message 2"
+	@echo "$$BENCH_DATA_B1_T1_A" | jq -M .
+	echo "Log message 3"
+	@echo "$$BENCH_DATA_B1_T1_B" | jq -M .
+	echo "Log message 4"
+	echo "Log message 5"
+	@echo "$$BENCH_DATA_B1_T2" | jq -M .
+	echo "Log message 6"
+	echo "Log message 7"
