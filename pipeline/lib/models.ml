@@ -11,7 +11,7 @@ module Benchmark = struct
     run_job_id : string option;
     worker : string;
     docker_image : string;
-    benchmark_name : string option;
+    benchmark_name : string;
     test_name : string;
     test_index : int;
     metrics : Yojson.Safe.t;
@@ -21,6 +21,7 @@ module Benchmark = struct
       ~docker_image ~benchmark_name ~test_index ~repository data =
     let test_name = Yojson.Safe.Util.(member "name" data |> to_string) in
     let metrics = Yojson.Safe.Util.(member "metrics" data) in
+    let benchmark_name = Option.value ~default:"default" benchmark_name in
     {
       version;
       run_at;
@@ -84,7 +85,7 @@ module Benchmark = struct
         field "run_job_id" run_job_id Fmt.(option string);
         field "worker" worker Fmt.string;
         field "docker_image" docker_image Fmt.string;
-        field "benchmark_name" benchmark_name Fmt.(option string);
+        field "benchmark_name" benchmark_name Fmt.string;
         field "test_name" test_name Fmt.(string);
         field "test_index" test_index Fmt.(int);
         field "metrics" metrics Yojson.Safe.pp;
@@ -103,7 +104,7 @@ module Benchmark = struct
       let pull_number = Db_util.(option int) self.pull_number in
       let build_job_id = Db_util.(option string) self.build_job_id in
       let run_job_id = Db_util.(option string) self.run_job_id in
-      let benchmark_name = Db_util.(option string) self.benchmark_name in
+      let benchmark_name = Db_util.string self.benchmark_name in
       let test_name = Db_util.(string) self.test_name in
       let test_index = Db_util.(int) self.test_index in
       let metrics = Db_util.json self.metrics in
