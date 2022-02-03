@@ -340,7 +340,9 @@ let make = () => {
   switch route {
   | Error({reason}) => <ErrorView msg={reason} />
   | Ok(Main) => <RepoView worker={None} />
-  | Ok(Repo({repoId, benchmarkName, worker})) => <RepoView repoId ?benchmarkName worker />
+  | Ok(Repo({repoId, benchmarkName, worker})) =>
+    let benchmarkName = Belt.Option.getWithDefault(benchmarkName, "default")
+    <RepoView repoId benchmarkName worker />
   | Ok(RepoPull({repoId, pullNumber, benchmarkName, worker})) =>
     <RepoView repoId pullNumber ?benchmarkName worker />
   }

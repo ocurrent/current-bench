@@ -39,7 +39,7 @@ module Benchmark : sig
 
   val test_name : t -> string
 
-  val benchmark_name : t -> string option
+  val benchmark_name : t -> string
 
   val test_index : t -> int
 
