@@ -241,9 +241,7 @@ let version = 2
 let of_json json = Latest.of_json json
 
 let of_list jsons =
-  List.fold_left
-    (fun acc json -> Latest.merge acc [ Latest.of_json json ])
-    [] jsons
+  List.fold_left (fun acc json -> Latest.merge acc [ of_json json ]) [] jsons
 
 let to_list ts =
   List.map
