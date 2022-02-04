@@ -21,7 +21,12 @@ let read ~start path =
   let len = min max_log_chunk_size (len - start) in
   (really_input_string ch (Int64.to_int len), start + len)
 
-type json_parser = { current : Buffer.t; stack : char list }
+type json_parser = {
+  current : Buffer.t;
+  stack : char list;
+  lines : int;
+  start_line : int;
+}
 
 let json_step stack chr =
   match (stack, chr) with
@@ -38,9 +43,13 @@ let json_step stack chr =
   | _, (('{' | '[' | '"') as chr) -> chr :: stack
   | _ -> stack
 
-let make_json_parser () = { current = Buffer.create 16; stack = [ '\n' ] }
+let make_json_parser () =
+  { current = Buffer.create 16; stack = [ '\n' ]; lines = 1; start_line = 1 }
 
 let json_step state chr =
+  let state =
+    match chr with '\n' -> { state with lines = state.lines + 1 } | _ -> state
+  in
   match json_step state.stack chr with
   | [] ->
       if Buffer.length state.current = 0
@@ -48,17 +57,24 @@ let json_step state chr =
       else (
         Buffer.add_char state.current chr;
         let str = Buffer.contents state.current in
-        (Some str, make_json_parser ()))
+        let st = make_json_parser () in
+        ( Some str,
+          { st with lines = state.lines; start_line = state.start_line } ))
   | hd :: _ as stack ->
       if chr <> '\n' || hd = '"' then Buffer.add_char state.current chr;
-      (None, { state with stack })
+      let start_line =
+        if state.stack = [] then state.lines else state.start_line
+      in
+      (None, { state with start_line; stack })
 
 let json_steps (parsed, state) str =
   String.fold_left
     (fun (parsed, state) chr ->
       let opt_json, state = json_step state chr in
       let parsed =
-        match opt_json with Some json -> json :: parsed | None -> parsed
+        match opt_json with
+        | Some json -> (json, (state.start_line, state.lines)) :: parsed
+        | None -> parsed
       in
       (parsed, state))
     (parsed, state) str
@@ -115,6 +131,10 @@ module Save = struct
 
   let auto_cancel = true
 
+  let json_merge_lines json (start, end_) =
+    Yojson.Safe.Util.combine json
+      (`Assoc [ ("lines", `Tuple [ `Int start; `Int end_ ]) ])
+
   let publish { conninfo; repository; serial_id; worker; docker_image } job
       worker_job_id () =
     let open Lwt.Infix in
@@ -125,7 +145,12 @@ module Save = struct
     let json_stream = job_output_stream worker_job_id in
     Lwt_stream.fold
       (fun jsons acc ->
-        let jsons = jsons |> List.rev |> List.map Yojson.Safe.from_string in
+        let jsons =
+          jsons
+          |> List.rev
+          |> List.map (fun (json, range) ->
+                 json_merge_lines (Yojson.Safe.from_string json) range)
+        in
         let jsons = Current_bench_json.of_list jsons in
         let acc = Current_bench_json.Latest.merge acc jsons in
         let duration = Ptime.diff (Ptime_clock.now ()) run_at in
