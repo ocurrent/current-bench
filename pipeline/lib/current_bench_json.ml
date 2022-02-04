@@ -24,6 +24,7 @@ module Json = struct
 
   let to_string_option = function `String s -> Some s | _ -> None
   let to_int_option = function `Int s -> Some s | _ -> None
+  let to_list_option = function `List xs -> Some xs | _ -> None
   let to_list = function `List xs -> xs | _ -> invalid_arg "Json: not a list"
 
   let to_assoc = function
@@ -67,12 +68,15 @@ module V2 = struct
     | Floats of float list
     | Assoc of (string * float) list
 
+  type line_range = int * int
+
   type metric = {
     name : string;
     description : string;
     value : value;
     units : string;
     trend : string;
+    lines : line_range list;
   }
 
   type result = { test_name : string; metrics : metric list }
@@ -100,6 +104,7 @@ module V2 = struct
       value = merge_value m0.value m1.value;
       units = longest_string m0.units m1.units;
       trend = longest_string m0.trend m1.trend;
+      lines = m0.lines @ m1.lines;
     }
 
   let rec add_metric ms m =
@@ -149,8 +154,8 @@ module V2 = struct
     | `Assoc vs ->
         let vs, units =
           let keys = List.map (fun (key, _) -> key) vs in
-          if not (List.mem "avg" keys) then
-            failwith "V2: Missing key *avg* in value";
+          if not (List.mem "avg" keys)
+          then failwith "V2: Missing key *avg* in value";
           List.split
           @@ List.map
                (fun (key, v) ->
@@ -178,7 +183,25 @@ module V2 = struct
     let units = find_units (units :: units_list) in
     (value, units)
 
-  let metric_of_json t =
+  let metric_of_json t lines =
+    let lines =
+      match Json.get "lines" t |> Json.to_list_option with
+      (* NOTE: The metric JSON could either have lines or not depending on whether the JSON is
+         - JSON saved in the DB using latest pipeline code, or
+         - coming from make bench output, or existing JSON saved in DB created using older pipeline *)
+      | Some t ->
+          List.map
+            (fun r ->
+              match r with
+              (* Frontend interprets every number as a Float, and Tuples become lists *)
+              | `List [ `Float start; `Float end_ ] ->
+                  (int_of_float start, int_of_float end_)
+              | _ -> (-1, -1))
+            t
+          (* Parsing JSON from DB *)
+      | _ -> lines
+      (* When parsing JSON from make bench output or older JSON in DB*)
+    in
     let units = Json.get "units" t |> Json.to_string_option |> default "" in
     let trend = Json.get "trend" t |> Json.to_string_option |> default "" in
     let description =
@@ -191,14 +214,17 @@ module V2 = struct
     | _ ->
         failwith
         @@ "V2: trend should be lower-is-better, higher-is-better or not set. "
-        ^ trend ^ " is not valid.");
-    { name; description; value; units; trend }
+        ^ trend
+        ^ " is not valid.");
+    { name; description; value; units; trend; lines }
 
-  let metric_of_json_v1 (name, value) =
+  let metric_of_json_v1 (name, value) lines =
     let value, units = value_of_json value in
     let description = "" in
     let trend = "" in
-    { name; description; value; units; trend }
+    { name; description; value; units; trend; lines }
+
+  let json_of_range (start, end_) = `List [ `Int start; `Int end_ ]
 
   let json_of_metric m =
     `Assoc
@@ -208,6 +234,7 @@ module V2 = struct
         ("value", json_of_value m.value);
         ("units", `String m.units);
         ("trend", `String m.trend);
+        ("lines", `List (m.lines |> List.map json_of_range));
       ]
 
   let json_of_metrics metrics = `List (List.map json_of_metric metrics)
@@ -216,21 +243,29 @@ module V2 = struct
     `Assoc
       [ ("name", `String m.test_name); ("metrics", json_of_metrics m.metrics) ]
 
-  let metrics_of_json = function
-    | `List lst -> List.map metric_of_json lst
-    | `Assoc lst -> List.map metric_of_json_v1 lst
+  let metrics_of_json lines = function
+    | `List lst -> List.map (fun m -> metric_of_json m lines) lst
+    | `Assoc lst -> List.map (fun m -> metric_of_json_v1 m lines) lst
     | _ -> invalid_arg "Json: expected a list or an object"
 
-  let result_of_json t =
+  let result_of_json t lines =
     {
       test_name = Json.get "name" t |> Json.to_string;
-      metrics = Json.get "metrics" t |> metrics_of_json;
+      metrics = Json.get "metrics" t |> metrics_of_json lines;
     }
 
   let of_json t =
+    let lines =
+      match Json.get "lines" t with
+      | `Tuple [ `Int start; `Int end_ ] -> [ (start, end_) ]
+      | _ -> []
+    in
     {
       benchmark_name = Json.get "name" t |> Json.to_string_option;
-      results = Json.get "results" t |> Json.to_list |> List.map result_of_json;
+      results =
+        Json.get "results" t
+        |> Json.to_list
+        |> List.map (fun r -> result_of_json r lines);
     }
 end
 
