@@ -125,8 +125,7 @@ module Save = struct
     let json_stream = job_output_stream worker_job_id in
     Lwt_stream.fold
       (fun jsons acc ->
-        let jsons = String.concat "\n" jsons in
-        let jsons = Util.parse_jsons jsons in
+        let jsons = jsons |> List.rev |> List.map Yojson.Safe.from_string in
         let jsons = Current_bench_json.of_list jsons in
         let acc = Current_bench_json.Latest.merge acc jsons in
         let duration = Ptime.diff (Ptime_clock.now ()) run_at in
