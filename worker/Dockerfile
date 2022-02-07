@@ -19,7 +19,7 @@ WORKDIR /mnt/project
 
 # Build dependencies.
 COPY --chown=opam:opam cb-worker.opam cb-worker.opam
-RUN opam install -y --deps-only -t .
+RUN opam install -y --deps-only .
 COPY --chown=opam . .
 RUN sudo chown opam .
 
