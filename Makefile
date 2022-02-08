@@ -84,6 +84,14 @@ rebuild-pipeline: ./local-test-repo/.git
 		--env-file=./environments/development.env \
 		up --detach --build pipeline
 
+.PHONY: rebuild-frontend
+rebuild-frontend: ./local-test-repo/.git
+	docker-compose \
+		--project-name="current-bench" \
+		--file=./environments/development.docker-compose.yaml \
+		--env-file=./environments/development.env \
+		up --detach --build frontend
+
 .PHONY: bench
 bench:
 	@cd ./local-test-repo/ && make -s bench
