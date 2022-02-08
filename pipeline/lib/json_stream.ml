@@ -148,8 +148,11 @@ module Save = struct
         let jsons =
           jsons
           |> List.rev
-          |> List.map (fun (json, range) ->
-                 json_merge_lines (Yojson.Safe.from_string json) range)
+          |> List.filter_map (fun (json, range) ->
+                 try
+                   let json = Yojson.Safe.from_string json in
+                   Some (json_merge_lines json range)
+                 with Yojson.Json_error _ -> None)
         in
         let jsons = Current_bench_json.of_list jsons in
         let acc = Current_bench_json.Latest.merge acc jsons in
