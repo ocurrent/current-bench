@@ -87,10 +87,10 @@ let record_stage_failure ~stage ~serial_id ~reason (db : Postgresql.connection)
     Fmt.str
       {|UPDATE benchmark_metadata
         SET failed = true,
-            reason = '%s'
+            reason = %s
         WHERE id = %s
       |}
-      reason serial_id
+      (Db_util.string reason) serial_id
   in
   try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
   | Postgresql.Error err ->
@@ -112,10 +112,10 @@ let record_cancel ~stage ~serial_id ~reason (db : Postgresql.connection) =
     Fmt.str
       {|UPDATE benchmark_metadata
         SET cancelled = true,
-            reason = '%s'
+            reason = %s
         WHERE id = %s
       |}
-      reason serial_id
+      (Db_util.string reason) serial_id
   in
   try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
   | Postgresql.Error err ->
