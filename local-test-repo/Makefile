@@ -74,9 +74,14 @@ define BENCH_DATA_B1_T2
 }
 endef
 
+define BENCH_DATA_3
+{""}
+endef
+
 export BENCH_DATA_B1_T1_A
 export BENCH_DATA_B1_T1_B
 export BENCH_DATA_B1_T2
+export BENCH_DATA_3
 bench:
 	echo "Log message 1"
 	echo "Log message 2"
@@ -88,3 +93,4 @@ bench:
 	@echo "$$BENCH_DATA_B1_T2" | jq -M .
 	echo "Log message 6"
 	echo "Log message 7"
+	@echo "$$BENCH_DATA_3"

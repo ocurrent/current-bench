@@ -29,7 +29,7 @@ let span x =
 let int = string_of_int
 
 let string x =
-  let x = String.split_on_char '\'' x in
-  "'" ^ String.concat "\\'" x ^ "'"
+  let x = x |> String.split_on_char '\'' |> String.concat "''" in
+  "'" ^ x ^ "'"
 
 let json x = string (Yojson.Safe.to_string x)
