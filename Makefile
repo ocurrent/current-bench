@@ -101,3 +101,11 @@ stop-prometheus-alertmanager:
 .PHONY: start-node-exporter
 start-node-exporter:
 	./prometheus/scripts/start-node-exporter.sh --web.listen-address 0.0.0.0:10080
+
+.PHONY: runtest
+runtest: ./local-test-repo/.git
+	docker-compose \
+		--project-name="current-bench" \
+		--file=./environments/development.docker-compose.yaml \
+		--env-file=./environments/development.env \
+		exec pipeline bash -c 'cd /mnt/project; opam exec -- dune runtest'
