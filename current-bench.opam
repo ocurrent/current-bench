@@ -35,6 +35,8 @@ depends: [
   "postgresql"
   "rresult"
   "omigrate"
+  "alcotest" {with-test}
+  "alcotest-lwt" {with-test}
 ]
 
 pin-depends: [
