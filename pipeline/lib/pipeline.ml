@@ -129,7 +129,8 @@ let pipeline ~ocluster ~conninfo ~repository env =
         Logs.err (fun log -> log "Error in %s stage: %s\n\n" stage m);
         Storage.record_stage_failure ~stage ~serial_id ~reason:m ~conninfo
     | _ -> ()
-  in
+  and+ () = ocluster_worker
+  and+ _ = output in
   ()
 
 let pipeline ~config ~ocluster ~conninfo ~repository =
