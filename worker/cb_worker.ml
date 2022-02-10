@@ -6,9 +6,11 @@ module Docker_config = struct
     mutable cpus : string list;
     numa_node : int option;
     shm_size : int;
+    arch : string;
   }
 
-  let v ?(cpus = []) ?numa_node ~shm_size () = { cpus; numa_node; shm_size }
+  let v ?(cpus = []) ?numa_node ~shm_size ~arch () =
+    { cpus; numa_node; shm_size; arch }
 
   let cpus_count t = List.length t.cpus
 
@@ -101,10 +103,10 @@ let check_contains ~path src =
         in
         aux ~src (Fpath.segs path)
 
-let run_command =
+let run_command ~arch =
   [
     "/usr/bin/setarch";
-    "x86_64";
+    arch;
     "--addr-no-randomize";
     "sh";
     "-c";
@@ -114,7 +116,9 @@ let run_command =
 let docker_run ~switch ~log ~docker_config ~cpu img_hash =
   let run_args = Docker_config.run_args ~cpu docker_config in
   let command =
-    ("docker" :: "run" :: run_args) @ [ "--rm"; "-i"; img_hash ] @ run_command
+    ("docker" :: "run" :: run_args)
+    @ [ "--rm"; "-i"; img_hash ]
+    @ run_command ~arch:docker_config.arch
   in
   Process.check_call ~label:"docker-run" ~switch ~log command >>!= fun () ->
   Lwt.return (Ok ())
@@ -197,13 +201,18 @@ module Docker = struct
     let doc = "Size of tmpfs volume to be mounted in /dev/shm (in GB)." in
     Arg.(value & opt int 4 & info [ "docker-shm-size" ] ~doc)
 
+  let arch =
+    let doc = "Architecture used (typically x86_64 or aarch64, see uname -m)" in
+    Arg.(value & opt string "x86_64" & info [ "arch" ] ~doc)
+
   let v =
     Term.(
-      const (fun cpus numa_node shm_size ->
-          Docker_config.v ?cpus ?numa_node ~shm_size ())
+      const (fun cpus numa_node shm_size arch ->
+          Docker_config.v ?cpus ?numa_node ~shm_size ~arch ())
       $ cpus
       $ numa_node
-      $ shm_size)
+      $ shm_size
+      $ arch)
 end
 
 let registration_path =
