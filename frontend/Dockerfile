@@ -17,16 +17,16 @@ RUN apt-get update \
 # set working directory
 WORKDIR /app
 
-COPY pipeline/lib/current_bench_json.ml /pipeline/lib/current_bench_json.ml
+COPY ./pipeline/lib/current_bench_json.ml /pipeline/lib/current_bench_json.ml
 
 # Build frontend code for production
 FROM dev AS builder
 
-COPY frontend/package.json frontend/yarn.lock /app/
+COPY ./frontend/package.json frontend/yarn.lock /app/
 RUN yarn install
 
 # add app
-COPY frontend/. /app/
+COPY ./frontend/. /app/
 
 RUN echo "VITE_OCAML_BENCH_GRAPHQL_URL=${VITE_OCAML_BENCH_GRAPHQL_URL}" > /app/.env
 RUN echo "VITE_OCAML_BENCH_PIPELINE_URL=${VITE_OCAML_BENCH_PIPELINE_URL}" >> /app/.env
@@ -38,7 +38,7 @@ RUN yarn bundle
 # build nginx image with static files built previously
 FROM nginx:stable-alpine
 
-COPY frontend/nginx.conf /etc/nginx/nginx.conf
+COPY ./frontend/nginx.conf /etc/nginx/nginx.conf
 
 ## Remove default nginx index page
 RUN rm -rf /usr/share/nginx/html/*
