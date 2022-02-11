@@ -1,5 +1,4 @@
 type 'a result = (string, 'a) Hashtbl.t
-
 type 'a results = (string, 'a result) Hashtbl.t
 
 val json_of_ols_results :

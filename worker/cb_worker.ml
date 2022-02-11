@@ -58,7 +58,6 @@ module Docker_config = struct
 end
 
 let ( >>!= ) = Lwt_result.bind
-
 let ( / ) = Filename.concat
 
 let read_file path =
@@ -162,7 +161,6 @@ let build_and_run ~switch ~log ~src ~docker_config = function
   | _ -> Lwt_result.fail (`Msg "Unsupported!")
 
 let update () = Lwt.return (fun () -> Lwt.return ())
-
 let or_die = function Ok x -> x | Error (`Msg msg) -> failwith msg
 
 let run ~state_dir ~docker_config ~name ~registration_path =

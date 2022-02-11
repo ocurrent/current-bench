@@ -8,7 +8,6 @@ type t = {
 [@@deriving to_yojson]
 
 let b64encode = Base64.(encode_exn ~pad:false ~alphabet:uri_safe_alphabet)
-
 let header = b64encode {|{"typ":"JWT","alg":"RS256"}|} ^ "."
 
 let encode ~key ~iat ~app_id =
