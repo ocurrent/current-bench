@@ -45,9 +45,7 @@ module Source = struct
       $ path)
 
   let current_github_app =
-    ( Term.(const Pipeline.Source.github_app $ Current_github.App.cmdliner),
-      Term.info ~doc:"Monitor all repositories associated with the Github app."
-        "github_app" )
+    Term.(const Pipeline.Source.github_app $ Current_github.App.cmdliner)
 
   let github_app app_id allowlist key secret =
     match List.filter (( <> ) "") [ app_id; allowlist; key; secret ] with
@@ -61,7 +59,14 @@ module Source = struct
             "--github-webhook-secret-file=" ^ secret;
           |]
         in
-        match Term.eval ~argv current_github_app with `Ok x -> [ x ] | _ -> [])
+        let info =
+          Cmd.info
+            ~doc:"Monitor all repositories associated with the Github app."
+            "github_app"
+        in
+        match Cmd.eval_value ~argv (Cmd.v info current_github_app) with
+        | Ok x -> ( match x with `Ok y -> [ y ] | _ -> [])
+        | _ -> [])
     | _ -> []
 
   let app_id =
@@ -116,10 +121,12 @@ let config_file =
   in
   Term.(const Pipeline.Config.of_file $ arg)
 
-let cmd : (unit, [ `Msg of string ]) result Term.t =
+let cmd : (unit, string) result Term.t =
   Term.(
     const (fun config server conninfo () sources ->
-        Pipeline.v ~config ~server ~sources conninfo ())
+        match Pipeline.v ~config ~server ~sources conninfo () with
+        | Ok _ -> Result.Ok ()
+        | Error (`Msg e) -> Result.Error e)
     $ config_file
     $ Current_web.cmdliner
     $ conninfo
@@ -127,6 +134,6 @@ let cmd : (unit, [ `Msg of string ]) result Term.t =
     $ Source.sources)
 
 let () =
-  Term.(
-    exit
-    @@ eval (cmd, Term.info ~doc:"Monitor all configured repositories." "all"))
+  Caml.exit
+  @@ Cmd.eval_result
+       (Cmd.v (Cmd.info ~doc:"Monitor all configured repositories." "all") cmd)
