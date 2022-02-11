@@ -232,4 +232,4 @@ let cmd =
     $ registration_path
     $ state_dir)
 
-let () = Caml.exit @@ Cmd.eval (Cmd.v (Cmd.info "cb worker") cmd)
+let () = Stdlib.exit @@ Cmd.eval (Cmd.v (Cmd.info "cb worker") cmd)
