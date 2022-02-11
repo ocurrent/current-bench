@@ -98,6 +98,7 @@ services:
         condition: service_started
     environment:
       OCAML_BENCH_FRONTEND_URL: ${OCAML_BENCH_FRONTEND_URL?required}
+      OCAML_BENCH_DB_PASSWORD: ${OCAML_BENCH_DB_PASSWORD?required}
   cluster:
     build:
       context: ../cluster
