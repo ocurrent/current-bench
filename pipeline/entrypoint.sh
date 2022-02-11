@@ -22,4 +22,9 @@ USER=current-bench-pipeline
 # give permission to workers
 chmod -R a+rw /app/capnp-secrets
 
+# Run migrations
+set -eu
+echo "Running migrations..."
+omigrate up --verbose --source=/app/db/migrations --database="postgresql://docker:docker@db:5432/${OCAML_BENCH_DB_PASSWORD}"
+
 exec "$@"
