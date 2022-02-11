@@ -13,7 +13,7 @@ depends: [
   "alcotest-lwt" {with-test}
   "bos"
   "capnp-rpc-unix"
-  "cmdliner"
+  "cmdliner" {>= "1.1.0"}
   "current"        {= "dev"}
   "current_docker" {= "dev"}
   "current_git"    {= "dev"}
