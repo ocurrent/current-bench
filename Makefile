@@ -27,7 +27,6 @@ stop-production:
 .PHONY: redeploy-production
 redeploy-production: \
 	build-production \
-	run-migrations \
 	stop-production \
 	start-production
 
@@ -49,12 +48,6 @@ update-version-info:
 .PHONY: clean-local-test-repo
 clean-local-test-repo:
 	cd ./local-test-repo/ && rm -rf .git/
-
-.PHONY: run-migrations
-run-migrations:
-	docker exec -it current-bench_pipeline_1 omigrate up \
-		--verbose --source=/app/db/migrations \
-		--database=postgresql://docker:docker@db:5432/docker
 
 .PHONY: start-development
 start-development: ./local-test-repo/.git update-version-info validate-env
