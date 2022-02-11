@@ -65,7 +65,7 @@ module Source = struct
             "github_app"
         in
         match Cmd.eval_value ~argv (Cmd.v info current_github_app) with
-        | Ok x -> ( match x with `Ok y -> [ y ] | _ -> [])
+        | Ok (`Ok y) -> [ y ]
         | _ -> [])
     | _ -> []
 
@@ -134,6 +134,6 @@ let cmd : (unit, string) result Term.t =
     $ Source.sources)
 
 let () =
-  Caml.exit
+  Stdlib.exit
   @@ Cmd.eval_result
        (Cmd.v (Cmd.info ~doc:"Monitor all configured repositories." "all") cmd)
