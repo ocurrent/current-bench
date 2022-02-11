@@ -10,7 +10,7 @@ bug-reports: "https://github.com/ocurrent/current-bench/issues"
 depends: [
   "dune" {>= "2.0"}
   "capnp-rpc-unix"
-  "cmdliner"
+  "cmdliner" {>= "1.1.0"}
   "dockerfile"
   "ocluster-worker" {= "dev"}
   "ocluster-api"    {= "dev"}
