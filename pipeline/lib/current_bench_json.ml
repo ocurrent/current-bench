@@ -23,9 +23,7 @@ module Json = struct
     | _ -> `Null
 
   let to_string_option = function `String s -> Some s | _ -> None
-
   let to_int_option = function `Int s -> Some s | _ -> None
-
   let to_list = function `List xs -> xs | _ -> invalid_arg "Json: not a list"
 
   let to_assoc = function
@@ -78,9 +76,7 @@ module V2 = struct
   }
 
   type result = { test_name : string; metrics : metric list }
-
   type t = { benchmark_name : string option; results : result list }
-
   type ts = t list
 
   let to_floats = function
@@ -242,7 +238,6 @@ end
 module Latest = V2
 
 let version = 2
-
 let of_json json = Latest.of_json json
 
 let of_list jsons =

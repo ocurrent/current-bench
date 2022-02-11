@@ -20,7 +20,6 @@ module Source = struct
     Github { token; webhook_secret; repo }
 
   let local path = Local path
-
   let github_app t = Github_app t
 
   let webhook_secret = function
@@ -72,7 +71,7 @@ let get_job_id x =
       | None -> None)
 
 let record_pipeline_stage ~stage ~serial_id ~conninfo image job_id =
-  let+ job_id = job_id and+ state = Current.state image in
+  let+ job_id and+ state = Current.state image in
   match (job_id, state) with
   | Some job_id, Error (`Active _) ->
       (* NOTE: For some reason this hook gets called twice, even if we match for
@@ -137,7 +136,7 @@ let pipeline ~config ~ocluster ~conninfo ~repository =
   Current.list_iter
     (module Custom_dockerfile.Env)
     (fun env ->
-      let* env = env in
+      let* env in
       pipeline ~ocluster ~conninfo ~repository env)
     (Custom_dockerfile.dockerfiles ~config ~repository)
 

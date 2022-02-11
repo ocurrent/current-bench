@@ -2,7 +2,6 @@ module Docker = Current_docker.Default
 module Images = Map.Make (String)
 
 let default_worker = "autumn"
-
 let default_docker = "ocaml/opam:debian-11-ocaml-4.13"
 
 type repo = {
@@ -13,9 +12,7 @@ type repo = {
 [@@deriving yojson]
 
 type repo_list = repo list [@@deriving yojson]
-
 type api_token = { repo : string; token : string } [@@deriving yojson]
-
 type api_token_list = api_token list [@@deriving yojson]
 
 type t = {

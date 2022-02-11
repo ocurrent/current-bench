@@ -27,27 +27,16 @@ let v ~owner ~name ?src ~commit ?pull_number ?branch ?github_head ?title () =
   }
 
 let owner t = t.owner
-
 let name t = t.name
-
 let src t = t.src
-
 let commit t = t.commit
-
 let commit_hash t = Current_git.Commit_id.hash t.commit
-
 let pull_number t = t.pull_number
-
 let title t = t.title
-
 let branch t = t.branch
-
 let github_head t = t.github_head
-
 let id t = (t.owner, t.name)
-
 let info t = t.owner ^ "/" ^ t.name
-
 let frontend_url = Sys.getenv "OCAML_BENCH_FRONTEND_URL"
 
 (* $server/$repo_owner/$repo_name/pull/$pull_number *)

@@ -41,33 +41,19 @@ module Benchmark = struct
     }
 
   let version self = self.version
-
   let run_at self = self.run_at
-
   let duration self = self.duration
-
   let repo_id self = self.repo_id
-
   let commit self = self.commit
-
   let branch self = self.branch
-
   let pull_number self = self.pull_number
-
   let build_job_id self = self.build_job_id
-
   let run_job_id self = self.run_job_id
-
   let test_name self = self.test_name
-
   let benchmark_name self = self.benchmark_name
-
   let test_index self = self.test_index
-
   let metrics self = self.metrics
-
   let worker self = self.worker
-
   let docker_image self = self.docker_image
 
   let pp =
