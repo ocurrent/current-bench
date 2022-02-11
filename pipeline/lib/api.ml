@@ -2,13 +2,9 @@ open Lwt.Infix
 module Utils = Cohttp_lwt_unix
 
 exception Invalid_token
-
 exception Missing_token
-
 exception Unauthorized
-
 exception Server_config_error
-
 exception Data_validation_error of string
 
 let request_token req =

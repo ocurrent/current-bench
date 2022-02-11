@@ -14,7 +14,6 @@ module Source : sig
     token:Fpath.t -> webhook_secret:string -> repo:Github.Repo_id.t -> t
 
   val local : Fpath.t -> t
-
   val github_app : Github.App.t -> t
 end
 

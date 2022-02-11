@@ -2,7 +2,6 @@ module Metrics = struct
   open Prometheus
 
   let namespace = "ocurrent"
-
   let subsystem = "logs"
 
   let inc_messages =

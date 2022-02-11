@@ -20,7 +20,6 @@ let check_connection ~conninfo =
       raise exn
 
 let option f = function Some x -> f x | None -> "NULL"
-
 let time x = "to_timestamp(" ^ string_of_float (Ptime.to_float_s x) ^ ")"
 
 let span x =

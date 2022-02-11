@@ -9,9 +9,7 @@ module Env = struct
   }
 
   let compare a b = Stdlib.compare (a.worker, a.image) (b.worker, b.image)
-
   let pp f t = Fmt.pf f "%s %s" t.worker t.image
-
   let find config repository = Config.find config (Repository.info repository)
 end
 
@@ -27,7 +25,6 @@ module Get_files = struct
       `Assoc [ ("commit", `String (Current_git.Commit.hash t.commit)) ]
 
     let digest t = Yojson.Safe.to_string (to_json t)
-
     let pp f t = Yojson.Safe.pretty_print f (to_json t)
   end
 
@@ -51,7 +48,6 @@ module Get_files = struct
     Lwt.return (Ok ok)
 
   let pp f key = Fmt.pf f "@[<v2>git file exists %a@]" Key.pp key
-
   let auto_cancel = true
 end
 
