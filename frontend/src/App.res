@@ -23,8 +23,8 @@ let makeGetBenchmarksVariables = (
   let isMaster = Belt.Option.isNone(pullNumber)
   let isDefaultBenchmark = Belt.Option.isNone(benchmarkName)
   let (worker, dockerImage) = switch worker {
-    | None => (None, None)
-    | Some((worker, dockerImage)) => (Some(worker), Some(dockerImage))
+  | None => (None, None)
+  | Some((worker, dockerImage)) => (Some(worker), Some(dockerImage))
   }
   let comparisonLimit = isMaster ? 0 : 50
   {
@@ -130,7 +130,9 @@ module Benchmark = {
       ->Belt.List.sort(((_, _, _, idx1), (_, _, _, idx2)) => idx1 - idx2)
       ->Belt.List.toArray
       ->Belt.Array.map(((dataByMetricName, comparison, testName, _)) =>
-        <BenchmarkTest repoId pullNumber key={testName} testName dataByMetricName comparison lastCommit />
+        <BenchmarkTest
+          repoId pullNumber key={testName} testName dataByMetricName comparison lastCommit
+        />
       )
       ->Rx.array(~empty=<Message text="No data for selected interval." />)}
     </Column>
@@ -145,7 +147,14 @@ module BenchmarkView = {
       let endDate = Js.Date.toISOString(endDate)->Js.Json.string
       ReScriptUrql.Hooks.useQuery(
         ~query=module(GetBenchmarks),
-        makeGetBenchmarksVariables(~repoId, ~pullNumber?, ~worker, ~benchmarkName?, ~startDate, ~endDate),
+        makeGetBenchmarksVariables(
+          ~repoId,
+          ~pullNumber?,
+          ~worker,
+          ~benchmarkName?,
+          ~startDate,
+          ~endDate,
+        ),
       )
     }
 
@@ -165,7 +174,6 @@ module BenchmarkView = {
     }
   }
 }
-
 
 let getDefaultDateRange = {
   let hourMs = 3600.0 *. 1000.
@@ -190,8 +198,9 @@ module Welcome = {
         <a target="_blank" href="https://github.com/ocurrent/current-bench">
           {Rx.text("https://github.com/ocurrent/current-bench")}
         </a>
-        {Rx.text(".")}<br />
-        <Text sx=[Sx.text.xs]>`Version: ${version}`</Text>
+        {Rx.text(".")}
+        <br />
+        <Text sx=[Sx.text.xs]> {`Version: ${version}`} </Text>
       </center>
     </Column>
   }
@@ -222,13 +231,18 @@ module RepoView = {
     let ((startDate, endDate), setDateRange) = React.useState(getDefaultDateRange)
     let onSelectDateRange = (startDate, endDate) => setDateRange(_ => (startDate, endDate))
 
-    let setWorker = (worker) => {
+    let setWorker = worker => {
       switch (repoId, pullNumber) {
-        | (Some(repoId), None) =>
-          AppRouter.Repo({repoId, benchmarkName, worker})->AppRouter.go
-        | (Some(repoId), Some(pullNumber)) =>
-          AppRouter.RepoPull({repoId, pullNumber, benchmarkName, worker})->AppRouter.go
-        | _ => ()
+      | (Some(repoId), None) =>
+        AppRouter.Repo({repoId: repoId, benchmarkName: benchmarkName, worker: worker})->AppRouter.go
+      | (Some(repoId), Some(pullNumber)) =>
+        AppRouter.RepoPull({
+          repoId: repoId,
+          pullNumber: pullNumber,
+          benchmarkName: benchmarkName,
+          worker: worker,
+        })->AppRouter.go
+      | _ => ()
       }
     }
 
@@ -241,7 +255,7 @@ module RepoView = {
     | PartialData(data, _) =>
       let repoIds = data.allRepoIds->Belt.Array.map(obj => obj.repo_id)
 
-      let sidebar : React.element = {
+      let sidebar: React.element = {
         <Sidebar
           repoIds
           worker
@@ -250,14 +264,13 @@ module RepoView = {
           selectedPull=?pullNumber
           selectedBenchmarkName=?benchmarkName
           onSelectRepoId={repoId =>
-            AppRouter.Repo({repoId: repoId, benchmarkName: None, worker})->AppRouter.go}
+            AppRouter.Repo({repoId: repoId, benchmarkName: None, worker: worker})->AppRouter.go}
         />
       }
 
       <div className={Sx.make([Sx.container, Sx.d.flex])}>
         {switch repoId {
-        | None =>
-          <>
+        | None => <>
             sidebar
             <Column sx=[Sx.w.full, Sx.minW.zero]>
               <Topbar>
@@ -278,7 +291,11 @@ module RepoView = {
             <Row sx=[Sx.w.auto, Sx.text.noUnderline] alignY=#center>
               <Text weight=#semibold> "/" </Text>
               {
-                let href = AppRouter.Repo({repoId: repoId, benchmarkName: None, worker})->AppRouter.path
+                let href = AppRouter.Repo({
+                  repoId: repoId,
+                  benchmarkName: None,
+                  worker: worker,
+                })->AppRouter.path
                 <Link href text="main" />
               }
               {pullNumber->Rx.onSome(pullNumber => {
@@ -286,7 +303,7 @@ module RepoView = {
                   repoId: repoId,
                   pullNumber: pullNumber,
                   benchmarkName: None,
-                  worker
+                  worker: worker,
                 })->AppRouter.path
                 <>
                   <Text weight=#semibold> "/" </Text>
@@ -299,14 +316,14 @@ module RepoView = {
                   AppRouter.Repo({
                     repoId: repoId,
                     benchmarkName: Some(benchmarkName),
-                    worker
+                    worker: worker,
                   })
                 | Some(pullNumber) =>
                   AppRouter.RepoPull({
                     repoId: repoId,
                     pullNumber: pullNumber,
                     benchmarkName: Some(benchmarkName),
-                    worker
+                    worker: worker,
                   })
                 }->AppRouter.path
                 <> <Text weight=#semibold> "/" </Text> <Link href text={benchmarkName} /> </>
