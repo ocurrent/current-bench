@@ -1,3 +1,5 @@
+open AppHelpers
+
 type graph
 type annotation
 type point
@@ -46,6 +48,7 @@ let computeStats = xs => {
 module DataRow = {
   type name = string
   type units = string
+  type lines = list<(int, int)>
   type value = float
   type metric = {name: name, value: value, units: units}
   type t = array<value> // Currently array of length 3: [min, value, max]
@@ -316,6 +319,8 @@ let make = React.memo((
   }>=[],
   ~dataSet: array<DataRow.row>,
   ~units: DataRow.units,
+  ~lines: DataRow.lines,
+  ~run_job_id: option<string>,
 ) => {
   let graphDivRef = React.useRef(Js.Nullable.null)
   let graphRef = React.useRef(None)
@@ -446,7 +451,16 @@ let make = React.memo((
   let left = switch title {
   | Some(title) =>
     <Column spacing=Sx.lg sx=[Sx.w.auto]>
-      <Text sx=[Sx.leadingNone, Sx.text.bold, Sx.text.xl]> title </Text>
+      <div className=Sx.make([Sx.d.flex, Sx.flex.row])>
+        <Text sx=[Sx.leadingNone, Sx.text.bold, Sx.text.xl]> title </Text>
+        {switch (run_job_id, lines->Belt.List.get(0)) {
+        | (Some(jobId), Some(lines)) =>
+          <a target="_blank" href={jobUrl(jobId, ~lines)}>
+            {<Icon sx=[Sx.unsafe("width", "12px"), Sx.ml.md] svg=Icon.help />}
+          </a>
+        | _ => Rx.null
+        }}
+      </div>
       {switch subTitle {
       | String(text) =>
         <Text sx=[Sx.leadingNone, Sx.text.sm, Sx.text.color(Sx.gray600), [Css.minHeight(#em(1.0))]]>
