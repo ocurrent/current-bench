@@ -64,7 +64,7 @@ let adjust = (data: BenchmarkData.t) => {
       | true => {
           let prefix = getMetricPrefix(metricName)
           let units = metadata[0]["units"]
-          // We concatenate the timeseries for all metrics in the hierarchy to correctly adjust units 
+          // We concatenate the timeseries for all metrics in the hierarchy to correctly adjust units
           let hierarchyTimeseries = switch prefix {
           | Some(prefix) =>
             let names =
@@ -83,15 +83,7 @@ let adjust = (data: BenchmarkData.t) => {
           }
           let (hts, newUnits) = adjustSize(hierarchyTimeseries, units)
           let ts = hts->Belt.Array.slice(~offset=0, ~len=Belt.Array.length(timeseries))
-          let md = metadata->Belt.Array.map(x =>
-            {
-              "commit": x["commit"],
-              "runAt": x["runAt"],
-              "units": newUnits,
-              "description": x["description"],
-              "trend": x["trend"],
-            }
-          )
+          let md = metadata->Belt.Array.map(x => Js.Obj.assign(x, {"units": newUnits}))
           (ts, md)
         }
       | false => (timeseries, metadata)
