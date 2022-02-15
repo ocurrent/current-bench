@@ -9,6 +9,8 @@ type byMetricName = Map.String.t<(
     "units": LineGraph.DataRow.units,
     "description": string,
     "trend": string,
+    "lines": list<(int, int)>,
+    "run_job_id": option<string>,
   }>,
 )>
 type byTestName = Map.String.t<(int, byMetricName)>
@@ -27,6 +29,8 @@ let add = (
   ~units: LineGraph.DataRow.units,
   ~description,
   ~trend,
+  ~lines,
+  ~run_job_id,
 ) => {
   // Unwrap
   let (_, byMetricName) = Map.String.getWithDefault(byTestName, testName, (0, Map.String.empty))
@@ -42,6 +46,8 @@ let add = (
       "units": units,
       "description": description,
       "trend": trend,
+      "lines": lines,
+      "run_job_id": run_job_id,
     },
   )
 

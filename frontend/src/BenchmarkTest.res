@@ -314,6 +314,8 @@ let make = (
 
       let oldMetrics = mergedMetadata->Belt.Array.every(m => {Some(m["commit"]) != lastCommit})
       let units = (mergedMetadata->BeltHelpers.Array.lastExn)["units"]
+      let lines = (mergedMetadata->BeltHelpers.Array.lastExn)["lines"]
+      let run_job_id = (mergedMetadata->BeltHelpers.Array.lastExn)["run_job_id"]
       let dataSet = tsArrays->Belt.Array.map(ts => ts->Belt.Array.sliceToEnd(-20))
       let labels = suffixes
       let firstPullX = Belt.Array.length(comparisonTimeseries)
@@ -327,7 +329,7 @@ let make = (
 
       <div key=metricName className={Sx.make(oldMetrics ? [Sx.opacity25] : [])}>
         {Topbar.anchor(~id)}
-        <LineGraph onXLabelClick title subTitle xTicks dataSet units annotations labels />
+        <LineGraph onXLabelClick title subTitle xTicks dataSet units annotations labels lines run_job_id/>
       </div>
     }
   }

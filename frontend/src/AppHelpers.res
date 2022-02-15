@@ -6,4 +6,10 @@ let goToCommitLink = (~repoId, commit) => {
 }
 
 let pipelineUrl: string = %raw(`import.meta.env.VITE_OCAML_BENCH_PIPELINE_URL`)
-let jobUrl = (~jobId) => pipelineUrl ++ "/job/" ++ jobId
+let jobUrl = (~lines=?, jobId) => {
+  let href = pipelineUrl ++ "/job/" ++ jobId
+  switch lines {
+  | Some(start, end) => href ++ `#L${Belt.Int.toString(start)}-L${Belt.Int.toString(end)}`
+  | _ => href
+  }
+}

@@ -6,6 +6,7 @@ fragment BenchmarkMetrics on benchmarks {
   test_name
   test_index
   metrics
+  run_job_id
   worker
   docker_image
 }

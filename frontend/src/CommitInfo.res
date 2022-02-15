@@ -70,7 +70,7 @@ let renderExternalLink = (~style=linkStyle, ~href, text) => {
 
 let renderJobIdLink = (jobId, ~text) => {
   let style = [Sx.text.xs]
-  let href = jobUrl(~jobId)
+  let href = jobUrl(jobId)
   renderExternalLink(~style, ~href, text)
 }
 
