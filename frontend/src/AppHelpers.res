@@ -4,3 +4,6 @@ let goToCommitLink = (~repoId, commit) => {
   let openUrl: string => unit = %raw(`function (url) { window.open(url, "_blank") }`)
   openUrl(commitUrl(~repoId, commit))
 }
+
+let pipelineUrl: string = %raw(`import.meta.env.VITE_OCAML_BENCH_PIPELINE_URL`)
+let jobUrl = (~jobId) => pipelineUrl ++ "/job/" ++ jobId

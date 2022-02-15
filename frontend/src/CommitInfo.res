@@ -1,4 +1,5 @@
 open Components
+open AppHelpers
 open BenchmarkQueryHelpers
 
 module GetLastCommitInfo = %graphql(`
@@ -67,11 +68,9 @@ let renderExternalLink = (~style=linkStyle, ~href, text) => {
   <a target="_blank" className={Sx.make(sx)} href> {Rx.text(text)} </a>
 }
 
-let url: string = %raw(`import.meta.env.VITE_OCAML_BENCH_PIPELINE_URL`)
-
 let renderJobIdLink = (jobId, ~text) => {
   let style = [Sx.text.xs]
-  let href = url ++ "/job/" ++ jobId
+  let href = jobUrl(~jobId)
   renderExternalLink(~style, ~href, text)
 }
 
