@@ -4,7 +4,9 @@
    current_git current_github current_ocluster capnp-rpc-unix current_web
    dockerfile fmt.tty logs logs.fmt prometheus rresult uri yojson str)
  (preprocess
-  (pps ppx_deriving_yojson)))
+  (pps ppx_deriving_yojson))
+ (instrumentation
+  (backend bisect_ppx)))
 
 ; copy everything but *.pp.ml
 
