@@ -109,3 +109,14 @@ runtest: ./local-test-repo/.git
 		--file=./environments/development.docker-compose.yaml \
 		--env-file=./environments/development.env \
 		exec pipeline bash -c 'cd /mnt/project; opam exec -- dune runtest'
+
+.PHONY: coverage
+coverage: ./local-test-repo/.git
+	docker-compose \
+		--project-name="current-bench" \
+		--file=./environments/development.docker-compose.yaml \
+		--env-file=./environments/development.env \
+		exec pipeline bash -c \
+		'cd /mnt/project; opam exec -- dune runtest --instrument-with bisect_ppx --force; \
+		opam exec -- bisect-ppx-report summary --per-file; opam exec -- bisect-ppx-report html' \
+	&& echo "To view coverage html open file://${PWD}/pipeline/_coverage/index.html in your browser"
