@@ -210,18 +210,24 @@ module Welcome = {
   }
 }
 
+let makeOnSelectRepoId = (worker, repoId) =>
+  AppRouter.Repo({repoId: repoId, benchmarkName: None, worker: worker})->AppRouter.go
+
 module ErrorView = {
   @react.component
-  let make = (~msg) => {
-    <Column alignX=#center sx=[Sx.mt.xl]>
-      <Heading level=#h1 align=#center text=`Application error` />
-      <Row alignX=#center sx=[Sx.text.color(Sx.gray900)]> {Rx.text(msg)} </Row>
-      <br />
-      {Rx.text("Learn more at ")}
-      <a target="_blank" href="https://github.com/ocurrent/current-bench">
-        {Rx.text("https://github.com/ocurrent/current-bench")}
-      </a>
-    </Column>
+  let make = (~msg, ~repoIds=[], ~onSelectRepoId=makeOnSelectRepoId(None)) => {
+    <>
+      <Sidebar repoIds onSelectRepoId worker=None setWorker={_ => ()} />
+      <Column alignX=#center sx=[Sx.mt.xl]>
+        <Heading level=#h1 align=#center text=`Application error` />
+        <Row alignX=#center sx=[Sx.text.color(Sx.gray900)]> {Rx.text(msg)} </Row>
+        <br />
+        {Rx.text("Learn more at ")}
+        <a target="_blank" href="https://github.com/ocurrent/current-bench">
+          {Rx.text("https://github.com/ocurrent/current-bench")}
+        </a>
+      </Column>
+    </>
   }
 }
 
@@ -258,6 +264,7 @@ module RepoView = {
     | Data(data)
     | PartialData(data, _) =>
       let repoIds = data.allRepoIds->Belt.Array.map(obj => obj.repo_id)
+      let onSelectRepoId = makeOnSelectRepoId(worker)
 
       let sidebar: React.element = {
         <Sidebar
@@ -267,8 +274,7 @@ module RepoView = {
           selectedRepoId=?repoId
           selectedPull=?pullNumber
           selectedBenchmarkName=?benchmarkName
-          onSelectRepoId={repoId =>
-            AppRouter.Repo({repoId: repoId, benchmarkName: None, worker: worker})->AppRouter.go}
+          onSelectRepoId
         />
       }
 
@@ -289,7 +295,7 @@ module RepoView = {
             </Column>
           </>
         | Some(repoId) if !(repoIds->BeltHelpers.Array.contains(repoId)) =>
-          <ErrorView msg={"No such repository: " ++ repoId} />
+          <ErrorView msg={"No such repository: " ++ repoId} repoIds onSelectRepoId />
         | Some(repoId) =>
           let breadcrumbs =
             <Row sx=[Sx.w.auto, Sx.text.noUnderline] alignY=#center>
@@ -359,7 +365,8 @@ let make = () => {
   let route = AppRouter.useRoute()
 
   switch route {
-  | Error({reason}) => <ErrorView msg={reason} />
+  | Error({reason}) =>
+    <div className={Sx.make([Sx.container, Sx.d.flex])}> <ErrorView msg={reason} /> </div>
   | Ok(Main) => <RepoView worker={None} />
   | Ok(Repo({repoId, benchmarkName, worker})) => <RepoView repoId ?benchmarkName worker />
   | Ok(RepoPull({repoId, pullNumber, benchmarkName, worker})) =>
