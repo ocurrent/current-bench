@@ -262,22 +262,26 @@ let make = (
         text="Benchmarks"
       />
     </Row>
-    <Column>
-      <Text sx=[Sx.mb.md] color=Sx.gray700 weight=#bold uppercase=true size=#sm>
-        "Repositories"
-      </Text>
-      <Select
-        name="repositories"
-        value=?selectedRepoId
-        placeholder="Select a repository"
-        onChange={e => ReactEvent.Form.target(e)["value"]->onSelectRepoId}>
-        {repoIds
-        ->Belt.Array.mapWithIndex((i, repoId) =>
-          <option key={string_of_int(i)} value={repoId}> {Rx.string(repoId)} </option>
-        )
-        ->Rx.array}
-      </Select>
-    </Column>
+    {switch repoIds->Belt.Array.length {
+    | 0 => Rx.null
+    | _ =>
+      <Column>
+        <Text sx=[Sx.mb.md] color=Sx.gray700 weight=#bold uppercase=true size=#sm>
+          "Repositories"
+        </Text>
+        <Select
+          name="repositories"
+          value=?selectedRepoId
+          placeholder="Select a repository"
+          onChange={e => ReactEvent.Form.target(e)["value"]->onSelectRepoId}>
+          {repoIds
+          ->Belt.Array.mapWithIndex((i, repoId) =>
+            <option key={string_of_int(i)} value={repoId}> {Rx.string(repoId)} </option>
+          )
+          ->Rx.array}
+        </Select>
+      </Column>
+    }}
     menu
   </Column>
 }
