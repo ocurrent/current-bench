@@ -220,13 +220,15 @@ module ErrorView = {
     <>
       <Sidebar repoIds onSelectRepoId worker=None setWorker={_ => ()} />
       <Column alignX=#center sx=[Sx.mt.xl]>
-        <Heading level=#h1 align=#center text=`Application error` />
+        <Heading level=#h1 align=#center text=`Application error ⚠` />
         <Row alignX=#center sx=[Sx.text.color(Sx.gray900)]> {Rx.text(msg)} </Row>
         <br />
-        {Rx.text("Learn more at ")}
-        <a target="_blank" href="https://github.com/ocurrent/current-bench">
-          {Rx.text("https://github.com/ocurrent/current-bench")}
-        </a>
+        <p>
+          {Rx.text("Report an issue at ")}
+          <a target="_blank" href="https://github.com/ocurrent/current-bench">
+            {Rx.text("https://github.com/ocurrent/current-bench")}
+          </a>
+        </p>
       </Column>
     </>
   }
