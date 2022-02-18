@@ -32,6 +32,7 @@ RUN echo "VITE_OCAML_BENCH_GRAPHQL_URL=${VITE_OCAML_BENCH_GRAPHQL_URL}" > /app/.
 RUN echo "VITE_OCAML_BENCH_PIPELINE_URL=${VITE_OCAML_BENCH_PIPELINE_URL}" >> /app/.env
 RUN echo "VITE_CURRENT_BENCH_VERSION=${VITE_CURRENT_BENCH_VERSION}" >> /app/.env
 
+RUN cp /app/graphql_schema.json /app/graphql_schema.json.orig && bash /app/scripts/update-graphql-schema.sh && diff /app/graphql_schema.json /app/graphql_schema.json.orig
 RUN yarn build
 RUN yarn bundle
 
