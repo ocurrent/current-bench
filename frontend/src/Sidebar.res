@@ -86,24 +86,24 @@ module BenchmarksMenu = {
       | None =>
         AppRouter.Repo({
           repoId: repoId,
-          benchmarkName: benchmarkName,
+          benchmarkName: Some(benchmarkName),
           worker: worker,
         })
       | Some(pullNumber) =>
         AppRouter.RepoPull({
           repoId: repoId,
           pullNumber: pullNumber,
-          benchmarkName: benchmarkName,
+          benchmarkName: Some(benchmarkName),
           worker: worker,
         })
       }
 
       <Link
         sx=[Sx.pb.md, Sx.text.capital]
-        active={selectedBenchmarkName == benchmarkName}
+        active={selectedBenchmarkName == Some(benchmarkName)}
         key={string_of_int(i)}
         href={benchmarkRoute->AppRouter.path}
-        text={benchmarkName->Belt.Option.getWithDefault("main")}
+        text={benchmarkName}
       />
     })
     ->Rx.array(~empty="None"->Rx.string)
@@ -130,8 +130,7 @@ module SidebarMenu = {
     | Data({benchmarksMenuData, pullsMenuData})
     | PartialData({benchmarksMenuData, pullsMenuData}, _) => <>
         {switch Belt.Array.some(benchmarksMenuData, bm => {
-          open AppHelpers
-          Belt.Option.getWithDefault(bm.benchmark_name, defaultBenchmarkName) !== defaultBenchmarkName
+          bm.benchmark_name !== AppHelpers.defaultBenchmarkName
         }) {
         | true =>
           <Column>
