@@ -13,3 +13,5 @@ let jobUrl = (~lines=?, jobId) => {
   | _ => href
   }
 }
+
+let defaultBenchmarkName = "default"
