@@ -20,8 +20,8 @@ let makeGetBenchmarksVariables = (
   ~startDate,
   ~endDate,
 ): GetBenchmarks.t_variables => {
+  open AppHelpers
   let isMaster = Belt.Option.isNone(pullNumber)
-  let isDefaultBenchmark = Belt.Option.isNone(benchmarkName)
   let (worker, dockerImage) = switch worker {
   | None => (None, None)
   | Some((worker, dockerImage)) => (Some(worker), Some(dockerImage))
@@ -33,8 +33,7 @@ let makeGetBenchmarksVariables = (
     isMaster: isMaster,
     worker: worker,
     dockerImage: dockerImage,
-    isDefaultBenchmark: isDefaultBenchmark,
-    benchmarkName: benchmarkName,
+    benchmarkName: Belt.Option.getWithDefault(benchmarkName, defaultBenchmarkName),
     startDate: startDate,
     endDate: endDate,
     comparisonLimit: comparisonLimit,
@@ -362,9 +361,7 @@ let make = () => {
   switch route {
   | Error({reason}) => <ErrorView msg={reason} />
   | Ok(Main) => <RepoView worker={None} />
-  | Ok(Repo({repoId, benchmarkName, worker})) =>
-    let benchmarkName = Belt.Option.getWithDefault(benchmarkName, "default")
-    <RepoView repoId benchmarkName worker />
+  | Ok(Repo({repoId, benchmarkName, worker})) => <RepoView repoId ?benchmarkName worker />
   | Ok(RepoPull({repoId, pullNumber, benchmarkName, worker})) =>
     <RepoView repoId pullNumber ?benchmarkName worker />
   }
