@@ -291,7 +291,12 @@ Sx.global(".dygraph-axis-label", [Sx.text.xs, Sx.z.high, Sx.overflow.hidden, Sx.
 
 let graphSx = [Sx.unsafe("height", "190px"), Sx.unsafe("marginBottom", "40px")]
 
-let containerSx = [Sx.w.full, Sx.border.xs, Sx.border.color(Sx.gray300), Sx.rounded.md, Sx.p.xl]
+let containerSxBase = [Sx.w.full, Sx.rounded.md, Sx.p.xl]
+let containerSxFailed = Belt.Array.concat(
+  containerSxBase,
+  [Sx.border.color(Sx.red300), Sx.border.md],
+)
+let containerSx = Belt.Array.concat(containerSxBase, [Sx.border.color(Sx.gray300), Sx.border.xs])
 
 open Components
 
@@ -321,6 +326,7 @@ let make = React.memo((
   ~units: DataRow.units,
   ~lines: DataRow.lines,
   ~run_job_id: option<string>,
+  ~failedMetric: bool,
 ) => {
   let graphDivRef = React.useRef(Js.Nullable.null)
   let graphRef = React.useRef(None)
@@ -451,7 +457,7 @@ let make = React.memo((
   let left = switch title {
   | Some(title) =>
     <Column spacing=Sx.lg sx=[Sx.w.auto]>
-      <div className=Sx.make([Sx.d.flex, Sx.flex.row])>
+      <div className={Sx.make([Sx.d.flex, Sx.flex.row])}>
         <Text sx=[Sx.leadingNone, Sx.text.bold, Sx.text.xl]> title </Text>
         {switch (run_job_id, lines->Belt.List.get(0)) {
         | (Some(jobId), Some(lines)) =>
@@ -472,9 +478,13 @@ let make = React.memo((
   | None => React.null
   }
 
+  let floatToStringHandleNaN = (~digits=4, x) => {
+    Js.Float.isNaN(x) ? "?" : Js.Float.toPrecisionWithPrecision(~digits, x)
+  }
+
   let lastValues =
     dataSet->Belt.Array.map(x =>
-      x->BeltHelpers.Array.lastExn->DataRow.toValue->Js.Float.toPrecisionWithPrecision(~digits=4)
+      x->BeltHelpers.Array.lastExn->DataRow.toValue->floatToStringHandleNaN
     )
   let isOverlayed = lastValues->Belt.Array.length > 1
   let right = isOverlayed
@@ -527,7 +537,7 @@ let make = React.memo((
         </Text>
       </Row>
 
-  let sx = Array.append(uSx, containerSx)
+  let sx = Array.append(uSx, failedMetric ? containerSxFailed : containerSx)
 
   <div className={Sx.make(sx)}>
     <Row spacing=#between alignY=#top sx={[Sx.mb.xl]}> {left} {right} </Row>
