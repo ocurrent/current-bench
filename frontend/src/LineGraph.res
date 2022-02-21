@@ -496,6 +496,7 @@ let make = React.memo((
             ->Belt.Option.getWithDefault("#000000")
             ->Js.String2.substr(~from=1)
           <div
+            key={idx->Belt.Int.toString}
             className={Sx.make([
               Sx.d.inlineFlex,
               Sx.items.center,
