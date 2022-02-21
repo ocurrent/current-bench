@@ -240,7 +240,7 @@ let make = (
       // FIXME: Validate that units are same on all the overlays? (ideally, in the current_bench_json.ml)
       let seriesArrays =
         names->Belt.Array.map(x => getSeriesArrays(dataByMetricName, comparison, x))
-      let (timeseries, metadata, comparisonTimeseries, comparisonMetadata) = seriesArrays[0]
+      let (_, metadata, comparisonTimeseries, _f) = seriesArrays[0]
       let mergedMetadata = isOverlayed
         ? seriesArrays->Belt.Array.map(((_, md, _, _)) => md)->Belt.Array.getExn(0)
         : metadata
@@ -252,18 +252,16 @@ let make = (
       ) => {
         Belt.Map.Int.set(acc, index, DataHelpers.trimCommit(m["commit"]))
       })
+      let rows =
+        seriesArrays->Belt.Array.map(((ts, md, comp_ts, comp_md)) =>
+          getRowData(~comparison=(comp_ts, comp_md), (ts, md))
+        )
       let subTitle: LineGraph.elementOrString = switch isOverlayed {
       | false =>
         let description = BeltHelpers.Array.lastExn(mergedMetadata)["description"]
-        let row = getRowData(
-          ~comparison=(comparisonTimeseries, comparisonMetadata),
-          (timeseries, metadata),
-        )
-        makeSubTitle(row, description)
+        makeSubTitle(BeltHelpers.Array.lastExn(rows), description)
       | true => String("")
       }
-
-      let oldMetrics = mergedMetadata->Belt.Array.every(m => {Some(m["commit"]) != lastCommit})
       let units = (mergedMetadata->BeltHelpers.Array.lastExn)["units"]
       let lines = (mergedMetadata->BeltHelpers.Array.lastExn)["lines"]
       let run_job_id = (mergedMetadata->BeltHelpers.Array.lastExn)["run_job_id"]
@@ -275,13 +273,31 @@ let make = (
           ? labels->Belt.Array.map(x => makeAnnotation(firstPullX, x, repoId, pullNumber))
           : []
       let title = isOverlayed ? overlayPrefix->Belt.Option.getExn : metricName
+      let oldMetrics = mergedMetadata->Belt.Array.every(m => {Some(m["commit"]) != lastCommit})
+      let failedMetric = rows->Belt.Array.some(row =>
+        switch row.last_value {
+        | Some(value) => Js.Float.isNaN(value)
+        | _ => false
+        }
+      )
+
       let onXLabelClick = AppHelpers.goToCommitLink(~repoId)
       let id = `line-graph-${testName}-${title}`
 
       <div key=metricName className={Sx.make(oldMetrics ? [Sx.opacity25] : [])}>
         {Topbar.anchor(~id)}
         <LineGraph
-          onXLabelClick title subTitle xTicks dataSet units annotations labels lines run_job_id
+          onXLabelClick
+          title
+          subTitle
+          xTicks
+          dataSet
+          units
+          annotations
+          labels
+          lines
+          run_job_id
+          failedMetric
         />
       </div>
     }
