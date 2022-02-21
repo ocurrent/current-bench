@@ -149,17 +149,12 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setL
   | Data(data)
   | PartialData(data, _) =>
     let lastCommitInfo = data.lastCommitInfo[0]
-    let lastBenchmark = Belt.Array.get(
-      benchmarks,
-      Belt.Array.length(benchmarks) - 1,
-    )
-    let (lastCommit, lastBenchmark) =
-      switch lastBenchmark {
-        | Some (lastBenchmark) when lastBenchmark.commit != lastCommitInfo.commit =>
-          (lastBenchmark.commit, Some(lastBenchmark.commit))
-        | _ => (lastCommitInfo.commit, None)
-      }
-    setLastCommit(Some(lastCommit))
+    let lastBenchmark = Belt.Array.get(benchmarks, Belt.Array.length(benchmarks) - 1)
+    let lastBenchmarkCommit = switch lastBenchmark {
+    | Some(lastBenchmark) => Some(lastBenchmark.commit)
+    | _ => None
+    }
+    setLastCommit(Some(lastCommitInfo.commit))
     let sameBuildJobLog = switch (lastCommitInfo.build_job_id, lastCommitInfo.run_job_id) {
     | (Some(buildID), Some(jobID)) => buildID == jobID
     | (_, _) => false
@@ -231,9 +226,8 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setL
 
         </Column>
       </Row>
-      {switch (status, lastBenchmark) {
-      | (Fail | Cancel | Running, Some(benchmark)) =>
-        <>
+      {switch (status, lastBenchmarkCommit) {
+      | (Fail | Cancel | Running, Some(benchmark)) => <>
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.yellow600)]>
             "Metrics for an older commit "
           </Text>
