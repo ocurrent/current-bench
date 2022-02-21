@@ -174,57 +174,6 @@ let getSeriesArrays = (data, comparison, metricName) => {
   (timeseries, metadata, comparisonTimeseries, comparisonMetadata)
 }
 
-// merge metadata for different metrics into a single one. Some metrics may be
-// missing for some commits. This function gets the list of all commits where
-// atleast one metric is present.
-let mergeMetadata = seriesArrays => {
-  let sortMerged = selectorFn => {
-    let mdArray = seriesArrays->Belt.Array.map(selectorFn)->Belt.Array.concatMany
-    let mdByCommit = mdArray->Belt.Array.reduce(Belt.Map.String.empty, (acc, md) => {
-      Belt.Map.String.set(acc, md["commit"], md)
-    })
-    let sorted =
-      mdByCommit
-      ->Belt.Map.String.valuesToArray
-      ->Belt.SortArray.stableSortBy((a, b) =>
-        compare(Js.Date.getTime(a["runAt"]), Js.Date.getTime(b["runAt"]))
-      )
-    (sorted, mdByCommit)
-  }
-  // Merge and sort comparison metadata
-  let (sortedCompareMd, compareMdByCommit) = sortMerged(((_, _, _, cmd)) => cmd)
-  // Merge and sort metadata
-  let (sortedMd, _) = sortMerged(((_, md, _, _)) => md)
-  // Ensure that comparison metadata is before normal metadata
-  sortedCompareMd->Belt.Array.concat(
-    sortedMd->Belt.Array.keep(x => !Belt.Map.String.has(compareMdByCommit, x["commit"])),
-  )
-}
-
-// Fill in NaN values when a metric is missing for a specific commit
-let fillMissingValues = (seriesArrays, mergedMetadata) => {
-  let n = Belt.Array.length(mergedMetadata)
-  seriesArrays->Belt.Array.map(((ts, md, _, _)) =>
-    switch Belt.Array.length(md) < n {
-    | false => ts
-    | true => {
-        let mergedCommits = mergedMetadata->Belt.Array.map(m => m["commit"])
-        let ts_ = Belt.Array.make(n, [Js.Float._NaN, Js.Float._NaN, Js.Float._NaN])
-        ignore(
-          md->Belt.Array.mapWithIndex((idx, m) => {
-            let idx_ = mergedCommits->Belt.Array.getIndexBy(c => c == m["commit"])
-            switch idx_ {
-            | Some(i) => Belt.Array.set(ts_, i, Belt.Array.getExn(ts, idx))
-            | _ => false
-            }
-          }),
-        )
-        ts_
-      }
-    }
-  )
-}
-
 @react.component
 let make = (
   ~repoId,
@@ -288,12 +237,14 @@ let make = (
       let suffixes = isOverlayed
         ? names->Belt.Array.map(x => Js.String.split("/", x)[1])
         : [metricName]
+      // FIXME: Validate that units are same on all the overlays? (ideally, in the current_bench_json.ml)
       let seriesArrays =
         names->Belt.Array.map(x => getSeriesArrays(dataByMetricName, comparison, x))
       let (timeseries, metadata, comparisonTimeseries, comparisonMetadata) = seriesArrays[0]
-      // FIXME: Validate that units are same on all the overlays? (ideally, in the current_bench_json.ml)
-      let mergedMetadata = isOverlayed ? mergeMetadata(seriesArrays) : metadata
-      let tsArrays = fillMissingValues(seriesArrays, mergedMetadata)
+      let mergedMetadata = isOverlayed
+        ? seriesArrays->Belt.Array.map(((_, md, _, _)) => md)->Belt.Array.getExn(0)
+        : metadata
+      let tsArrays = seriesArrays->Belt.Array.map(((ts, _, _, _)) => ts)
       let xTicks = mergedMetadata->Belt.Array.reduceWithIndex(Belt.Map.Int.empty, (
         acc,
         m,
@@ -329,7 +280,9 @@ let make = (
 
       <div key=metricName className={Sx.make(oldMetrics ? [Sx.opacity25] : [])}>
         {Topbar.anchor(~id)}
-        <LineGraph onXLabelClick title subTitle xTicks dataSet units annotations labels lines run_job_id/>
+        <LineGraph
+          onXLabelClick title subTitle xTicks dataSet units annotations labels lines run_job_id
+        />
       </div>
     }
   }
