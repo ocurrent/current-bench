@@ -458,7 +458,7 @@ let make = React.memo((
   | Some(title) =>
     <Column spacing=Sx.lg sx=[Sx.w.auto]>
       <div className={Sx.make([Sx.d.flex, Sx.flex.row])}>
-        <Text sx=[Sx.leadingNone, Sx.text.bold, Sx.text.xl]> title </Text>
+        <Text sx=[Sx.leadingNone, Sx.text.bold, Sx.text.md]> title </Text>
         {switch (run_job_id, lines->Belt.List.get(0)) {
         | (Some(jobId), Some(lines)) =>
           <a target="_blank" href={jobUrl(jobId, ~lines)}>
@@ -529,10 +529,10 @@ let make = React.memo((
         ->Rx.array(~empty=<Message text="No labels" />)}
       </Row>
     : <Row alignX=#right spacing=Sx.md sx=[Sx.w.auto]>
-        <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray900)]>
+        <Text sx=[Sx.leadingNone, Sx.text.md, Sx.text.bold, Sx.text.color(Sx.gray900)]>
           {lastValues->BeltHelpers.Array.lastExn}
         </Text>
-        <Text sx=[Sx.leadingNone, Sx.text.xl2, Sx.text.bold, Sx.text.color(Sx.gray500)]>
+        <Text sx=[Sx.leadingNone, Sx.text.md, Sx.text.bold, Sx.text.color(Sx.gray500)]>
           units
         </Text>
       </Row>
