@@ -379,11 +379,23 @@ let make = React.memo((
     )
   }
 
+  let onClick = (_e, point) => {
+    let commit = switch xTicks {
+    | Some(xTicks) => xTicks->Belt.Map.Int.get(point["idx"])
+    | _ => None
+    }
+    switch (commit, goToCommit) {
+    | (Some(commit), Some(goToCommit)) => goToCommit(commit)
+    | _ => ()
+    }
+  }
+
   React.useEffect1(() => {
     let options = defaultOptions(
       ~yLabel?,
       ~labels?,
       ~xTicks?,
+      ~onClick,
       ~legendFormatter=Legend.format(~xTicks?),
       (),
     )
@@ -435,6 +447,7 @@ let make = React.memo((
           ~yLabel?,
           ~labels?,
           ~xTicks?,
+          ~onClick,
           ~data=makeDygraphData(dataSet),
           ~legendFormatter=Legend.format(~xTicks?),
           (),
