@@ -110,12 +110,6 @@ let getElementsByClassName: string => array<Dom.element> = %raw(`
   }
 `)
 
-let getElementHTMLonClick: (Dom.element, string => unit) => unit = %raw(`
-  function(elem, handler) {
-    elem.onclick = function(e) { handler(e.target.innerHTML) }
-  }
-`)
-
 module Legend = {
   type t = {
     label: string,
@@ -190,7 +184,6 @@ let defaultOptions = (
   ~labels=?,
   ~onClick=?,
   ~data=[],
-  ~xLabelFormatter=?,
   (),
 ) => {
   let ticker = {
@@ -215,10 +208,8 @@ let defaultOptions = (
     "axes": {
       "x": {
         "drawGrid": true,
-        "drawAxis": true,
-        "axisLabelFormatter": Js.Null.fromOption(xLabelFormatter),
+        "drawAxis": false,
         "ticker": ticker,
-        "axisLabelWidth": 45,
       },
       "y": {
         "drawAxis": true,
@@ -289,7 +280,7 @@ Sx.global(".dygraph-axis-label-y", [Sx.pr.sm])
 
 Sx.global(".dygraph-axis-label", [Sx.text.xs, Sx.z.high, Sx.overflow.hidden, Sx.opacity75])
 
-let graphSx = [Sx.unsafe("height", "190px"), Sx.unsafe("marginBottom", "40px")]
+let graphSx = [Sx.unsafe("height", "190px")]
 
 let containerSxBase = [Sx.w.full, Sx.rounded.md, Sx.p.lg]
 let containerSxFailed = Belt.Array.concat(
@@ -414,14 +405,6 @@ let make = React.memo((
               graph->setAnnotations(annotations)
             })
           }
-
-          switch goToCommit {
-          | Some(handler) =>
-            getElementsByClassName("dygraph-axis-label-x")->Belt.Array.forEach(elem =>
-              getElementHTMLonClick(elem, handler)
-            )
-          | None => ()
-          }
         }
       | _ => ()
       }
@@ -454,14 +437,6 @@ let make = React.memo((
         )
         graph->updateOptions(options)
         graph->setAnnotations(annotations)
-
-        switch goToCommit {
-        | Some(handler) =>
-          getElementsByClassName("dygraph-axis-label-x")->Belt.Array.forEach(elem =>
-            getElementHTMLonClick(elem, handler)
-          )
-        | None => ()
-        }
       }
     }
     None
