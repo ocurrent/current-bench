@@ -325,8 +325,7 @@ let make = (
     <div
       className={Sx.make([
         Sx.unsafe("display", "grid"),
-        Sx.unsafe("gap", "32px"), // xl2
-        Sx.unsafe("gridTemplateColumns", "repeat(auto-fit, minmax(400px, 1fr))"),
+        Sx.unsafe("gap", "2px"),
       ])}>
       metric_graphs
     </div>
