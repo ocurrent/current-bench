@@ -280,7 +280,7 @@ Sx.global(".dygraph-axis-label-y", [Sx.pr.sm])
 
 Sx.global(".dygraph-axis-label", [Sx.text.xs, Sx.z.high, Sx.overflow.hidden, Sx.opacity75])
 
-let graphSx = [Sx.unsafe("height", "190px")]
+let graphSx = [Sx.unsafe("height", "150px")]
 
 let containerSxBase = [Sx.w.full, Sx.rounded.md, Sx.p.lg]
 let containerSxFailed = Belt.Array.concat(
