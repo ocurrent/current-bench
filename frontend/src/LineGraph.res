@@ -457,23 +457,30 @@ let make = React.memo((
   let left = switch title {
   | Some(title) =>
     <Column spacing=Sx.lg sx=[Sx.w.auto]>
-      <div className={Sx.make([Sx.d.flex, Sx.flex.row])}>
-        <Text sx=[Sx.leadingNone, Sx.text.bold, Sx.text.md]> title </Text>
+      <div className={Sx.make([Sx.d.flex, Sx.flex.row, Sx.items.baseline])}>
+        <Text sx=[Sx.leadingNone, Sx.text.bold, Sx.text.md, Sx.mr.md]> title </Text>
+        {switch subTitle {
+        | String(text) =>
+          <Text
+            sx=[
+              Sx.leadingNone,
+              Sx.text.sm,
+              Sx.text.color(Sx.gray600),
+              [Css.minHeight(#em(1.0))],
+              Sx.mr.md,
+            ]>
+            {text}
+          </Text>
+        | Element(elem) => elem
+        }}
         {switch (run_job_id, lines->Belt.List.get(0)) {
         | (Some(jobId), Some(lines)) =>
           <a target="_blank" href={jobUrl(jobId, ~lines)}>
-            {<Icon sx=[Sx.unsafe("width", "12px"), Sx.ml.md] svg=Icon.help />}
+            {<Icon sx=[Sx.unsafe("width", "12px")] svg=Icon.help />}
           </a>
         | _ => Rx.null
         }}
       </div>
-      {switch subTitle {
-      | String(text) =>
-        <Text sx=[Sx.leadingNone, Sx.text.sm, Sx.text.color(Sx.gray600), [Css.minHeight(#em(1.0))]]>
-          {text}
-        </Text>
-      | Element(elem) => elem
-      }}
     </Column>
   | None => React.null
   }
