@@ -312,7 +312,7 @@ let make = React.memo((
   ~xTicks: option<Belt.Map.Int.t<string>>=?,
   ~yLabel: option<string>=?,
   ~labels: option<array<string>>=?,
-  ~onXLabelClick=?,
+  ~goToCommit=?,
   ~annotations: array<{
     "clickHandler": (annotation, point, graph, event) => unit,
     "height": int,
@@ -403,7 +403,7 @@ let make = React.memo((
             })
           }
 
-          switch onXLabelClick {
+          switch goToCommit {
           | Some(handler) =>
             getElementsByClassName("dygraph-axis-label-x")->Belt.Array.forEach(elem =>
               getElementHTMLonClick(elem, handler)
@@ -442,7 +442,7 @@ let make = React.memo((
         graph->updateOptions(options)
         graph->setAnnotations(annotations)
 
-        switch onXLabelClick {
+        switch goToCommit {
         | Some(handler) =>
           getElementsByClassName("dygraph-axis-label-x")->Belt.Array.forEach(elem =>
             getElementHTMLonClick(elem, handler)
