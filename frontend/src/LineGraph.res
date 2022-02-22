@@ -133,7 +133,7 @@ module Legend = {
     let statsIndex = Array.length(data.series) / 2
     switch xLabel {
     | Some(xLabel) =>
-      let html = "<b>" ++ xLabel ++ "</b>"
+      let html = "<b>" ++ DataHelpers.trimCommit(xLabel) ++ "</b>"
       let row = (dashHTML, labelHTML, yHTML) => {
         "<div class='dygraph-legend-row'>" ++
         (dashHTML ++
