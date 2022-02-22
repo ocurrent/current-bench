@@ -280,13 +280,13 @@ let make = (
         }
       )
 
-      let onXLabelClick = AppHelpers.goToCommitLink(~repoId)
+      let goToCommit = AppHelpers.goToCommitLink(~repoId)
       let id = `line-graph-${testName}-${title}`
 
       <div key=metricName className={Sx.make(oldMetrics ? [Sx.opacity25] : [])}>
         {Topbar.anchor(~id)}
         <LineGraph
-          onXLabelClick
+          goToCommit
           title
           subTitle
           xTicks
