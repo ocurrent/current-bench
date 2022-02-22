@@ -291,7 +291,7 @@ Sx.global(".dygraph-axis-label", [Sx.text.xs, Sx.z.high, Sx.overflow.hidden, Sx.
 
 let graphSx = [Sx.unsafe("height", "190px"), Sx.unsafe("marginBottom", "40px")]
 
-let containerSxBase = [Sx.w.full, Sx.rounded.md, Sx.p.xl]
+let containerSxBase = [Sx.w.full, Sx.rounded.md, Sx.p.lg]
 let containerSxFailed = Belt.Array.concat(
   containerSxBase,
   [Sx.border.color(Sx.red300), Sx.border.md],
@@ -540,7 +540,7 @@ let make = React.memo((
   let sx = Array.append(uSx, failedMetric ? containerSxFailed : containerSx)
 
   <div className={Sx.make(sx)}>
-    <Row spacing=#between alignY=#top sx={[Sx.mb.xl]}> {left} {right} </Row>
+    <Row spacing=#between alignY=#top sx={[Sx.mb.lg]}> {left} {right} </Row>
     <div className={Sx.make(graphSx)} ref={ReactDOM.Ref.domRef(graphDivRef)} />
   </div>
 })
