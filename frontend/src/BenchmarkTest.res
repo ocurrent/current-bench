@@ -250,7 +250,7 @@ let make = (
         m,
         index,
       ) => {
-        Belt.Map.Int.set(acc, index, DataHelpers.trimCommit(m["commit"]))
+        Belt.Map.Int.set(acc, index, m["commit"])
       })
       let rows =
         seriesArrays->Belt.Array.map(((ts, md, comp_ts, comp_md)) =>
