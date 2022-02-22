@@ -321,11 +321,7 @@ let make = (
       <Text sx=[Sx.w.auto, Sx.text.md, Sx.text.bold, Sx.text.color(Sx.gray900)]> testName </Text>
     </summary>
     {Belt.Map.String.isEmpty(comparison) ? Rx.null : metric_table}
-    <div
-      className={Sx.make([
-        Sx.unsafe("display", "grid"),
-        Sx.unsafe("gap", "2px"),
-      ])}>
+    <div className={Sx.make([Sx.unsafe("display", "grid"), Sx.unsafe("gap", "2px")])}>
       metric_graphs
     </div>
   </details>
