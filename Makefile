@@ -128,3 +128,7 @@ coverage: ./local-test-repo/.git
 		'cd /mnt/project; opam exec -- dune runtest --instrument-with bisect_ppx --force; \
 		opam exec -- bisect-ppx-report summary --per-file; opam exec -- bisect-ppx-report html' \
 	&& echo "To view coverage html open file://${PWD}/pipeline/_coverage/index.html in your browser"
+
+.PHONY: local-make-bench
+local-make-bench: ./local-test-repo/.git
+	cd local-test-repo/; git add .; git commit --amend -m "New commit: $$(date)"; cd ..
