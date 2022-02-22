@@ -265,7 +265,6 @@ let make = (
       let units = (mergedMetadata->BeltHelpers.Array.lastExn)["units"]
       let lines = (mergedMetadata->BeltHelpers.Array.lastExn)["lines"]
       let run_job_id = (mergedMetadata->BeltHelpers.Array.lastExn)["run_job_id"]
-      let dataSet = tsArrays->Belt.Array.map(ts => ts->Belt.Array.sliceToEnd(-20))
       let labels = suffixes
       let firstPullX = Belt.Array.length(comparisonTimeseries)
       let annotations =
@@ -291,7 +290,7 @@ let make = (
           title
           subTitle
           xTicks
-          dataSet
+          dataSet=tsArrays
           units
           annotations
           labels
