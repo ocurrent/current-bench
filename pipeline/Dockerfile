@@ -2,17 +2,17 @@ FROM ocaml/opam:debian-11-ocaml-4.13 AS build
 
 RUN sudo apt-get update && \
     sudo apt-get install -qq -yy \
-    libffi-dev \
-    m4 \
     pkg-config \
+    m4 \
     libssl-dev \
-    libgmp-dev \
-    libpq-dev \
-    graphviz \
-    capnproto \
     libsqlite3-dev \
+    libpq-dev \
+    libgmp-dev \
+    libffi-dev \
+    libev-dev \
     libcapnp-dev \
-    libev-dev
+    graphviz \
+    capnproto
 
 RUN opam remote add origin 'https://opam.ocaml.org' --all-switches && opam remote remove default && opam update
 
