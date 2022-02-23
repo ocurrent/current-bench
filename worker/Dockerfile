@@ -1,19 +1,20 @@
-FROM ocaml/opam:debian-ocaml-4.13 AS build
+FROM ocaml/opam:debian-11-ocaml-4.13 AS build
 
 RUN sudo apt-get update && \
     sudo apt-get install -qq -yy \
-    libffi-dev \
-    m4 \
     pkg-config \
+    m4 \
     libssl-dev \
-    libgmp-dev \
-    libpq-dev \
-    graphviz \
-    capnproto \
     libsqlite3-dev \
-    libcapnp-dev \
+    libpq-dev \
+    libgmp-dev \
+    libffi-dev \
     libev-dev \
-    libsqlite3-dev
+    libcapnp-dev \
+    graphviz \
+    capnproto
+
+RUN opam remote add origin 'https://opam.ocaml.org' --all-switches && opam remote remove default && opam update
 
 WORKDIR /mnt/project
 

@@ -14,6 +14,8 @@ RUN sudo apt-get update && \
     libcapnp-dev \
     libev-dev
 
+RUN opam remote add origin 'https://opam.ocaml.org' --all-switches && opam remote remove default && opam update
+
 WORKDIR /mnt/project
 
 # Build dependencies.
