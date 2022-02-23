@@ -110,6 +110,7 @@ let job_output_stream job_id =
 
 module Save = struct
   type t = {
+    config : Config.t;
     conninfo : string;
     repository : Repository.t;
     serial_id : int;
@@ -131,12 +132,29 @@ module Save = struct
 
   let auto_cancel = true
 
+  let to_slack ~config job_id = function
+    | [], [] -> ":x: empty :x:"
+    | cb, failures ->
+        let failures_output =
+          List.map
+            (fun (raw, (start, stop), error) ->
+              let url = Config.job_url ~config job_id start stop in
+              Printf.sprintf ":question: *<%s|%i-%i `%s`>* `%s`" url start stop
+                error raw)
+            failures
+        in
+        let cb_output =
+          let jsons = List.map Current_bench_json.to_json cb in
+          "```" ^ Yojson.Safe.to_string (`List jsons) ^ "```"
+        in
+        String.concat "\n" ("" :: cb_output :: failures_output)
+
   let json_merge_lines json (start, end_) =
     Yojson.Safe.Util.combine json
       (`Assoc [ ("lines", `Tuple [ `Int start; `Int end_ ]) ])
 
-  let publish { conninfo; repository; serial_id; worker; docker_image } job
-      worker_job_id () =
+  let publish { config; conninfo; repository; serial_id; worker; docker_image }
+      job worker_job_id () =
     let open Lwt.Infix in
     Current.Job.start job ~level:Current.Level.Above_average >>= fun () ->
     let run_at = Ptime_clock.now () in
@@ -144,36 +162,36 @@ module Save = struct
     let run_job_id = Some worker_job_id in
     let json_stream = job_output_stream worker_job_id in
     Lwt_stream.fold
-      (fun jsons acc ->
-        let jsons =
-          jsons
+      (fun parsed (cb, failures) ->
+        let jsons, json_failures =
+          parsed
           |> List.rev
-          |> List.filter_map (fun (json, range) ->
+          |> List.partition_map (fun (json, range) ->
                  try
                    let json = Yojson.Safe.from_string json in
-                   Some (json_merge_lines json range)
-                 with Yojson.Json_error _ -> None)
+                   Left (json_merge_lines json range)
+                 with exn -> Right (json, range, Printexc.to_string exn))
         in
         let jsons = Current_bench_json.of_list jsons in
-        let acc = Current_bench_json.Latest.merge acc jsons in
+        let cb = Current_bench_json.Latest.merge cb jsons in
         let duration = Ptime.diff (Ptime_clock.now ()) run_at in
         let () =
           db_save ~conninfo
             (Models.Benchmark.make ~duration ~run_at ~repository ~worker
                ~docker_image ?build_job_id ?run_job_id)
-            acc
+            cb
         in
-        acc)
-      json_stream []
-    >>= fun _acc ->
+        (cb, List.rev_append json_failures failures))
+      json_stream ([], [])
+    >>= fun results ->
     Storage.record_success ~conninfo ~serial_id;
-    let output = "" in
+    let output = to_slack ~config worker_job_id results in
     Lwt.return (Ok output)
 end
 
 module SC = Current_cache.Output (Save)
 
-let save ~conninfo ~repository ~serial_id ~worker ~docker_image job_id =
+let save ~config ~conninfo ~repository ~serial_id ~worker ~docker_image job_id =
   let open Current.Syntax in
   Current.component "db-save"
   |> let> job_id in
@@ -181,5 +199,12 @@ let save ~conninfo ~repository ~serial_id ~worker ~docker_image job_id =
      | None -> Current_incr.const (Error (`Active `Ready), None)
      | Some job_id ->
          SC.set
-           { Save.conninfo; repository; serial_id; worker; docker_image }
+           {
+             Save.config;
+             conninfo;
+             repository;
+             serial_id;
+             worker;
+             docker_image;
+           }
            job_id ()

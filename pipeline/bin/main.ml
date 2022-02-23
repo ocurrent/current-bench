@@ -112,6 +112,16 @@ let conninfo =
   @@ Arg.info ~doc:"Connection info for Postgres DB" ~docv:"PATH"
        [ "conn-info" ]
 
+let frontend_url =
+  Arg.required
+  @@ Arg.opt Arg.(some string) None
+  @@ Arg.info ~doc:"URL of the frontend" ~docv:"URL" [ "frontend-url" ]
+
+let pipeline_url =
+  Arg.required
+  @@ Arg.opt Arg.(some string) None
+  @@ Arg.info ~doc:"URL of the ocurrent pipeline" ~docv:"URL" [ "pipeline-url" ]
+
 let config_file =
   let arg =
     Arg.required
@@ -119,7 +129,12 @@ let config_file =
     @@ Arg.info ~doc:"Config file for repositories" ~docv:"PATH"
          [ "repositories" ]
   in
-  Term.(const Pipeline.Config.of_file $ arg)
+  Term.(
+    const (fun frontend_url pipeline_url config_file ->
+        Pipeline.Config.of_file ~frontend_url ~pipeline_url config_file)
+    $ frontend_url
+    $ pipeline_url
+    $ arg)
 
 let cmd : (unit, string) result Term.t =
   Term.(

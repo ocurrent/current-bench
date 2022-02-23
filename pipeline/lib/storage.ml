@@ -32,55 +32,39 @@ let setup_metadata ~repository ~worker ~docker_image
       |}
       run_at repo_id commit branch pull_number title worker docker_image
   in
-  try
-    let result = db#exec query in
-    match result#get_all with
-    | [| [| id |] |] -> int_of_string id
-    | result ->
-        Logs.err (fun log ->
-            log "Unexpected result while setting up metadata %s:%s\n%a"
-              (Repository.info repository)
-              (Repository.commit_hash repository)
-              (Fmt.array (Fmt.array Fmt.string))
-              result);
-        -1
-  with exn ->
-    Logs.err (fun log ->
-        log "Error while setting up metadata %s:%s\n%a"
-          (Repository.info repository)
-          (Repository.commit_hash repository)
-          Fmt.exn exn);
-    -1
+  let result = db#exec query in
+  match result#get_all with
+  | [| [| id |] |] -> int_of_string id
+  | result ->
+      Logs.err (fun log ->
+          log "Unexpected result while setting up metadata %s:%s\n%a"
+            (Repository.info repository)
+            (Repository.commit_hash repository)
+            (Fmt.array (Fmt.array Fmt.string))
+            result);
+      -1
 
 let setup_metadata ~repository ~conninfo ~worker ~docker_image =
   Db_util.with_db ~conninfo (setup_metadata ~repository ~worker ~docker_image)
 
-let record_stage_start ~stage ~job_id ~serial_id (db : Postgresql.connection) =
+let record_stage_start ~job_id ~serial_id (db : Postgresql.connection) =
   Logs.debug (fun log -> log "Recording build start...");
   let job_id = Db_util.string job_id in
   let serial_id = Db_util.int serial_id in
   let query =
     Fmt.str
       {|UPDATE benchmark_metadata
-        SET %s = %s
+        SET build_job_id = %s, run_job_id = %s
         WHERE id = %s
       |}
-      stage job_id serial_id
+      job_id job_id serial_id
   in
-  try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
-  | Postgresql.Error err ->
-      Logs.err (fun log ->
-          log "Database error while recording stage %s: %s" stage
-            (Postgresql.string_of_error err))
-  | exn ->
-      Logs.err (fun log ->
-          log "Unknown error while recording stage %s:\n%a" stage Fmt.exn exn)
+  ignore (db#exec ~expect:[ Postgresql.Command_ok ] query)
 
-let record_stage_start ~stage ~job_id ~serial_id ~conninfo =
-  Db_util.with_db ~conninfo (record_stage_start ~stage ~job_id ~serial_id)
+let record_stage_start ~job_id ~serial_id ~conninfo =
+  Db_util.with_db ~conninfo (record_stage_start ~job_id ~serial_id)
 
-let record_stage_failure ~stage ~serial_id ~reason (db : Postgresql.connection)
-    =
+let record_stage_failure ~serial_id ~reason (db : Postgresql.connection) =
   Logs.debug (fun log -> log "Recording stage failure...");
   let serial_id = Db_util.int serial_id in
   let query =
@@ -92,20 +76,12 @@ let record_stage_failure ~stage ~serial_id ~reason (db : Postgresql.connection)
       |}
       (Db_util.string reason) serial_id
   in
-  try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
-  | Postgresql.Error err ->
-      Logs.err (fun log ->
-          log "Database error while recording stage failure %s: %s" stage
-            (Postgresql.string_of_error err))
-  | exn ->
-      Logs.err (fun log ->
-          log "Unknown error while recording stage failure %s:\n%a" stage
-            Fmt.exn exn)
+  ignore (db#exec ~expect:[ Postgresql.Command_ok ] query)
 
-let record_stage_failure ~stage ~serial_id ~reason ~conninfo =
-  Db_util.with_db ~conninfo (record_stage_failure ~stage ~serial_id ~reason)
+let record_stage_failure ~serial_id ~reason ~conninfo =
+  Db_util.with_db ~conninfo (record_stage_failure ~serial_id ~reason)
 
-let record_cancel ~stage ~serial_id ~reason (db : Postgresql.connection) =
+let record_cancel ~serial_id ~reason (db : Postgresql.connection) =
   Logs.debug (fun log -> log "Recording stage cancel...");
   let serial_id = Db_util.int serial_id in
   let query =
@@ -117,18 +93,10 @@ let record_cancel ~stage ~serial_id ~reason (db : Postgresql.connection) =
       |}
       (Db_util.string reason) serial_id
   in
-  try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
-  | Postgresql.Error err ->
-      Logs.err (fun log ->
-          log "Database error while recording stage cancellation %s: %s" stage
-            (Postgresql.string_of_error err))
-  | exn ->
-      Logs.err (fun log ->
-          log "Unknown error while recording stage cancellation %s:\n%a" stage
-            Fmt.exn exn)
+  ignore (db#exec ~expect:[ Postgresql.Command_ok ] query)
 
-let record_cancel ~stage ~serial_id ~reason ~conninfo =
-  Db_util.with_db ~conninfo (record_cancel ~stage ~serial_id ~reason)
+let record_cancel ~serial_id ~reason ~conninfo =
+  Db_util.with_db ~conninfo (record_cancel ~serial_id ~reason)
 
 let record_success ~serial_id (db : Postgresql.connection) =
   Logs.debug (fun log -> log "Recording stage success...");
@@ -141,15 +109,7 @@ let record_success ~serial_id (db : Postgresql.connection) =
       |}
       serial_id
   in
-  try ignore (db#exec ~expect:[ Postgresql.Command_ok ] query) with
-  | Postgresql.Error err ->
-      Logs.err (fun log ->
-          log "Database error while recording stage success %s: %s" serial_id
-            (Postgresql.string_of_error err))
-  | exn ->
-      Logs.err (fun log ->
-          log "Unknown error while recording stage success %s:\n%a" serial_id
-            Fmt.exn exn)
+  ignore (db#exec ~expect:[ Postgresql.Command_ok ] query)
 
 let record_success ~serial_id ~conninfo =
   Db_util.with_db ~conninfo (record_success ~serial_id)

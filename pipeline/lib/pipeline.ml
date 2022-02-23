@@ -38,12 +38,10 @@ let github_set_status ~repository result =
   | None -> Current.ignore_value result
   | Some head ->
       let status_url = Repository.commit_status_url repository in
-      Current.state result
-      >>| github_status_of_state status_url
-      |> Github.Api.Commit.set_status (Current.return head) "ocaml-benchmarks"
-      |> Current.ignore_value
+      Github.Api.Commit.set_status (Current.return head) "ocaml-benchmarks"
+        (Current.state result >>| github_status_of_state status_url)
 
-let setup_on_cancel_hook ~stage ~job_id ~serial_id ~conninfo =
+let setup_on_cancel_hook ~job_id ~serial_id ~conninfo =
   let jobs = Current.Job.jobs () in
   match Current.Job.Map.find_opt job_id jobs with
   | Some job ->
@@ -53,13 +51,11 @@ let setup_on_cancel_hook ~stage ~job_id ~serial_id ~conninfo =
                just when the job is cancelled! *)
             (match m with
             | "Job complete" -> Logs.debug (fun log -> log "%s: %s\n" m job_id)
-            | _ -> Storage.record_cancel ~stage ~serial_id ~reason:m ~conninfo);
-            (* FIXME: We need to update GitHub status too!             *)
+            | _ -> Storage.record_cancel ~serial_id ~reason:m ~conninfo);
             Lwt.return_unit)
       in
       Logs.info (fun log ->
-          log "Setting up hook for job %s in stage %s: %d\n" job_id stage
-            serial_id)
+          log "Setting up hook for job %s: %d\n" job_id serial_id)
   | None -> Logs.debug (fun log -> log "Job already stopped: %s\n" job_id)
 
 let get_job_id x =
@@ -70,25 +66,28 @@ let get_job_id x =
       | Some { Current.Metadata.job_id; _ } -> job_id
       | None -> None)
 
-let record_pipeline_stage ~stage ~serial_id ~conninfo image job_id =
+let record_pipeline_stage ~serial_id ~conninfo image job_id =
   let+ job_id and+ state = Current.state image in
   match (job_id, state) with
   | Some job_id, Error (`Active _) ->
       (* NOTE: For some reason this hook gets called twice, even if we match for
          (`Active `Running), explicitly. The DB calls would happen twice, which
          shouldn't be a problem.*)
-      setup_on_cancel_hook ~stage ~job_id ~serial_id ~conninfo;
-      Storage.record_stage_start ~stage ~job_id ~serial_id ~conninfo
-  | Some _, Error (`Msg m) ->
-      Logs.err (fun log -> log "Error in %s stage: \n%s\n" stage m);
-      Storage.record_stage_failure ~stage ~serial_id ~reason:m ~conninfo
-  | _ -> ()
+      setup_on_cancel_hook ~job_id ~serial_id ~conninfo;
+      Storage.record_stage_start ~job_id ~serial_id ~conninfo;
+      "recorded stage start"
+  | Some job_id, Error (`Msg m) ->
+      Logs.err (fun log -> log "Error for job %s: \n%s\n" job_id m);
+      Storage.record_stage_failure ~serial_id ~reason:m ~conninfo;
+      "*RECORDED FAILURE*"
+  | _ -> "(no error)"
 
 module Env = Custom_dockerfile.Env
 
-let pipeline ~ocluster ~conninfo ~repository env =
+let pipeline ~config ~ocluster ~conninfo ~repository env =
   let worker = env.Env.worker in
   let docker_image = env.Env.image in
+  let key = Config.key_of_repo ~config repository worker docker_image in
   let serial_id =
     Storage.setup_metadata ~repository ~conninfo ~worker ~docker_image
   in
@@ -113,24 +112,27 @@ let pipeline ~ocluster ~conninfo ~repository env =
   in
   let worker_job_id = get_job_id ocluster_worker in
   let output =
-    Json_stream.save ~conninfo ~repository ~serial_id ~worker ~docker_image
-      worker_job_id
+    Json_stream.save ~config ~conninfo ~repository ~serial_id ~worker
+      ~docker_image worker_job_id
   in
   let+ () =
-    record_pipeline_stage ~stage:"build_job_id" ~serial_id ~conninfo
-      ocluster_worker worker_job_id
+    Config.slack_log ~config ~key:(key ^ " worker_job_id")
+    @@ record_pipeline_stage ~serial_id ~conninfo ocluster_worker worker_job_id
   and+ () =
-    record_pipeline_stage ~stage:"run_job_id" ~serial_id ~conninfo
-      ocluster_worker worker_job_id
+    Config.slack_log ~config ~key:(key ^ " record_stage_failure")
+    @@ Current.map (function
+         | Error (`Msg m) ->
+             let stage = "json_stream_save" in
+             Logs.err (fun log -> log "Error in %s stage: %s\n\n" stage m);
+             Storage.record_stage_failure ~serial_id ~reason:m ~conninfo;
+             "error recorded!"
+         | _ -> "(no error)")
+    @@ Current.catch output
   and+ () =
-    Current.state output >>| function
-    | Error (`Msg m) ->
-        let stage = "json_stream_save" in
-        Logs.err (fun log -> log "Error in %s stage: %s\n\n" stage m);
-        Storage.record_stage_failure ~stage ~serial_id ~reason:m ~conninfo
-    | _ -> ()
-  and+ () = ocluster_worker
-  and+ _ = output in
+    Config.slack_log ~config ~key:(key ^ " worker")
+    @@ Current.map (fun () -> "(ok)")
+    @@ ocluster_worker
+  and+ () = Config.slack_log ~config ~key:(key ^ " jsons") @@ output in
   ()
 
 let pipeline ~config ~ocluster ~conninfo ~repository =
@@ -138,7 +140,7 @@ let pipeline ~config ~ocluster ~conninfo ~repository =
     (module Custom_dockerfile.Env)
     (fun env ->
       let* env in
-      pipeline ~ocluster ~conninfo ~repository env)
+      pipeline ~config ~ocluster ~conninfo ~repository env)
     (Custom_dockerfile.dockerfiles ~config ~repository)
 
 let pipeline ~config ~ocluster ~conninfo repository =
@@ -221,15 +223,29 @@ let repositories sources =
   let repos = Current.list_seq (List.map repositories sources) in
   Current.map List.concat repos
 
+let string_of_repositories repos =
+  String.concat ", "
+  @@ List.sort String.compare
+  @@ List.map (fun r -> Repository.to_string r) repos
+
 let process_pipeline ~config ~ocluster ~conninfo ~sources () =
-  Current.list_iter ~collapse_key:"pipeline"
-    (module Repository)
-    (fun repo ->
-      let* repository = repo in
-      if Benchmark.Db.exists ~conninfo repository
-      then Current.ignore_value repo
-      else pipeline ~config ~ocluster ~conninfo repository)
-    (repositories sources)
+  let repos = repositories sources in
+  let+ () =
+    Config.slack_log ~config ~key:"*repositories outcome*"
+    @@ Current.map (fun () -> "ALL GOOD")
+    @@ Current.list_iter ~collapse_key:"pipeline"
+         (module Repository)
+         (fun repo ->
+           let* repository = repo in
+           if Benchmark.Db.exists ~conninfo repository
+           then Current.ignore_value repo
+           else pipeline ~config ~ocluster ~conninfo repository)
+         repos
+  and+ () =
+    Config.slack_log ~config ~key:"*repositories*"
+      (Current.map string_of_repositories repos)
+  in
+  ()
 
 let v ~config ~server:mode ~sources conninfo () =
   Db_util.check_connection ~conninfo;

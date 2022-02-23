@@ -4,7 +4,7 @@ module Github = Current_github
 module Config : sig
   type t
 
-  val of_file : Fpath.t -> t
+  val of_file : frontend_url:string -> pipeline_url:string -> Fpath.t -> t
 end
 
 module Source : sig
