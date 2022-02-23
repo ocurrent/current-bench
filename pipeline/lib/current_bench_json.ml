@@ -277,6 +277,13 @@ let of_json json = Latest.of_json json
 let of_list jsons =
   List.fold_left (fun acc json -> Latest.merge acc [ of_json json ]) [] jsons
 
+let to_json { Latest.benchmark_name; results } : Json.t =
+  let name = match benchmark_name with None -> `Null | Some s -> `String s in
+  `Assoc
+    [
+      ("name", name); ("results", `List (List.map Latest.json_of_result results));
+    ]
+
 let to_list ts =
   List.map
     (fun { Latest.benchmark_name; results } ->

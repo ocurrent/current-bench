@@ -37,6 +37,24 @@ let branch t = t.branch
 let github_head t = t.github_head
 let id t = (t.owner, t.name)
 let info t = t.owner ^ "/" ^ t.name
+
+let to_string t =
+  let pr =
+    match t.pull_number with None -> "" | Some pr -> " #" ^ string_of_int pr
+  in
+  let br = match t.branch with None -> "" | Some br -> " " ^ br in
+  let hash = Current_git.Commit_id.hash t.commit in
+  let hash = String.sub hash 0 6 in
+  info t ^ br ^ pr ^ " `" ^ hash ^ "`"
+
+let to_path t =
+  let pr =
+    match t.pull_number with
+    | None -> ""
+    | Some pr -> "/pull/" ^ string_of_int pr
+  in
+  info t ^ pr
+
 let frontend_url () = Sys.getenv "OCAML_BENCH_FRONTEND_URL"
 
 (* $server/$repo_owner/$repo_name/pull/$pull_number *)

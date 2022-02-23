@@ -20,6 +20,7 @@ depends: [
   "current_git"    {= "dev"}
   "current_github" {= "dev"}
   "current_rpc"    {= "dev"}
+  "current_slack"  {= "dev"}
   "current_web"    {= "dev"}
   "current_incr" {>= "0.5"}
   "current_ansi"
@@ -46,6 +47,7 @@ pin-depends: [
   [ "current_git.dev"    "git+https://github.com/ocurrent/ocurrent.git#739c80bfda5290e6b0b854372db60789ac83ec97"]
   [ "current.dev"        "git+https://github.com/ocurrent/ocurrent.git#739c80bfda5290e6b0b854372db60789ac83ec97"]
   [ "current_rpc.dev"    "git+https://github.com/ocurrent/ocurrent.git#739c80bfda5290e6b0b854372db60789ac83ec97"]
+  [ "current_slack.dev"  "git+https://github.com/ocurrent/ocurrent.git#739c80bfda5290e6b0b854372db60789ac83ec97"]
   [ "current_web.dev"    "git+https://github.com/ocurrent/ocurrent.git#739c80bfda5290e6b0b854372db60789ac83ec97"]
   [ "current_ocluster.dev" "git+https://github.com/art-w/ocluster.git#f5884b0e8454c29c156cda939416436565206e24" ]
   [ "ocluster-api.dev"     "git+https://github.com/art-w/ocluster.git#f5884b0e8454c29c156cda939416436565206e24" ]

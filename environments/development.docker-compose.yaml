@@ -90,6 +90,8 @@ services:
       - "--github-account-allowlist=${OCAML_BENCH_GITHUB_ACCOUNT_ALLOW_LIST}"
       - "--github-private-key-file=/mnt/environments/${OCAML_BENCH_GITHUB_PRIVATE_KEY_FILE}"
       - "--github-webhook-secret-file=/mnt/environments/${OCAML_BENCH_GITHUB_WEBHOOK_SECRET_FILE}"
+      - "--frontend-url=${OCAML_BENCH_FRONTEND_URL?required}"
+      - "--pipeline-url=${OCAML_BENCH_PIPELINE_URL?required}"
     restart: always
     depends_on:
       db:
