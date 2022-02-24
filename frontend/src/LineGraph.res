@@ -341,11 +341,16 @@ let make = React.memo((
   let convertNanToNull = (xs: DataRow.t) =>
     Belt.Array.map(xs, x => Js.Float.isNaN(x) ? Obj.magic(Js.null) : x)
 
-  let originalLabels = labels
-  let labels = labels->Belt.Option.map(labels => {
-    let means = Belt.Array.length(labels) > 1 ? labels->Belt.Array.map(x => "mean:" ++ x) : ["mean"]
-    Belt.Array.concatMany([["idx"], labels, means])
-  })
+  let makeDygraphLabels = labels =>
+    labels
+    ->Belt.Option.getWithDefault([])
+    ->(
+      labels => {
+        let means =
+          Belt.Array.length(labels) > 1 ? labels->Belt.Array.map(x => "mean:" ++ x) : ["mean"]
+        Belt.Array.concatMany([["idx"], labels, means])
+      }
+    )
 
   let makeDygraphData = (data: array<DataRow.row>) => {
     let constantSeries = data->Belt.Array.map(computeConstantSeries)
@@ -385,7 +390,7 @@ let make = React.memo((
   React.useEffect1(() => {
     let options = defaultOptions(
       ~yLabel?,
-      ~labels?,
+      ~labels=makeDygraphLabels(labels),
       ~xTicks?,
       ~onClick,
       ~legendFormatter=Legend.format(~xTicks?),
@@ -429,7 +434,7 @@ let make = React.memo((
     | Some(graph) => {
         let options = defaultOptions(
           ~yLabel?,
-          ~labels?,
+          ~labels=makeDygraphLabels(labels),
           ~xTicks?,
           ~onClick,
           ~data=makeDygraphData(dataSet),
@@ -493,7 +498,7 @@ let make = React.memo((
           Sx.flex.wrap,
           Sx.unsafe("width", "min-content"),
         ]>
-        {originalLabels
+        {labels
         ->Belt.Option.getWithDefault([])
         ->Belt.Array.mapWithIndex((idx, label) => {
           let hex =
