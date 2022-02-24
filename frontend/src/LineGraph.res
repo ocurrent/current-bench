@@ -336,13 +336,10 @@ let make = React.memo((
     let stdDev = computeStdDev(~mean, values)
     DataRow.valueWithErrorBars(~mid=mean, ~low=mean -. stdDev, ~high=mean +. stdDev)
   }
-  let constantSeries = dataSet->Belt.Array.map(computeConstantSeries)
 
   // Dygraph needs null values, and cannot handle NaNs correctly
   let convertNanToNull = (xs: DataRow.t) =>
     Belt.Array.map(xs, x => Js.Float.isNaN(x) ? Obj.magic(Js.null) : x)
-
-  let nullConstantSeries = constantSeries->Belt.Array.map(convertNanToNull)
 
   let originalLabels = labels
   let labels = labels->Belt.Option.map(labels => {
@@ -351,6 +348,9 @@ let make = React.memo((
   })
 
   let makeDygraphData = (data: array<DataRow.row>) => {
+    let constantSeries = data->Belt.Array.map(computeConstantSeries)
+    let nullConstantSeries = constantSeries->Belt.Array.map(convertNanToNull)
+
     // Dygraph does not display the last tick, so a dummy value
     // is added a the end of the data to overcome this.
     // See: https://github.com/danvk/dygraphs/issues/506
