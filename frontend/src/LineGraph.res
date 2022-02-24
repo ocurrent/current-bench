@@ -513,11 +513,12 @@ let make = React.memo((
     ? <Row
         spacing=#between
         sx=[
-          Sx.d.inlineFlex,
-          Sx.flex.col,
           Sx.items.start,
           Sx.flex.wrap,
           Sx.unsafe("width", "min-content"),
+          Sx.unsafe("display", "grid"),
+          Sx.unsafe("gridTemplateColumns", "auto auto auto auto auto auto"),
+          Sx.unsafe("gap", "8px"),
         ]>
         {labels
         ->Belt.Option.getWithDefault([])
