@@ -104,12 +104,6 @@ external global: global = "default"
 @send
 external _synchronize: (global, array<graph>, 'options) => unit = "synchronize"
 
-let getElementsByClassName: string => array<Dom.element> = %raw(`
-  function(className) {
-    return document.getElementsByClassName(className)
-  }
-`)
-
 module Legend = {
   type t = {
     label: string,
@@ -322,6 +316,7 @@ let make = React.memo((
   let graphDivRef = React.useRef(Js.Nullable.null)
   let graphRef = React.useRef(None)
   let (legendColors, setLegendColors) = React.useState(() => [])
+  let (linesState, setLinesState) = React.useState(() => [])
 
   let intersection = Hooks.useIntersection(graphDivRef, IntersectionObserver.makeOption())
 
@@ -344,6 +339,9 @@ let make = React.memo((
   let makeDygraphLabels = labels =>
     labels
     ->Belt.Option.getWithDefault([])
+    ->Belt.Array.keepWithIndex((_, idx) =>
+      linesState->Belt.Array.get(idx)->Belt.Option.getWithDefault(true)
+    )
     ->(
       labels => {
         let means =
@@ -353,14 +351,18 @@ let make = React.memo((
     )
 
   let makeDygraphData = (data: array<DataRow.row>) => {
+    let data =
+      data->Belt.Array.keepWithIndex((_, idx) =>
+        linesState->Belt.Array.get(idx)->Belt.Option.getWithDefault(true)
+      )
     let constantSeries = data->Belt.Array.map(computeConstantSeries)
     let nullConstantSeries = constantSeries->Belt.Array.map(convertNanToNull)
 
-    // Dygraph does not display the last tick, so a dummy value
-    // is added a the end of the data to overcome this.
-    // See: https://github.com/danvk/dygraphs/issues/506
     let data =
       data
+      // Dygraph does not display the last tick, so a dummy value
+      // is added a the end of the data to overcome this.
+      // See: https://github.com/danvk/dygraphs/issues/506
       ->Belt.Array.map(x => Belt.Array.concat(x, [DataRow.dummyValue]))
       ->Belt.Array.map(x => x->Belt.Array.map(convertNanToNull))
 
@@ -386,6 +388,14 @@ let make = React.memo((
     | _ => ()
     }
   }
+
+  React.useMemo1(() => {
+    let state = switch labels {
+    | Some(labels) => Belt.Array.make(Belt.Array.length(labels), true)
+    | _ => []
+    }
+    setLinesState(_ => state)
+  }, [labels])
 
   React.useEffect1(() => {
     let options = defaultOptions(
@@ -428,7 +438,7 @@ let make = React.memo((
     )
   }, [isIntersecting])
 
-  React.useLayoutEffect2(() => {
+  React.useLayoutEffect3(() => {
     switch graphRef.current {
     | None => ()
     | Some(graph) => {
@@ -446,7 +456,7 @@ let make = React.memo((
       }
     }
     None
-  }, (dataSet, annotations))
+  }, (dataSet, annotations, linesState))
 
   let left = switch title {
   | Some(title) =>
@@ -483,6 +493,17 @@ let make = React.memo((
     Js.Float.isNaN(x) ? "?" : Js.Float.toPrecisionWithPrecision(~digits, x)
   }
 
+  let handleLegendClick = (label, _e) => {
+    let index =
+      labels
+      ->Belt.Option.getWithDefault([])
+      ->Belt.Array.getIndexBy(l => l == label)
+      ->Belt.Option.getWithDefault(-1)
+    setLinesState(_ =>
+      linesState->Belt.Array.mapWithIndex((idx, state) => idx == index ? !state : state)
+    )
+  }
+
   let lastValues =
     dataSet->Belt.Array.map(x =>
       x->BeltHelpers.Array.lastExn->DataRow.toValue->floatToStringHandleNaN
@@ -506,17 +527,21 @@ let make = React.memo((
             ->Belt.Array.get(idx)
             ->Belt.Option.getWithDefault("#000000")
             ->Js.String2.substr(~from=1)
+          let active = linesState->Belt.Array.get(idx)->Belt.Option.getWithDefault(true)
           <div
             key={idx->Belt.Int.toString}
+            onClick=handleLegendClick(label)
             className={Sx.make([
               Sx.d.inlineFlex,
               Sx.items.center,
               Sx.flex.noWrap,
               Sx.unsafe("gap", "4px"),
+              Sx.pointer,
             ])}>
             <span
               className={Sx.make([
                 Sx.mr.zero,
+                active ? Sx.opacity100 : Sx.opacity25,
                 Sx.text.color(Css.hex(hex)),
               ]) ++ " dygraph-legend-line"}
             />
