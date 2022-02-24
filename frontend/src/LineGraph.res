@@ -359,7 +359,8 @@ let make = React.memo((
       ->Belt.Array.map(x => Belt.Array.concat(x, [DataRow.dummyValue]))
       ->Belt.Array.map(x => x->Belt.Array.map(convertNanToNull))
 
-    let n = (data->Belt.Array.map(Belt.Array.length))[0]
+    let n = data->Belt.Array.get(0)->Belt.Option.getWithDefault([])->Belt.Array.length
+
     // Data passed onto Dygraph looks like array<[idx, value1, value2, ..., stats1, stats2, ...]>
     Belt.Array.range(0, n - 1)->Belt.Array.map(idx =>
       Belt.Array.concatMany([
