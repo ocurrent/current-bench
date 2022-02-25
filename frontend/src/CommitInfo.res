@@ -207,24 +207,19 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setL
           | Running =>
             <Text sx=[Sx.text.bold, Sx.text.lg, Sx.text.color(Sx.yellow600)]> "Running" </Text>
           }}
-
-        {switch sameBuildJobLog {
-        | false =>
-            {switch lastCommitInfo.build_job_id {
+          {switch sameBuildJobLog {
+          | false =>
+            switch lastCommitInfo.build_job_id {
             | Some(jobId) => renderJobIdLink(jobId, ~text="View Build Logs")
             | None => Rx.null
-            }}
-        | true => Rx.null
-        }}
-          {switch lastCommitInfo.run_job_id {
-          | Some(jobId) => renderJobIdLink(
-              jobId,
-              ~text=sameBuildJobLog ? "View Logs" : "View Execution Logs",
-            )
-          | _ =>
-            <Text sx=[Sx.text.xs, Sx.text.color(Sx.gray700)]> "No logs" </Text>
+            }
+          | true => Rx.null
           }}
-
+          {switch lastCommitInfo.run_job_id {
+          | Some(jobId) =>
+            renderJobIdLink(jobId, ~text=sameBuildJobLog ? "View Logs" : "View Execution Logs")
+          | _ => <Text sx=[Sx.text.xs, Sx.text.color(Sx.gray700)]> "No logs" </Text>
+          }}
         </Column>
       </Row>
       {switch (lastBenchmarkCommit, noCommitMetrics) {
