@@ -16,8 +16,8 @@ let jobUrl = (~lines=?, jobId) => {
 
 let defaultBenchmarkName = "default"
 
-// Get sorted (by runAt) metadata information for all commits
-let sortedMetadata = dataByTestName => {
+// Get commits sorted by runAt timestamp
+let sortedCommitsByRunAt = dataByTestName => {
   dataByTestName
   ->Belt.Map.String.valuesToArray
   ->Belt.Array.map(((_, dataByMetricName)) => dataByMetricName->Belt.Map.String.valuesToArray)
@@ -31,34 +31,48 @@ let sortedMetadata = dataByTestName => {
   ->Belt.SortArray.stableSortBy((a, b) =>
     compare(Js.Date.getTime(a["runAt"]), Js.Date.getTime(b["runAt"]))
   )
+  ->Belt.Array.map(md => (md["commit"], md["runAt"], md["run_job_id"]))
 }
 
 // Fill in NaN values and add missing commit metadata
-let addMissingCommits = ((metricTimeseries, metricMetadata), allCommits) => {
+let addMissingCommits = ((metricTimeseries, metricMetadata) as data, allCommits) => {
   let n = Belt.Array.length(allCommits)
   switch Belt.Array.length(metricTimeseries) < n {
-  | false => metricTimeseries
+  | false => data
+
   | true => {
+      // We use a NaN value to fill in values for missing commits
       let missingValue = [Js.Float._NaN, Js.Float._NaN, Js.Float._NaN]
-      let filledTimeseries = allCommits->Belt.Array.map(commit =>
+      let filledTimeseries = allCommits->Belt.Array.map(((commit, _, _)) =>
         switch metricMetadata->Belt.Array.getIndexBy(md => md["commit"] == commit) {
         | Some(idx) => Belt.Array.getExn(metricTimeseries, idx)
         | None => missingValue
         }
       )
-      filledTimeseries
+      // We use the last metadata item and use that as a template to create
+      // entries for missing commits. commit, runAt, lines and run_job_id are
+      // overwritten.  Other metadata like units, trend, description are the
+      // same as metadata in the last commit.
+      let templateMetadata = BeltHelpers.Array.lastExn(metricMetadata)
+      let filledMetadata =
+        allCommits->Belt.Array.map(((commit, runAt, run_job_id)) =>
+          Js.Obj.assign(
+            templateMetadata,
+            {"commit": commit, "runAt": runAt, "run_job_id": run_job_id, "lines": []},
+          )
+        )
+      (filledTimeseries, filledMetadata)
     }
   }
 }
 
 // Fill in values and metadata for all missing commits across all metrics in all tests
 let fillMissingValues = dataByTestName => {
-  let allMetadata = sortedMetadata(dataByTestName)
-  let allCommits = allMetadata->Belt.Array.map(md => md["commit"])
+  let allCommitsByRunAt = sortedCommitsByRunAt(dataByTestName)
   dataByTestName->Belt.Map.String.map(((test_index, dataByMetricName)) => (
     test_index,
-    dataByMetricName->Belt.Map.String.map(metricData => {
-      (addMissingCommits(metricData, allCommits), allMetadata)
-    }),
+    dataByMetricName->Belt.Map.String.map(metricData =>
+      addMissingCommits(metricData, allCommitsByRunAt)
+    ),
   ))
 }
