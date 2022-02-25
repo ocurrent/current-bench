@@ -154,6 +154,7 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setL
     | Some(lastBenchmark) => Some(lastBenchmark.commit)
     | _ => None
     }
+    let noCommitMetrics = lastBenchmarkCommit == Some(lastCommitInfo.commit)
     setLastCommit(Some(lastCommitInfo.commit))
     let sameBuildJobLog = switch (lastCommitInfo.build_job_id, lastCommitInfo.run_job_id) {
     | (Some(buildID), Some(jobID)) => buildID == jobID
@@ -226,16 +227,12 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setL
 
         </Column>
       </Row>
-      {switch (status, lastBenchmarkCommit) {
-      | (Fail | Cancel | Running, Some(benchmark)) => <>
+      {switch (lastBenchmarkCommit, noCommitMetrics) {
+      | (Some(benchmark), false) => <>
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.yellow600)]>
             "Metrics for an older commit "
           </Text>
-          {renderCommitLink(
-            ~style=[Sx.text.bold, Sx.text.xs, Sx.p.zero],
-            repoId,
-            benchmark,
-          )}
+          {renderCommitLink(~style=[Sx.text.bold, Sx.text.xs, Sx.p.zero], repoId, benchmark)}
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.yellow600)]>
             " are shown below"
           </Text>
