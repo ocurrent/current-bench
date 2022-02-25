@@ -112,14 +112,14 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setL
   // NOTE: This function needs to be called in all the branches of the switch,
   // if not we see a React Warning about a change in the order of Hooks called
   // by CommitInfo. (See https://reactjs.org/link/rules-of-hooks)
-  let setLastCommit = flag => {
-    // NOTE: We cannot directly call `setOldMetrics(_ => noCommitMetrics)` in
+  let setLastCommit = commit => {
+    // NOTE: We cannot directly call `setLastCommit(_ => commit)` in
     // the success branch, since it is not recommended to update a component
     // (`App$BenchmarkView`) while rendering a different component
     // (`CommitInfo`). So, we wrap it in useEffect. (See
     // https://reactjs.org/link/setstate-in-render)
     React.useEffect(() => {
-      setLastCommit(_ => flag)
+      setLastCommit(_ => commit)
       None
     })
   }
