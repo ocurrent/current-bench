@@ -1,0 +1,6 @@
+(library
+ (public_name cobench)
+ (libraries lwt cohttp-lwt-unix yojson ptime))
+
+(rule
+ (copy ../pipeline/lib/current_bench_json.ml current_bench_json.ml))

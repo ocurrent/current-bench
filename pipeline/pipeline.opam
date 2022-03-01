@@ -8,6 +8,7 @@ authors: ["Rizo Isrof <rizo@tarides.com" "Craig Ferguson <craig@tarides.com>" "G
 homepage: "https://github.com/ocurrent/current-bench"
 bug-reports: "https://github.com/ocurrent/current-bench/issues"
 depends: [
+  "ocaml" {>= "4.13.0"}
   "dune" {>= "2.0"}
   "alcotest" {with-test}
   "alcotest-lwt" {with-test}
@@ -28,7 +29,6 @@ depends: [
   "duration"
   "fpath"
   "logs"
-  "ocaml" {>= "4.08"}
   "postgresql"
   "rresult"
   "omigrate"

@@ -1,0 +1,32 @@
+opam-version: "2.0"
+synopsis: "Continuous benchmarks library for Current-Bench"
+maintainer: ["Arthur Wendling <arthur@tarides.com>" "Gargi Sharma <gargi@tarides.com>" "Puneeth Chaganti <puneeth@tarides.com>"]
+authors: ["Arthur Wendling <arthur@tarides.com>" "Gargi Sharma <gargi@tarides.com>" "Puneeth Chaganti <puneeth@tarides.com>"]
+homepage: "https://github.com/ocurrent/current-bench"
+bug-reports: "https://github.com/ocurrent/current-bench/issues"
+dev-repo: "git+https://github.com/ocurrent/current-bench.git"
+
+depends: [
+  "ocaml" {>= "4.13.0"}
+  "dune"  {>= "2.0"}
+  "yojson"
+  "cohttp-lwt-unix"
+  "odoc" {with-doc}
+]
+
+build: [
+  ["dune" "subst"] {pinned}
+  [
+    "dune"
+    "build"
+    "-p"
+    name
+    "-j"
+    jobs
+    "@install"
+    "@runtest" {with-test}
+    "@doc" {with-doc}
+  ]
+]
+
+available: [ os-distribution != "alpine" ]

@@ -32,7 +32,6 @@ depends: [
   "duration"
   "fpath"
   "logs"
-  "ocaml" {>= "4.08"}
   "postgresql"
   "rresult"
   "omigrate"
