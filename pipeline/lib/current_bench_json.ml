@@ -267,12 +267,21 @@ module V2 = struct
         |> Json.to_list
         |> List.map (fun r -> result_of_json r lines);
     }
+
+  let to_json { benchmark_name; results } =
+    let name =
+      match benchmark_name with
+      | None -> []
+      | Some name -> [ ("name", `String name) ]
+    in
+    `Assoc (name @ [ ("results", `List (List.map json_of_result results)) ])
 end
 
 module Latest = V2
 
 let version = 2
 let of_json json = Latest.of_json json
+let to_json t = Latest.to_json t
 
 let of_list jsons =
   List.fold_left (fun acc json -> Latest.merge acc [ of_json json ]) [] jsons
