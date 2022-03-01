@@ -14,7 +14,7 @@ let parseParams = (query) => {
   Js.String.split("&", query)
   ->Belt.Array.keepMap((part) => {
       switch Js.String.split("=", part) {
-        | [ key, value ] => Some((key, Js.Global.decodeURI(value)))
+        | [ key, value ] => Some((key, Js.Global.decodeURIComponent(value)))
         | _ => None
       }
   })
@@ -75,7 +75,7 @@ let workerParams = (worker) =>
   switch worker {
     | None => ""
     | Some((worker, dockerImage)) =>
-      "?worker=" ++ Js.Global.encodeURI(worker) ++ "&image=" ++ Js.Global.encodeURI(dockerImage)
+      "?worker=" ++ Js.Global.encodeURIComponent(worker) ++ "&image=" ++ Js.Global.encodeURIComponent(dockerImage)
   }
 
 let path = route =>
