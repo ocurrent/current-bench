@@ -171,6 +171,19 @@ let convertTicks = (ticks: Belt.Map.Int.t<string>) => {
   ->Belt.Map.Int.valuesToArray
 }
 
+let category10colors = [
+  "#1f77b4",
+  "#ff7f0e",
+  "#2ca02c",
+  "#d62728",
+  "#9467bd",
+  "#8c564b",
+  "#e377c2",
+  "#7f7f7f",
+  "#bcbd22",
+  "#17becf",
+]
+
 let defaultOptions = (
   ~legendFormatter=?,
   ~xTicks=?,
@@ -178,6 +191,7 @@ let defaultOptions = (
   ~labels=?,
   ~onClick=?,
   ~data=[],
+  ~colors=category10colors,
   (),
 ) => {
   let ticker = {
@@ -222,18 +236,7 @@ let defaultOptions = (
     "customBars": true,
     "fillGraph": false,
     "pointClickCallback": Js.Null.fromOption(onClick),
-    "colors": [
-      "#1f77b4",
-      "#ff7f0e",
-      "#2ca02c",
-      "#d62728",
-      "#9467bd",
-      "#8c564b",
-      "#e377c2",
-      "#7f7f7f",
-      "#bcbd22",
-      "#17becf",
-    ],
+    "colors": colors,
     // "animatedZooms": true,
     "digitsAfterDecimal": 3,
     "hideOverlayOnMouseOut": true,
@@ -336,6 +339,20 @@ let make = React.memo((
   let convertNanToNull = (xs: DataRow.t) =>
     Belt.Array.map(xs, x => Js.Float.isNaN(x) ? Obj.magic(Js.null) : x)
 
+  let graphColors = labels => {
+    let labels_ = labels->Belt.Option.getWithDefault([])
+    let n = category10colors->Belt.Array.length
+    let colorsArray =
+      n > labels_->Belt.Array.length
+        ? category10colors
+        : labels_->Belt.Array.mapWithIndex((idx, _) =>
+            category10colors->Belt.Array.getExn(mod(idx, n))
+          )
+    colorsArray->Belt.Array.keepWithIndex((_, idx) =>
+      linesState->Belt.Array.get(idx)->Belt.Option.getWithDefault(true)
+    )
+  }
+
   let makeDygraphLabels = labels =>
     labels
     ->Belt.Option.getWithDefault([])
@@ -401,6 +418,7 @@ let make = React.memo((
     let options = defaultOptions(
       ~yLabel?,
       ~labels=makeDygraphLabels(labels),
+      ~colors=graphColors(labels),
       ~xTicks?,
       ~onClick,
       ~legendFormatter=Legend.format(~xTicks?),
@@ -445,6 +463,7 @@ let make = React.memo((
         let options = defaultOptions(
           ~yLabel?,
           ~labels=makeDygraphLabels(labels),
+          ~colors=graphColors(labels),
           ~xTicks?,
           ~onClick,
           ~data=makeDygraphData(dataSet),
