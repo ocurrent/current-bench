@@ -503,12 +503,11 @@ let make = React.memo((
       linesState->Belt.Array.mapWithIndex((idx, state) => idx == index ? !state : state)
     )
   }
-
-  let lastValues =
-    dataSet->Belt.Array.map(x =>
-      x->BeltHelpers.Array.lastExn->DataRow.toValue->floatToStringHandleNaN
-    )
-  let isOverlayed = lastValues->Belt.Array.length > 1
+  let labels = labels->Belt.Option.getWithDefault([])
+  let lastValues = dataSet->Belt.Array.map(x => x->BeltHelpers.Array.lastExn->DataRow.toValue)
+  let zip3 = (xs, ys, zs) => Belt.Array.zip(xs, ys)->Belt.Array.zipBy(zs, ((x, y), z) => (x, y, z))
+  let legendData = labels->Belt.Array.zip(zip3(lastValues, linesState, legendColors))
+  let isOverlayed = labels->Belt.Array.length > 1
   let right = isOverlayed
     ? <Row
         spacing=#between
@@ -520,15 +519,10 @@ let make = React.memo((
           Sx.unsafe("gridTemplateColumns", "auto auto auto auto auto auto"),
           Sx.unsafe("gap", "8px"),
         ]>
-        {labels
-        ->Belt.Option.getWithDefault([])
-        ->Belt.Array.mapWithIndex((idx, label) => {
-          let hex =
-            legendColors
-            ->Belt.Array.get(idx)
-            ->Belt.Option.getWithDefault("#000000")
-            ->Js.String2.substr(~from=1)
-          let active = linesState->Belt.Array.get(idx)->Belt.Option.getWithDefault(true)
+        {legendData
+        ->Belt.SortArray.stableSortBy(((_, (vA, _, _)), (_, (vB, _, _))) => compare(vB, vA))
+        ->Belt.Array.mapWithIndex((idx, (label, (value, active, color))) => {
+          let hex = color->Js.String2.substr(~from=1)
           <div
             key={idx->Belt.Int.toString}
             onClick=handleLegendClick(label)
@@ -548,7 +542,7 @@ let make = React.memo((
             />
             <Text sx=[Sx.text.sm, Sx.text.color(Sx.gray900)]> {label ++ ":"} </Text>
             <Text sx=[Sx.text.sm, Sx.text.color(Sx.gray900)]>
-              {lastValues->Belt.Array.get(idx)->Belt.Option.getWithDefault("")}
+              {value->floatToStringHandleNaN}
             </Text>
             <Text sx=[Sx.text.sm]> units </Text>
           </div>
@@ -557,7 +551,7 @@ let make = React.memo((
       </Row>
     : <Row alignX=#right spacing=Sx.md sx=[Sx.w.auto]>
         <Text sx=[Sx.leadingNone, Sx.text.md, Sx.text.bold, Sx.text.color(Sx.gray900)]>
-          {lastValues->BeltHelpers.Array.lastExn}
+          {lastValues->BeltHelpers.Array.lastExn->floatToStringHandleNaN}
         </Text>
         <Text sx=[Sx.leadingNone, Sx.text.md, Sx.text.bold, Sx.text.color(Sx.gray500)]>
           units
