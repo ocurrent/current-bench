@@ -21,6 +21,7 @@ type t
 
 val of_results : result list -> t
 val to_json : t -> Yojson.Safe.t
+val of_json : Yojson.Safe.t -> t
 
 module Remote : sig
   type token
