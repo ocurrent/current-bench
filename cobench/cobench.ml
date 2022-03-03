@@ -20,6 +20,7 @@ type t = L.t
 
 let of_results results = { L.benchmark_name = None; results }
 let to_json = C.to_json
+let of_json = C.of_json
 
 module Remote = struct
   type token = {
