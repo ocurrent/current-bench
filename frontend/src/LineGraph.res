@@ -1,4 +1,5 @@
 open AppHelpers
+open Components
 
 type graph
 type annotation
@@ -171,6 +172,10 @@ let convertTicks = (ticks: Belt.Map.Int.t<string>) => {
   ->Belt.Map.Int.valuesToArray
 }
 
+// Dygraph needs null values, and cannot handle NaNs correctly
+let convertNanToNull = (xs: DataRow.t) =>
+  Belt.Array.map(xs, x => Js.Float.isNaN(x) ? Obj.magic(Js.null) : x)
+
 let category10colors = [
   "#1f77b4",
   "#ff7f0e",
@@ -286,11 +291,170 @@ let containerSxFailed = Belt.Array.concat(
 )
 let containerSx = Belt.Array.concat(containerSxBase, [Sx.border.color(Sx.gray300), Sx.border.xs])
 
-open Components
+let onPointClick = (xTicks, goToCommit, _e, point) => {
+  let commit = switch xTicks {
+  | Some(xTicks) => xTicks->Belt.Map.Int.get(point["idx"])
+  | _ => None
+  }
+  switch (commit, goToCommit) {
+  | (Some(commit), Some(goToCommit)) => goToCommit(commit)
+  | _ => ()
+  }
+}
+
+let computeConstantSeries = data => {
+  let values = data->Belt.Array.map(DataRow.toValue)
+  let mean = values->computeMean->Belt.Option.getWithDefault(0.0)
+  let stdDev = computeStdDev(~mean, values)
+  DataRow.valueWithErrorBars(~mid=mean, ~low=mean -. stdDev, ~high=mean +. stdDev)
+}
+
+let floatToStringHandleNaN = (~digits=4, x) => {
+  Js.Float.isNaN(x) ? "?" : Js.Float.toPrecisionWithPrecision(~digits, x)
+}
+
+let makeDygraphData = (data: array<DataRow.row>, linesState) => {
+  let data =
+    data->Belt.Array.keepWithIndex((_, idx) =>
+      linesState->Belt.Array.get(idx)->Belt.Option.getWithDefault(true)
+    )
+  let constantSeries = data->Belt.Array.map(computeConstantSeries)
+  let nullConstantSeries = constantSeries->Belt.Array.map(convertNanToNull)
+
+  let data =
+    data
+    // Dygraph does not display the last tick, so a dummy value
+    // is added a the end of the data to overcome this.
+    // See: https://github.com/danvk/dygraphs/issues/506
+    ->Belt.Array.map(x => Belt.Array.concat(x, [DataRow.dummyValue]))
+    ->Belt.Array.map(x => x->Belt.Array.map(convertNanToNull))
+
+  let n = data->Belt.Array.get(0)->Belt.Option.getWithDefault([])->Belt.Array.length
+
+  // Data passed onto Dygraph looks like array<[idx, value1, value2, ..., stats1, stats2, ...]>
+  Belt.Array.range(0, n - 1)->Belt.Array.map(idx =>
+    Belt.Array.concatMany([[Obj.magic(idx)], data->Belt.Array.map(d => d[idx]), nullConstantSeries])
+  )
+}
+
+let makeDygraphLabels = (labels, linesState) =>
+  labels
+  ->Belt.Option.getWithDefault([])
+  ->Belt.Array.keepWithIndex((_, idx) =>
+    linesState->Belt.Array.get(idx)->Belt.Option.getWithDefault(true)
+  )
+  ->(
+    labels => {
+      let means =
+        Belt.Array.length(labels) > 1 ? labels->Belt.Array.map(x => "mean:" ++ x) : ["mean"]
+      Belt.Array.concatMany([["idx"], labels, means])
+    }
+  )
+
+let graphColors = (labels, linesState) => {
+  let labels_ = labels->Belt.Option.getWithDefault([])
+  let n = category10colors->Belt.Array.length
+  let colorsArray =
+    n > labels_->Belt.Array.length
+      ? category10colors
+      : labels_->Belt.Array.mapWithIndex((idx, _) =>
+          category10colors->Belt.Array.getExn(mod(idx, n))
+        )
+  colorsArray->Belt.Array.keepWithIndex((_, idx) =>
+    linesState->Belt.Array.get(idx)->Belt.Option.getWithDefault(true)
+  )
+}
+
+let handleLegendClick = (label, labels, linesState, setLinesState, _e) => {
+  let index = labels->Belt.Array.getIndexBy(l => l == label)->Belt.Option.getWithDefault(-1)
+  setLinesState(_ =>
+    linesState->Belt.Array.mapWithIndex((idx, state) => idx == index ? !state : state)
+  )
+}
+
+module OverlayLegend = {
+  @react.component
+  let make = React.memo((~legendData, ~units, ~labels, ~linesState, ~setLinesState) => {
+    <Row
+      spacing=#between
+      sx=[
+        Sx.items.start,
+        Sx.flex.wrap,
+        Sx.unsafe("width", "min-content"),
+        Sx.unsafe("display", "grid"),
+        Sx.unsafe("gridTemplateColumns", "auto auto auto auto auto auto"),
+        Sx.unsafe("gap", "8px"),
+      ]>
+      {legendData
+      ->Belt.SortArray.stableSortBy(((_, (vA, _, _)), (_, (vB, _, _))) => compare(vB, vA))
+      ->Belt.Array.mapWithIndex((idx, (label, (value, active, color))) => {
+        let hex = color->Js.String2.substr(~from=1)
+        <div
+          key={idx->Belt.Int.toString}
+          onClick={handleLegendClick(label, labels, linesState, setLinesState)}
+          className={Sx.make([
+            Sx.d.inlineFlex,
+            Sx.items.center,
+            Sx.flex.noWrap,
+            Sx.unsafe("gap", "4px"),
+            Sx.pointer,
+          ])}>
+          <span
+            className={Sx.make([
+              Sx.mr.zero,
+              active ? Sx.opacity100 : Sx.opacity25,
+              Sx.text.color(Css.hex(hex)),
+            ]) ++ " dygraph-legend-line"}
+          />
+          <Text sx=[Sx.text.sm, Sx.text.color(Sx.gray900)]> {label ++ ":"} </Text>
+          <Text sx=[Sx.text.sm, Sx.text.color(Sx.gray900)]> {value->floatToStringHandleNaN} </Text>
+          <Text sx=[Sx.text.sm]> units </Text>
+        </div>
+      })
+      ->Rx.array(~empty=<Message text="No labels" />)}
+    </Row>
+  })
+}
 
 type elementOrString =
   | String(string)
   | Element(React.element)
+
+module GraphInfo = {
+  @react.component
+  let make = React.memo((~title, ~subTitle, ~run_job_id, ~lines) => {
+    switch title {
+    | Some(title) =>
+      <Column spacing=Sx.lg sx=[Sx.w.auto]>
+        <div className={Sx.make([Sx.d.flex, Sx.flex.row, Sx.items.baseline])}>
+          <Text sx=[Sx.leadingNone, Sx.text.bold, Sx.text.md, Sx.mr.md]> title </Text>
+          {switch subTitle {
+          | String(text) =>
+            <Text
+              sx=[
+                Sx.leadingNone,
+                Sx.text.sm,
+                Sx.text.color(Sx.gray600),
+                [Css.minHeight(#em(1.0))],
+                Sx.mr.md,
+              ]>
+              {text}
+            </Text>
+          | Element(elem) => elem
+          }}
+          {switch (run_job_id, lines->Belt.List.get(0)) {
+          | (Some(jobId), Some(lines)) =>
+            <a target="_blank" href={jobUrl(jobId, ~lines)}>
+              {<Icon sx=[Sx.unsafe("width", "12px")] svg=Icon.help />}
+            </a>
+          | _ => Rx.null
+          }}
+        </div>
+      </Column>
+    | None => React.null
+    }
+  })
+}
 
 @react.component
 let make = React.memo((
@@ -328,84 +492,6 @@ let make = React.memo((
     ->Belt.Option.map(IntersectionObserver.Entry.isIntersecting)
     ->Belt.Option.getWithDefault(false)
 
-  let computeConstantSeries = data => {
-    let values = data->Belt.Array.map(DataRow.toValue)
-    let mean = values->computeMean->Belt.Option.getWithDefault(0.0)
-    let stdDev = computeStdDev(~mean, values)
-    DataRow.valueWithErrorBars(~mid=mean, ~low=mean -. stdDev, ~high=mean +. stdDev)
-  }
-
-  // Dygraph needs null values, and cannot handle NaNs correctly
-  let convertNanToNull = (xs: DataRow.t) =>
-    Belt.Array.map(xs, x => Js.Float.isNaN(x) ? Obj.magic(Js.null) : x)
-
-  let graphColors = labels => {
-    let labels_ = labels->Belt.Option.getWithDefault([])
-    let n = category10colors->Belt.Array.length
-    let colorsArray =
-      n > labels_->Belt.Array.length
-        ? category10colors
-        : labels_->Belt.Array.mapWithIndex((idx, _) =>
-            category10colors->Belt.Array.getExn(mod(idx, n))
-          )
-    colorsArray->Belt.Array.keepWithIndex((_, idx) =>
-      linesState->Belt.Array.get(idx)->Belt.Option.getWithDefault(true)
-    )
-  }
-
-  let makeDygraphLabels = labels =>
-    labels
-    ->Belt.Option.getWithDefault([])
-    ->Belt.Array.keepWithIndex((_, idx) =>
-      linesState->Belt.Array.get(idx)->Belt.Option.getWithDefault(true)
-    )
-    ->(
-      labels => {
-        let means =
-          Belt.Array.length(labels) > 1 ? labels->Belt.Array.map(x => "mean:" ++ x) : ["mean"]
-        Belt.Array.concatMany([["idx"], labels, means])
-      }
-    )
-
-  let makeDygraphData = (data: array<DataRow.row>) => {
-    let data =
-      data->Belt.Array.keepWithIndex((_, idx) =>
-        linesState->Belt.Array.get(idx)->Belt.Option.getWithDefault(true)
-      )
-    let constantSeries = data->Belt.Array.map(computeConstantSeries)
-    let nullConstantSeries = constantSeries->Belt.Array.map(convertNanToNull)
-
-    let data =
-      data
-      // Dygraph does not display the last tick, so a dummy value
-      // is added a the end of the data to overcome this.
-      // See: https://github.com/danvk/dygraphs/issues/506
-      ->Belt.Array.map(x => Belt.Array.concat(x, [DataRow.dummyValue]))
-      ->Belt.Array.map(x => x->Belt.Array.map(convertNanToNull))
-
-    let n = data->Belt.Array.get(0)->Belt.Option.getWithDefault([])->Belt.Array.length
-
-    // Data passed onto Dygraph looks like array<[idx, value1, value2, ..., stats1, stats2, ...]>
-    Belt.Array.range(0, n - 1)->Belt.Array.map(idx =>
-      Belt.Array.concatMany([
-        [Obj.magic(idx)],
-        data->Belt.Array.map(d => d[idx]),
-        nullConstantSeries,
-      ])
-    )
-  }
-
-  let onClick = (_e, point) => {
-    let commit = switch xTicks {
-    | Some(xTicks) => xTicks->Belt.Map.Int.get(point["idx"])
-    | _ => None
-    }
-    switch (commit, goToCommit) {
-    | (Some(commit), Some(goToCommit)) => goToCommit(commit)
-    | _ => ()
-    }
-  }
-
   React.useMemo1(() => {
     let state = switch labels {
     | Some(labels) => Belt.Array.make(Belt.Array.length(labels), true)
@@ -417,10 +503,10 @@ let make = React.memo((
   React.useEffect1(() => {
     let options = defaultOptions(
       ~yLabel?,
-      ~labels=makeDygraphLabels(labels),
-      ~colors=graphColors(labels),
+      ~labels=makeDygraphLabels(labels, linesState),
+      ~colors=graphColors(labels, linesState),
       ~xTicks?,
-      ~onClick,
+      ~onClick=onPointClick(xTicks, goToCommit),
       ~legendFormatter=Legend.format(~xTicks?),
       (),
     )
@@ -430,7 +516,7 @@ let make = React.memo((
     | Some(ref) =>
       switch (graphRef.current, isIntersecting) {
       | (None, true) => {
-          let graph = init(ref, makeDygraphData(dataSet), options)
+          let graph = init(ref, makeDygraphData(dataSet, linesState), options)
           graphRef.current = Some(graph)
           setLegendColors(_ => graph->getColors())
 
@@ -462,11 +548,10 @@ let make = React.memo((
     | Some(graph) => {
         let options = defaultOptions(
           ~yLabel?,
-          ~labels=makeDygraphLabels(labels),
-          ~colors=graphColors(labels),
+          ~labels=makeDygraphLabels(labels, linesState),
           ~xTicks?,
-          ~onClick,
-          ~data=makeDygraphData(dataSet),
+          ~onClick=onPointClick(xTicks, goToCommit),
+          ~data=makeDygraphData(dataSet, linesState),
           ~legendFormatter=Legend.format(~xTicks?),
           (),
         )
@@ -477,97 +562,15 @@ let make = React.memo((
     None
   }, (dataSet, annotations, linesState))
 
-  let left = switch title {
-  | Some(title) =>
-    <Column spacing=Sx.lg sx=[Sx.w.auto]>
-      <div className={Sx.make([Sx.d.flex, Sx.flex.row, Sx.items.baseline])}>
-        <Text sx=[Sx.leadingNone, Sx.text.bold, Sx.text.md, Sx.mr.md]> title </Text>
-        {switch subTitle {
-        | String(text) =>
-          <Text
-            sx=[
-              Sx.leadingNone,
-              Sx.text.sm,
-              Sx.text.color(Sx.gray600),
-              [Css.minHeight(#em(1.0))],
-              Sx.mr.md,
-            ]>
-            {text}
-          </Text>
-        | Element(elem) => elem
-        }}
-        {switch (run_job_id, lines->Belt.List.get(0)) {
-        | (Some(jobId), Some(lines)) =>
-          <a target="_blank" href={jobUrl(jobId, ~lines)}>
-            {<Icon sx=[Sx.unsafe("width", "12px")] svg=Icon.help />}
-          </a>
-        | _ => Rx.null
-        }}
-      </div>
-    </Column>
-  | None => React.null
-  }
-
-  let floatToStringHandleNaN = (~digits=4, x) => {
-    Js.Float.isNaN(x) ? "?" : Js.Float.toPrecisionWithPrecision(~digits, x)
-  }
-
-  let handleLegendClick = (label, _e) => {
-    let index =
-      labels
-      ->Belt.Option.getWithDefault([])
-      ->Belt.Array.getIndexBy(l => l == label)
-      ->Belt.Option.getWithDefault(-1)
-    setLinesState(_ =>
-      linesState->Belt.Array.mapWithIndex((idx, state) => idx == index ? !state : state)
-    )
-  }
   let labels = labels->Belt.Option.getWithDefault([])
   let lastValues = dataSet->Belt.Array.map(x => x->BeltHelpers.Array.lastExn->DataRow.toValue)
   let zip3 = (xs, ys, zs) => Belt.Array.zip(xs, ys)->Belt.Array.zipBy(zs, ((x, y), z) => (x, y, z))
   let legendData = labels->Belt.Array.zip(zip3(lastValues, linesState, legendColors))
   let isOverlayed = labels->Belt.Array.length > 1
+
+  let left = <GraphInfo title subTitle lines run_job_id />
   let right = isOverlayed
-    ? <Row
-        spacing=#between
-        sx=[
-          Sx.items.start,
-          Sx.flex.wrap,
-          Sx.unsafe("width", "min-content"),
-          Sx.unsafe("display", "grid"),
-          Sx.unsafe("gridTemplateColumns", "auto auto auto auto auto auto"),
-          Sx.unsafe("gap", "8px"),
-        ]>
-        {legendData
-        ->Belt.SortArray.stableSortBy(((_, (vA, _, _)), (_, (vB, _, _))) => compare(vB, vA))
-        ->Belt.Array.mapWithIndex((idx, (label, (value, active, color))) => {
-          let hex = color->Js.String2.substr(~from=1)
-          <div
-            key={idx->Belt.Int.toString}
-            onClick=handleLegendClick(label)
-            className={Sx.make([
-              Sx.d.inlineFlex,
-              Sx.items.center,
-              Sx.flex.noWrap,
-              Sx.unsafe("gap", "4px"),
-              Sx.pointer,
-            ])}>
-            <span
-              className={Sx.make([
-                Sx.mr.zero,
-                active ? Sx.opacity100 : Sx.opacity25,
-                Sx.text.color(Css.hex(hex)),
-              ]) ++ " dygraph-legend-line"}
-            />
-            <Text sx=[Sx.text.sm, Sx.text.color(Sx.gray900)]> {label ++ ":"} </Text>
-            <Text sx=[Sx.text.sm, Sx.text.color(Sx.gray900)]>
-              {value->floatToStringHandleNaN}
-            </Text>
-            <Text sx=[Sx.text.sm]> units </Text>
-          </div>
-        })
-        ->Rx.array(~empty=<Message text="No labels" />)}
-      </Row>
+    ? <OverlayLegend legendData units labels linesState setLinesState />
     : <Row alignX=#right spacing=Sx.md sx=[Sx.w.auto]>
         <Text sx=[Sx.leadingNone, Sx.text.md, Sx.text.bold, Sx.text.color(Sx.gray900)]>
           {lastValues->BeltHelpers.Array.lastExn->floatToStringHandleNaN}
