@@ -148,11 +148,11 @@ module SidebarMenu = {
   }
 }
 
-module WorkersSelect = {
-  open BenchmarkQueryHelpers.GetWorkers
+type worker = {worker: string, docker_image: string}
 
+module WorkersSelect = {
   @react.component
-  let make = (~worker, ~setWorker, ~workers): React.element => {
+  let make = (~worker, ~setWorker, ~workers: array<worker>): React.element => {
     let idx_opt = {
       workers->Belt.Array.getIndexBy(w => worker == Some((w.worker, w.docker_image)))
     }
@@ -199,9 +199,13 @@ module WorkersSelect = {
 
 module Workers = {
   @react.component
-  let make = (~worker, ~setWorker, ~repoId): React.element => {
+  let make = (~worker, ~setWorker, ~repoId, ~selectedPull): React.element => {
+    let isMain = Belt.Option.isNone(selectedPull)
     let ({ReScriptUrql.Hooks.response: response}, _) = {
-      ReScriptUrql.Hooks.useQuery(~query=module(BenchmarkQueryHelpers.GetWorkers), {repoId: repoId})
+      ReScriptUrql.Hooks.useQuery(
+        ~query=module(BenchmarkQueryHelpers.GetWorkers),
+        {repoId: repoId, pullNumber: selectedPull, isMain: isMain},
+      )
     }
 
     switch response {
@@ -211,7 +215,11 @@ module Workers = {
     | Fetching => Rx.text("Loading...")
     | Data(data)
     | PartialData(data, _) =>
-      let workers = data.workers
+      // Data fetched from the Postgres View through GraphQL makes NOT NULL columns nullable
+      let workers = data.workers->Belt.Array.map(({worker, docker_image}) => {
+        worker: worker->Belt.Option.getWithDefault(""),
+        docker_image: docker_image->Belt.Option.getWithDefault(""),
+      })
       <WorkersSelect worker setWorker workers />
     }
   }
@@ -230,7 +238,7 @@ let make = (
   let menu = switch selectedRepoId {
   | None => Rx.null
   | Some(repoId) => <>
-      <Workers worker setWorker repoId />
+      <Workers worker setWorker repoId selectedPull />
       <SidebarMenu repoId ?selectedPull ?selectedBenchmarkName worker />
     </>
   }
