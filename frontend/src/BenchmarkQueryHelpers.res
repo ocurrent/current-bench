@@ -50,10 +50,13 @@ query ($repoId: String!,
 `)
 
 module GetWorkers = %graphql(`
-query ($repoId: String!) {
+query ($repoId: String!,
+       $pullNumber: Int,
+       $isMain: Boolean!) {
   workers:
-    benchmark_metadata(where: {repo_id: {_eq: $repoId}},
-                       distinct_on: [worker, docker_image]) {
+    bench_workers(where: {_and: [{pull_number: {_eq: $pullNumber}},
+                                 {pull_number: {_is_null: $isMain}},
+                                 {repo_id: {_eq: $repoId}}]}) {
       worker
       docker_image
   }
