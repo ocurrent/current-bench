@@ -152,15 +152,15 @@ module WorkersSelect = {
   open BenchmarkQueryHelpers.GetWorkers
 
   @react.component
-  let make = (~worker, ~setWorker, ~benchmarks): React.element => {
+  let make = (~worker, ~setWorker, ~workers): React.element => {
     let idx_opt = {
-      benchmarks->Belt.Array.getIndexBy(w => worker == Some((w.worker, w.docker_image)))
+      workers->Belt.Array.getIndexBy(w => worker == Some((w.worker, w.docker_image)))
     }
 
     React.useEffect1(() => {
       switch idx_opt {
       | None =>
-        let first = benchmarks[0]
+        let first = workers[0]
         setWorker(Some((first.worker, first.docker_image)))
       | _ => ()
       }
@@ -169,7 +169,7 @@ module WorkersSelect = {
 
     let idx = idx_opt->Belt.Option.getWithDefault(0)
 
-    switch Belt.Array.length(benchmarks) {
+    switch Belt.Array.length(workers) {
     | 0 | 1 => <> </>
     | _ =>
       <Column>
@@ -180,10 +180,10 @@ module WorkersSelect = {
           placeholder="Select a worker"
           onChange={e => {
             let idx = int_of_string(ReactEvent.Form.target(e)["value"])
-            let w = benchmarks[idx]
+            let w = workers[idx]
             setWorker(Some((w.worker, w.docker_image)))
           }}>
-          {benchmarks
+          {workers
           ->Belt.Array.mapWithIndex((i, run) => {
             let idx = string_of_int(i)
             <option key={idx} value={idx}>
@@ -211,8 +211,8 @@ module Workers = {
     | Fetching => Rx.text("Loading...")
     | Data(data)
     | PartialData(data, _) =>
-      let benchmarks = data.benchmarks
-      <WorkersSelect worker setWorker benchmarks />
+      let workers = data.workers
+      <WorkersSelect worker setWorker workers />
     }
   }
 }
