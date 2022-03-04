@@ -44,3 +44,17 @@
       - worker
       - docker_image
       filter: {}
+
+- table:
+    schema: public
+    name: bench_workers
+  select_permissions:
+  - role: public
+    permission:
+      columns:
+      - run_at
+      - repo_id
+      - pull_number
+      - worker
+      - docker_image
+      filter: {}
