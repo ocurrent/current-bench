@@ -132,3 +132,11 @@ coverage: ./local-test-repo/.git
 .PHONY: local-make-bench
 local-make-bench: ./local-test-repo/.git
 	cd local-test-repo/; git add .; git commit --amend -m "New commit: $$(date)"; cd ..
+
+.PHONY: migration
+migration:
+	docker-compose \
+		--project-name="current-bench" \
+		--file=./environments/development.docker-compose.yaml \
+		--env-file=./environments/development.env \
+		exec pipeline omigrate create --verbose --dir=/app/db/migrations $(NAME)
