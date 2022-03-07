@@ -34,6 +34,8 @@ module Benchmark : sig
 
   module Db : sig
     val insert : conninfo:Db_util.t -> t -> unit
-    val exists : conninfo:Db_util.t -> Repository.t -> bool
+
+    val exists :
+      conninfo:Db_util.t -> env:Custom_dockerfile.Env.t -> Repository.t -> bool
   end
 end

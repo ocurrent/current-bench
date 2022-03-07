@@ -9,6 +9,7 @@ type repo = {
   name : string;
   worker : string; [@default default_worker]
   image : string; [@default default_docker]
+  schedule : string option; [@default None]
 }
 [@@deriving yojson]
 
@@ -23,9 +24,12 @@ type config = {
 }
 [@@deriving yojson]
 
+module Map_string = Map.Make (String)
+
 type t = {
   repos : repo_list;
   images : Docker.Image.t Current.t Images.t;
+  clocks : Clock.t Map_string.t;
   api_tokens : api_token_list;
   slack : Slack.channel option;
   frontend_url : string;
@@ -49,6 +53,17 @@ let make_images repos =
     (pull default_docker Images.empty)
     repos
 
+let make_clocks repos =
+  List.fold_left
+    (fun acc repo ->
+      match repo.schedule with
+      | None -> acc
+      | Some schedule ->
+          Map_string.update schedule
+            (function None -> Some (Clock.make schedule) | exist -> exist)
+            acc)
+    Map_string.empty repos
+
 let slack_of_url = function
   | None -> None
   | Some url -> Some (Slack.channel (Uri.of_string url))
@@ -62,6 +77,7 @@ let of_file ~frontend_url ~pipeline_url filename : t =
         repos = repositories;
         api_tokens;
         images = make_images repositories;
+        clocks = make_clocks repositories;
         slack = slack_of_url slack;
         frontend_url;
         pipeline_url;
@@ -70,10 +86,23 @@ let of_file ~frontend_url ~pipeline_url filename : t =
 
 let find t name =
   match List.filter (fun r -> r.name = name) t.repos with
-  | [] -> [ { name; worker = default_worker; image = default_docker } ]
+  | [] ->
+      [
+        {
+          name;
+          worker = default_worker;
+          image = default_docker;
+          schedule = None;
+        };
+      ]
   | configs -> configs
 
 let find_image t image_name = Images.find image_name t.images
+
+let get_clock t repo =
+  match repo.schedule with
+  | None -> Current.return (Clock.now_rfc3339 ())
+  | Some schedule -> Map_string.find schedule t.clocks
 
 let repo_url ~config repo worker docker_image =
   Printf.sprintf "%s/%s?worker=%s&image=%s" config.frontend_url
