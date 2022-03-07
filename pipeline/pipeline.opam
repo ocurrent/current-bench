@@ -33,6 +33,8 @@ depends: [
   "rresult"
   "omigrate"
   "ocluster"
+  "timere"
+  "timere-parse"
 ]
 pin-depends: [
   [ "current.dev"        "git+https://github.com/ocurrent/ocurrent.git#739c80bfda5290e6b0b854372db60789ac83ec97"]

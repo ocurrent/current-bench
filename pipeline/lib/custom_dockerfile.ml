@@ -6,11 +6,20 @@ module Env = struct
     worker : string;
     image : string;
     dockerfile : [ `File of Fpath.t | `Contents of Dockerfile.t Current.t ];
+    clock : string;
   }
 
-  let compare a b = Stdlib.compare (a.worker, a.image) (b.worker, b.image)
+  let compare a b =
+    Stdlib.compare (a.worker, a.image, a.clock) (b.worker, b.image, b.clock)
+
   let pp f t = Fmt.pf f "%s %s" t.worker t.image
-  let find config repository = Config.find config (Repository.info repository)
+
+  let find config repository =
+    Current.list_seq
+    @@ List.map (fun conf ->
+           let+ clock = Config.get_clock config conf in
+           (clock, conf))
+    @@ Config.find config (Repository.info repository)
 end
 
 module Get_files = struct
@@ -89,19 +98,22 @@ let dockerfile ~base ~files = Dockerfile.crunch (dockerfile ~base ~files)
 
 let dockerfiles ~config ~repository =
   let custom_dockerfile = "bench.Dockerfile" in
-  let+ files = get_all_files ~repository in
+  let+ files = get_all_files ~repository
+  and+ envs = Env.find config repository in
   let dockerfile_exists = List.mem custom_dockerfile files in
   List.map
-    (fun conf ->
+    (fun (clock, conf) ->
       let image, dockerfile =
         if dockerfile_exists
         then (custom_dockerfile, `File (Fpath.v custom_dockerfile))
         else
           let image = conf.Config.image in
-          ( image,
+          let docker =
             `Contents
               (let+ base = Config.find_image config image in
-               dockerfile ~base ~files) )
+               dockerfile ~base ~files)
+          in
+          (image, docker)
       in
-      { Env.worker = conf.Config.worker; image; dockerfile })
-    (Env.find config repository)
+      { Env.worker = conf.Config.worker; image; dockerfile; clock })
+    envs

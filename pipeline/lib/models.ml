@@ -118,19 +118,24 @@ module Benchmark = struct
 
     let insert ~conninfo self = Db_util.with_db ~conninfo (insert self)
 
-    let exists_query ~repository =
+    let exists_query ~env ~repository =
       let repo_id = Db_util.string @@ Repository.info repository
-      and commit = Db_util.string @@ Repository.commit_hash repository in
+      and commit = Db_util.string @@ Repository.commit_hash repository
+      and worker = Db_util.string @@ env.Custom_dockerfile.Env.worker
+      and docker_image = Db_util.string @@ env.Custom_dockerfile.Env.image
+      and date = Db_util.string @@ env.Custom_dockerfile.Env.clock in
       (* NOTE: We check if an entry exists in the benchmarks table, and not the
          benchmark_metadata table since we want to re-run the benchmarks if
          the failure occurred due to a current-bench pipeline related error
          like DB write error, running out of space, incorrectly solving opam
          dependencies, etc. *)
-      Fmt.str "SELECT COUNT(*) FROM benchmarks WHERE repo_id=%s AND commit=%s"
-        repo_id commit
+      Fmt.str
+        "SELECT COUNT(*) FROM benchmarks WHERE repo_id=%s AND (commit=%s OR \
+         run_at >= %s) AND worker=%s AND docker_image=%s"
+        repo_id commit date worker docker_image
 
-    let exists repository (db : Postgresql.connection) =
-      let query = exists_query ~repository in
+    let exists ~env repository (db : Postgresql.connection) =
+      let query = exists_query ~env ~repository in
       let result = db#exec query in
       match result#get_all with
       | [| [| count_str |] |] ->
@@ -152,7 +157,7 @@ module Benchmark = struct
                 Fmt.exn exn);
           true
 
-    let exists ~conninfo repository =
-      Db_util.with_db ~conninfo (exists repository)
+    let exists ~conninfo ~env repository =
+      Db_util.with_db ~conninfo (exists ~env repository)
   end
 end

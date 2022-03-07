@@ -35,6 +35,8 @@ depends: [
   "postgresql"
   "rresult"
   "omigrate"
+  "timere"
+  "timere-parse"
   "alcotest" {with-test}
   "alcotest-lwt" {with-test}
 ]

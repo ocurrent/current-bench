@@ -140,7 +140,9 @@ let pipeline ~config ~ocluster ~conninfo ~repository =
     (module Custom_dockerfile.Env)
     (fun env ->
       let* env in
-      pipeline ~config ~ocluster ~conninfo ~repository env)
+      if Benchmark.Db.exists ~conninfo ~env repository
+      then Current.return ()
+      else pipeline ~config ~ocluster ~conninfo ~repository env)
     (Custom_dockerfile.dockerfiles ~config ~repository)
 
 let pipeline ~config ~ocluster ~conninfo repository =
@@ -236,10 +238,8 @@ let process_pipeline ~config ~ocluster ~conninfo ~sources () =
     @@ Current.list_iter ~collapse_key:"pipeline"
          (module Repository)
          (fun repo ->
-           let* repository = repo in
-           if Benchmark.Db.exists ~conninfo repository
-           then Current.ignore_value repo
-           else pipeline ~config ~ocluster ~conninfo repository)
+           let* repo in
+           pipeline ~config ~ocluster ~conninfo repo)
          repos
   and+ () =
     Config.slack_log ~config ~key:"*repositories*"
