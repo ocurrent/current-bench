@@ -10,6 +10,7 @@ type repo = {
   worker : string; [@default default_worker]
   image : string; [@default default_docker]
   schedule : string option; [@default None]
+  build_args : string list; [@default []]
 }
 [@@deriving yojson]
 
@@ -93,6 +94,7 @@ let find t name =
           worker = default_worker;
           image = default_docker;
           schedule = None;
+          build_args = [];
         };
       ]
   | configs -> configs

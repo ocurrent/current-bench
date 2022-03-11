@@ -91,7 +91,12 @@ let pipeline ~config ~ocluster ~conninfo ~repository env =
   let serial_id =
     Storage.setup_metadata ~repository ~conninfo ~worker ~docker_image
   in
-  let docker_options = Cluster_api.Docker.Spec.defaults in
+  let docker_options =
+    {
+      Cluster_api.Docker.Spec.defaults with
+      build_args = env.Custom_dockerfile.Env.build_args;
+    }
+  in
   let dockerfile =
     match env.Env.dockerfile with
     | `Contents d -> `Contents (Current.map Dockerfile.string_of_t d)

@@ -7,6 +7,7 @@ module Env = struct
     image : string;
     dockerfile : [ `File of Fpath.t | `Contents of Dockerfile.t Current.t ];
     clock : string;
+    build_args : string list;
   }
 
   let compare a b =
@@ -115,5 +116,11 @@ let dockerfiles ~config ~repository =
           in
           (image, docker)
       in
-      { Env.worker = conf.Config.worker; image; dockerfile; clock })
+      {
+        Env.worker = conf.Config.worker;
+        image;
+        dockerfile;
+        clock;
+        build_args = conf.Config.build_args;
+      })
     envs
