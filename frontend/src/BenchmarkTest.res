@@ -240,10 +240,7 @@ let make = (
       // FIXME: Validate that units are same on all the overlays? (ideally, in the current_bench_json.ml)
       let seriesArrays =
         names->Belt.Array.map(x => getSeriesArrays(dataByMetricName, comparison, x))
-      let (_, metadata, comparisonTimeseries, _f) = seriesArrays[0]
-      let mergedMetadata = isOverlayed
-        ? seriesArrays->Belt.Array.map(((_, md, _, _)) => md)->Belt.Array.getExn(0)
-        : metadata
+      let mergedMetadata = seriesArrays->Belt.Array.map(((_, md, _, _)) => md)->Belt.Array.getExn(0)
       let tsArrays = seriesArrays->Belt.Array.map(((ts, _, _, _)) => ts)
       let xTicks = mergedMetadata->Belt.Array.reduceWithIndex(Belt.Map.Int.empty, (
         acc,
@@ -266,7 +263,12 @@ let make = (
       let lines = (mergedMetadata->BeltHelpers.Array.lastExn)["lines"]
       let run_job_id = (mergedMetadata->BeltHelpers.Array.lastExn)["run_job_id"]
       let labels = suffixes
-      let firstPullX = Belt.Array.length(comparisonTimeseries)
+      let firstPullX =
+        seriesArrays
+        ->Belt.Array.map(((_, _, ts, _)) => ts)
+        ->Belt.Array.get(0)
+        ->Belt.Option.getWithDefault([])
+        ->Belt.Array.length
       let annotations =
         firstPullX > 0
           ? labels->Belt.Array.map(x => makeAnnotation(firstPullX, x, repoId, pullNumber))
