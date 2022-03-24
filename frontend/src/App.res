@@ -107,9 +107,11 @@ module Benchmark = {
 
   @react.component
   let make = React.memo((~repoId, ~pullNumber, ~data: GetBenchmarks.t, ~lastCommit) => {
-    let benchmarkDataByTestName = React.useMemo2(() => {
-      data.benchmarks->makeBenchmarkData->AdjustMetricUnit.adjust->AppHelpers.fillMissingValues
-    }, (data.benchmarks, makeBenchmarkData))
+    let benchmarkDataByTestName = React.useMemo2(
+      () =>
+        data.benchmarks->makeBenchmarkData->AdjustMetricUnit.adjust->AppHelpers.fillMissingValues,
+      (data.benchmarks, makeBenchmarkData),
+    )
 
     let comparisonBenchmarkDataByTestName = React.useMemo2(
       () =>
