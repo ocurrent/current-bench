@@ -240,6 +240,14 @@ let make = (
       // FIXME: Validate that units are same on all the overlays? (ideally, in the current_bench_json.ml)
       let seriesArrays =
         names->Belt.Array.map(x => getSeriesArrays(dataByMetricName, comparison, x))
+      // FIXME: Filter out very small values (quick fix for demo, before we work on grouping stuff)
+      let (seriesArrays, labels) = isOverlayed
+        ? Belt.Array.zip(seriesArrays, suffixes)
+          ->Belt.Array.keep((((ts, _, _, _), _)) =>
+            ts->BeltHelpers.Array.lastExn->LineGraph.DataRow.toValue >= 0.1
+          )
+          ->Belt.Array.unzip
+        : (seriesArrays, suffixes)
       let mergedMetadata = seriesArrays->Belt.Array.map(((_, md, _, _)) => md)->Belt.Array.getExn(0)
       let tsArrays = seriesArrays->Belt.Array.map(((ts, _, _, _)) => ts)
       let xTicks = mergedMetadata->Belt.Array.reduceWithIndex(Belt.Map.Int.empty, (
@@ -262,7 +270,6 @@ let make = (
       let units = (mergedMetadata->BeltHelpers.Array.lastExn)["units"]
       let lines = (mergedMetadata->BeltHelpers.Array.lastExn)["lines"]
       let run_job_id = (mergedMetadata->BeltHelpers.Array.lastExn)["run_job_id"]
-      let labels = suffixes
       let firstPullX =
         seriesArrays
         ->Belt.Array.map(((_, _, ts, _)) => ts)
