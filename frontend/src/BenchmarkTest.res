@@ -241,10 +241,19 @@ let make = (
       let seriesArrays =
         names->Belt.Array.map(x => getSeriesArrays(dataByMetricName, comparison, x))
       // FIXME: Filter out very small values (quick fix for demo, before we work on grouping stuff)
-      let (seriesArrays, labels) = isOverlayed
+      let maximum =
+        Belt.Array.reduce(seriesArrays, None, (acc, (ts, _, _, _)) => {
+          let value = ts->BeltHelpers.Array.lastExn->LineGraph.DataRow.toValue
+          switch acc {
+          | Some(best) when best >= value => acc
+          | _ => Some(value)
+          }
+        })
+      let significative = maximum->Belt.Option.getWithDefault(0.0) /. 200.0
+      let (seriesArrays, labels) = (isOverlayed && not(Js.Float.isNaN(significative)))
         ? Belt.Array.zip(seriesArrays, suffixes)
           ->Belt.Array.keep((((ts, _, _, _), _)) =>
-            ts->BeltHelpers.Array.lastExn->LineGraph.DataRow.toValue >= 0.1
+            ts->BeltHelpers.Array.lastExn->LineGraph.DataRow.toValue >= significative
           )
           ->Belt.Array.unzip
         : (seriesArrays, suffixes)
