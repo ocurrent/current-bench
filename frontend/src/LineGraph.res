@@ -287,7 +287,7 @@ let graphSx = [Sx.unsafe("height", "150px")]
 let containerSxBase = [Sx.w.full, Sx.rounded.md, Sx.p.lg]
 let containerSxFailed = Belt.Array.concat(
   containerSxBase,
-  [Sx.border.color(Sx.red300), Sx.border.md],
+  [Sx.border.color(Sx.red300), Sx.border.xs, Sx.border.dashed],
 )
 let containerSx = Belt.Array.concat(containerSxBase, [Sx.border.color(Sx.gray300), Sx.border.xs])
 
