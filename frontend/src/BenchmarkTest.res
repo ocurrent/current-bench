@@ -84,16 +84,10 @@ let renderMetricOverviewRow = (
     ~comparison=(comparisonTimeseries, _comparisonMetadata),
     (timeseries, metadata),
   )
-  switch row.last_value {
-  | None => React.null
-  | Some(last_value) => {
-      let (vsMasterAbs, vsMasterRel) = switch (row.comparison_value, row.delta) {
-      | (Some(y), Some(delta)) => (
-          Js.Float.toPrecisionWithPrecision(~digits=6)(y),
-          delta->deltaToString,
-        )
-      | _ => ("NA", "NA")
-      }
+  switch (row.last_value, row.comparison_value, row.delta) {
+  | (Some(last_value), Some(vsMasterAbs), Some(vsMasterRel)) => {
+      let vsMasterAbs = Js.Float.toPrecisionWithPrecision(~digits=6)(vsMasterAbs)
+      let vsMasterRel = vsMasterRel->deltaToString
       let color = switch isFavourableDelta(row) {
       | Some(true) => Sx.green300
       | Some(false) => Sx.red300
@@ -110,6 +104,7 @@ let renderMetricOverviewRow = (
         <Table.Col sx=[Sx.text.right, Sx.text.color(color)]> {Rx.text(vsMasterRel)} </Table.Col>
       </Table.Row>
     }
+  | _ => React.null
   }
 }
 
