@@ -291,7 +291,7 @@ let make = (
           : []
       let title = isOverlayed ? overlayPrefix->Belt.Option.getExn : metricName
       let oldMetrics = mergedMetadata->Belt.Array.every(m => {Some(m["commit"]) != lastCommit})
-      let failedMetric = rows->Belt.Array.some(row =>
+      let failedMetric = rows->Belt.Array.every(row =>
         switch row.last_value {
         | Some(value) => Js.Float.isNaN(value)
         | _ => false
