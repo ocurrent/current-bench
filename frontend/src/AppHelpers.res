@@ -56,12 +56,16 @@ let addMissingCommits = ((metricTimeseries, metricMetadata) as data, allCommits)
       // same as metadata in the last commit.
       let templateMetadata = BeltHelpers.Array.lastExn(metricMetadata)
       let filledMetadata = allCommits->Belt.Array.map(((commit, runAt, run_job_id)) => {
-        Js.Obj.assign(Js.Obj.empty(), templateMetadata)->Js.Obj.assign({
-          "commit": commit,
-          "runAt": runAt,
-          "run_job_id": run_job_id,
-          "lines": [],
-        })
+        switch metricMetadata->Belt.Array.getBy(md => md["commit"] == commit) {
+        | Some(metadata) => metadata
+        | _ =>
+          Js.Obj.assign(Js.Obj.empty(), templateMetadata)->Js.Obj.assign({
+            "commit": commit,
+            "runAt": runAt,
+            "run_job_id": run_job_id,
+            "lines": [],
+          })
+        }
       })
       (filledTimeseries, filledMetadata)
     }
