@@ -17,9 +17,10 @@ let parse_one =
   let str =
     String.concat "\n"
       [
-        "debug line";
+        "debug line\r\r";
         {|{"json": true}|};
         "more stuff";
+        "(Reading database ...\r(Reading database ... 5%";
         "more stuff";
         {|{"ok": ["yes"]}|};
         "...";
@@ -28,7 +29,7 @@ let parse_one =
   let state = Json_stream.make_json_parser () in
   let parsed, _state = Json_stream.json_steps ([], state) str in
   let expect =
-    [ ({|{"ok": ["yes"]}|}, (5, 5)); ({|{"json": true}|}, (2, 2)) ]
+    [ ({|{"ok": ["yes"]}|}, (8, 8)); ({|{"json": true}|}, (3, 3)) ]
   in
   Alcotest.(check (list parsed_location)) "jsons" expect parsed
 

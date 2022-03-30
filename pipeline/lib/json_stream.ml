@@ -31,7 +31,12 @@ type json_parser = {
 let json_step stack chr =
   match (stack, chr) with
   | [], '\n' -> [ '\n' ]
+  | [], '\r' -> [ '\r' ]
   | [], _ -> []
+  | [ '\r' ], '\r' -> [ '\r' ]
+  | [ '\r' ], '\n' -> [ '\n' ]
+  | [ '\r' ], '{' -> [ '{' ]
+  | [ '\r' ], _ -> []
   | [ '\n' ], '\n' -> [ '\n' ]
   | [ '\n' ], '{' -> [ '{' ]
   | [ '\n' ], _ -> []
@@ -48,7 +53,11 @@ let make_json_parser () =
 
 let json_step state chr =
   let state =
-    match chr with '\n' -> { state with lines = state.lines + 1 } | _ -> state
+    match chr with
+    | '\r' -> { state with lines = state.lines + 1 }
+    | '\n' when not (state.stack = [ '\r' ]) ->
+        { state with lines = state.lines + 1 }
+    | _ -> state
   in
   match json_step state.stack chr with
   | [] ->
@@ -61,9 +70,12 @@ let json_step state chr =
         ( Some str,
           { st with lines = state.lines; start_line = state.start_line } ))
   | hd :: _ as stack ->
-      if chr <> '\n' || hd = '"' then Buffer.add_char state.current chr;
+      if (chr <> '\n' && chr <> '\r') || hd = '"'
+      then Buffer.add_char state.current chr;
       let start_line =
-        if state.stack = [] then state.lines else state.start_line
+        if state.stack = [] || state.stack = [ '\r' ]
+        then state.lines
+        else state.start_line
       in
       (None, { state with start_line; stack })
 
