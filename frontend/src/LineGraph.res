@@ -176,17 +176,27 @@ let convertTicks = (ticks: Belt.Map.Int.t<string>) => {
 let convertNanToNull = (xs: DataRow.t) =>
   Belt.Array.map(xs, x => Js.Float.isNaN(x) ? Obj.magic(Js.null) : x)
 
-let category10colors = [
+let category20colors = [
   "#1f77b4",
+  "#aec7e8",
   "#ff7f0e",
+  "#ffbb78",
   "#2ca02c",
+  "#98df8a",
   "#d62728",
+  "#ff9896",
   "#9467bd",
+  "#c5b0d5",
   "#8c564b",
+  "#c49c94",
   "#e377c2",
+  "#f7b6d2",
   "#7f7f7f",
+  "#c7c7c7",
   "#bcbd22",
+  "#dbdb8d",
   "#17becf",
+  "#9edae5",
 ]
 
 let defaultOptions = (
@@ -196,7 +206,7 @@ let defaultOptions = (
   ~labels=?,
   ~onClick=?,
   ~data=[],
-  ~colors=category10colors,
+  ~colors=category20colors,
   (),
 ) => {
   let ticker = {
@@ -353,12 +363,12 @@ let makeDygraphLabels = (labels, linesState) =>
 
 let graphColors = (labels, linesState) => {
   let labels_ = labels->Belt.Option.getWithDefault([])
-  let n = category10colors->Belt.Array.length
+  let n = category20colors->Belt.Array.length
   let colorsArray =
     n > labels_->Belt.Array.length
-      ? category10colors
+      ? category20colors
       : labels_->Belt.Array.mapWithIndex((idx, _) =>
-          category10colors->Belt.Array.getExn(mod(idx, n))
+          category20colors->Belt.Array.getExn(mod(idx, n))
         )
   colorsArray->Belt.Array.keepWithIndex((_, idx) =>
     linesState->Belt.Array.get(idx)->Belt.Option.getWithDefault(true)
