@@ -548,6 +548,7 @@ let make = React.memo((
     | Some(graph) => {
         let options = defaultOptions(
           ~yLabel?,
+          ~colors=graphColors(labels, linesState),
           ~labels=makeDygraphLabels(labels, linesState),
           ~xTicks?,
           ~onClick=onPointClick(xTicks, goToCommit),
