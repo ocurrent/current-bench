@@ -113,14 +113,14 @@ module Benchmark = {
       (data.benchmarks, makeBenchmarkData),
     )
 
-    let comparisonBenchmarkDataByTestName = React.useMemo2(
+    let comparisonBenchmarkDataByTestName = React.useMemo3(
       () =>
         data.comparisonBenchmarks
         ->Belt.Array.reverse
         ->makeBenchmarkData
         ->AppHelpers.fillMissingValues
         ->AppHelpers.addMissingComparisonMetrics(benchmarkDataByTestName),
-      (data.comparisonBenchmarks, makeBenchmarkData),
+      (data.benchmarks, data.comparisonBenchmarks, makeBenchmarkData),
     )
 
     let graphsData = React.useMemo1(() => {
