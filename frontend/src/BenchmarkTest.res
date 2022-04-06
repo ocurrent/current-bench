@@ -177,6 +177,7 @@ let make = (
   ~comparison=Belt.Map.String.empty,
   ~dataByMetricName: Belt.Map.String.t<(array<LineGraph.DataRow.t>, 'a)>,
   ~lastCommit,
+  ~labelColorMapping: Belt.Map.String.t<string>,
 ) => {
   let metric_table = {
     <Table sx=[Sx.mb.xl2]>
@@ -310,6 +311,7 @@ let make = (
           lines
           run_job_id
           failedMetric
+          labelColorMapping
         />
       </div>
     }

@@ -136,6 +136,31 @@ module Benchmark = {
       ->Belt.Map.String.valuesToArray
     }, [benchmarkDataByTestName])
 
+    // Mapping of all overlayed graph labels to a color;
+    // Used to assign the same color to a label across different metrics
+    let labelColorMapping = React.useMemo1(() => {
+      let suffixes =
+        benchmarkDataByTestName
+        ->Belt.Map.String.valuesToArray
+        ->Belt.Array.map(((_, dataByMetricName)) =>
+          dataByMetricName
+          ->Belt.Map.String.keysToArray
+          ->Belt.Array.map(x => Js.String.split("/", x))
+          ->Belt.Array.keep(x => x->Belt.Array.length > 1)
+          ->Belt.Array.map(x => x[1])
+        )
+        ->Belt.Array.concatMany
+        ->Belt.Set.String.fromArray
+        ->Belt.Set.String.toArray
+
+      let colors = LineGraph.category20colors
+      let n = colors->Belt.Array.length
+      Belt.Array.reduceWithIndex(suffixes, Belt.Map.String.empty, (map, label, idx) => {
+        let color = colors->Belt.Array.getExn(mod(idx, n))
+        Belt.Map.String.set(map, label, color)
+      })
+    }, [benchmarkDataByTestName])
+
     <Column spacing=Sx.xl>
       {graphsData
       ->Belt.List.fromArray
@@ -143,7 +168,14 @@ module Benchmark = {
       ->Belt.List.toArray
       ->Belt.Array.map(((dataByMetricName, comparison, testName, _)) =>
         <BenchmarkTest
-          repoId pullNumber key={testName} testName dataByMetricName comparison lastCommit
+          repoId
+          pullNumber
+          key={testName}
+          testName
+          dataByMetricName
+          comparison
+          lastCommit
+          labelColorMapping
         />
       )
       ->Rx.array(~empty=<Message text="No data for selected interval." />)}

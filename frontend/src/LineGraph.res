@@ -361,15 +361,17 @@ let makeDygraphLabels = (labels, linesState) =>
     }
   )
 
-let graphColors = (labels, linesState) => {
+let graphColors = (labels, linesState, colorLabelMapping) => {
   let labels_ = labels->Belt.Option.getWithDefault([])
   let n = category20colors->Belt.Array.length
   let colorsArray =
-    n > labels_->Belt.Array.length
-      ? category20colors
-      : labels_->Belt.Array.mapWithIndex((idx, _) =>
-          category20colors->Belt.Array.getExn(mod(idx, n))
-        )
+    labels_->Belt.Array.mapWithIndex((idx, label) =>
+      colorLabelMapping->Belt.Map.String.getWithDefault(
+        label,
+        category20colors->Belt.Array.getExn(mod(idx, n)),
+      )
+    )
+
   colorsArray->Belt.Array.keepWithIndex((_, idx) =>
     linesState->Belt.Array.get(idx)->Belt.Option.getWithDefault(true)
   )
@@ -489,6 +491,7 @@ let make = React.memo((
   ~lines: DataRow.lines,
   ~run_job_id: option<string>,
   ~failedMetric: bool,
+  ~labelColorMapping: Belt.Map.String.t<string>,
 ) => {
   let graphDivRef = React.useRef(Js.Nullable.null)
   let graphRef = React.useRef(None)
@@ -514,7 +517,7 @@ let make = React.memo((
     let options = defaultOptions(
       ~yLabel?,
       ~labels=makeDygraphLabels(labels, linesState),
-      ~colors=graphColors(labels, linesState),
+      ~colors=graphColors(labels, linesState, labelColorMapping),
       ~xTicks?,
       ~onClick=onPointClick(xTicks, goToCommit),
       ~legendFormatter=Legend.format(~xTicks?),
@@ -558,7 +561,7 @@ let make = React.memo((
     | Some(graph) => {
         let options = defaultOptions(
           ~yLabel?,
-          ~colors=graphColors(labels, linesState),
+          ~colors=graphColors(labels, linesState, labelColorMapping),
           ~labels=makeDygraphLabels(labels, linesState),
           ~xTicks?,
           ~onClick=onPointClick(xTicks, goToCommit),
