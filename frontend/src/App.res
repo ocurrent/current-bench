@@ -118,6 +118,7 @@ module Benchmark = {
         data.comparisonBenchmarks
         ->Belt.Array.reverse
         ->makeBenchmarkData
+        ->AdjustMetricUnit.adjustComparisonData(benchmarkDataByTestName)
         ->AppHelpers.fillMissingValues
         ->AppHelpers.addMissingComparisonMetrics(benchmarkDataByTestName),
       (data.benchmarks, data.comparisonBenchmarks, makeBenchmarkData),

@@ -92,3 +92,47 @@ let adjust = (data: BenchmarkData.t) => {
     (testIndex, adjustedDataByMetricName)
   })
 }
+
+// Adjust comparisonData units to be same as units of corresponding benchmarks data
+let adjustComparisonData = (comparisonData: BenchmarkData.t, data: BenchmarkData.t) => {
+  comparisonData->Belt.Map.String.mapWithKey((
+    testName,
+    (testIndex, comparisonDataByMetricName),
+  ) => {
+    let adjustedDataByMetricName =
+      comparisonDataByMetricName->Belt.Map.String.mapWithKey((
+        metricName,
+        (timeseries, metadata),
+      ) => {
+        let isSizeMetric = switch Belt.Array.size(metadata) {
+        | 0 => false
+        | _ => isSize(metadata[0]["units"])
+        }
+        switch isSizeMetric {
+        | true => {
+            let units = metadata[0]["units"]
+            let (_, dataByMetricName) =
+              data->Belt.Map.String.getWithDefault(testName, (0, Belt.Map.String.empty))
+            let (_, benchmarkMetadata) =
+              dataByMetricName->Belt.Map.String.getWithDefault(metricName, ([], []))
+            let (ts, newUnits) = switch benchmarkMetadata->Belt.Array.length {
+            | 0 => adjustSize(timeseries, units)
+            | _ => {
+                let newUnits = benchmarkMetadata[0]["units"]
+                let adjustedTimeseries = Belt.Array.map(timeseries, value => {
+                  Belt.Array.map(value, v =>
+                    Js.Float.isNaN(v) ? v : changeSizeUnits(v, units, newUnits)
+                  )
+                })
+                (adjustedTimeseries, newUnits)
+              }
+            }
+            let md = metadata->Belt.Array.map(x => Js.Obj.assign(x, {"units": newUnits}))
+            (ts, md)
+          }
+        | false => (timeseries, metadata)
+        }
+      })
+    (testIndex, adjustedDataByMetricName)
+  })
+}
