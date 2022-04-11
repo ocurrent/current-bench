@@ -113,3 +113,24 @@ let record_success ~serial_id (db : Postgresql.connection) =
 
 let record_success ~serial_id ~conninfo =
   Db_util.with_db ~conninfo (record_success ~serial_id)
+
+let mark_closed_pull_requests ~open_pulls (db : Postgresql.connection) =
+  Logs.debug (fun log -> log "Updating open and closed pulls...");
+  let open_pr_query =
+    String.concat " OR "
+    @@ List.map
+         (fun (repo_id, pull_number) ->
+           Fmt.str {|(repo_id = '%s' AND pull_number = %d)|} repo_id pull_number)
+         open_pulls
+  in
+  let query =
+    Fmt.str
+      {|UPDATE benchmark_metadata
+        SET is_open_pr = pull_number is NULL OR %s;
+      |}
+      open_pr_query
+  in
+  ignore (db#exec ~expect:[ Postgresql.Command_ok ] query)
+
+let mark_closed_pull_requests ~open_pulls ~conninfo =
+  Db_util.with_db ~conninfo (mark_closed_pull_requests ~open_pulls)
