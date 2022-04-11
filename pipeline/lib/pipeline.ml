@@ -235,6 +235,14 @@ let string_of_repositories repos =
   @@ List.sort String.compare
   @@ List.map (fun r -> Repository.to_string r) repos
 
+let pull_requests_from_repositories repos =
+  List.filter_map
+    (fun r ->
+      match Repository.pull_number r with
+      | None -> None
+      | Some pull_number -> Some (Repository.info r, pull_number))
+    repos
+
 let process_pipeline ~config ~ocluster ~conninfo ~sources () =
   let repos = repositories sources in
   let+ () =
@@ -249,6 +257,9 @@ let process_pipeline ~config ~ocluster ~conninfo ~sources () =
   and+ () =
     Config.slack_log ~config ~key:"*repositories*"
       (Current.map string_of_repositories repos)
+  and+ () =
+    let+ open_pulls = Current.map pull_requests_from_repositories repos in
+    Storage.mark_closed_pull_requests ~open_pulls ~conninfo
   in
   ()
 
