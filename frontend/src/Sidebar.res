@@ -11,6 +11,7 @@ module SidebarMenuData = %graphql(`
 query ($repoId: String!) {
   pullsMenuData: benchmark_metadata(distinct_on: [pull_number], where: {_and: [{repo_id: {_eq: $repoId}}, {pull_number: {_is_null: false}}]}, order_by: [{pull_number: desc}]) {
     pull_number
+    is_open_pr
     branch
     pr_title
   }  
@@ -20,22 +21,9 @@ query ($repoId: String!) {
 }
 `)
 
-module PullsMenu = {
+module PullsList = {
   @react.component
-  let make = (
-    ~repoId,
-    ~pullsMenuData: array<SidebarMenuData.t_pullsMenuData>,
-    ~selectedPull=?,
-    ~selectedBenchmarkName=?,
-    ~worker,
-  ) => {
-    let pullNumberInfos = pullsMenuData->Belt.Array.keepMap(obj =>
-      switch obj.pull_number {
-      | Some(pullNumber) => Some(pullNumber, Belt.Option.getWithDefault(obj.pr_title, ""))
-      | _ => None
-      }
-    )
-
+  let make = (~repoId, ~pullNumberInfos, ~selectedPull=?, ~selectedBenchmarkName=?, ~worker) => {
     pullNumberInfos
     ->Belt.Array.mapWithIndex((i, pullNumberInfo) => {
       let (pullNumber, prTitle) = pullNumberInfo
@@ -68,6 +56,56 @@ module PullsMenu = {
       </Row>
     })
     ->Rx.array(~empty="None"->Rx.string)
+  }
+}
+
+module PullsMenu = {
+  @react.component
+  let make = (
+    ~repoId,
+    ~pullsMenuData: array<SidebarMenuData.t_pullsMenuData>,
+    ~selectedPull=?,
+    ~selectedBenchmarkName=?,
+    ~worker,
+  ) => {
+    let openPullNumberInfos = pullsMenuData->Belt.Array.keepMap(obj =>
+      switch obj.pull_number {
+      | Some(pullNumber) if obj.is_open_pr =>
+        Some(pullNumber, Belt.Option.getWithDefault(obj.pr_title, ""))
+      | _ => None
+      }
+    )
+
+    let closedPullNumberInfos = pullsMenuData->Belt.Array.keepMap(obj =>
+      switch obj.pull_number {
+      | Some(pullNumber) if !obj.is_open_pr =>
+        Some(pullNumber, Belt.Option.getWithDefault(obj.pr_title, ""))
+      | _ => None
+      }
+    )
+
+    <Column>
+      <Text color=Sx.gray700 weight=#bold uppercase=true size=#sm> "Pull Requests" </Text>
+      <PullsList
+        repoId pullNumberInfos={openPullNumberInfos} ?selectedPull ?selectedBenchmarkName worker
+      />
+      {closedPullNumberInfos->Belt.Array.length > 0
+        ? <details>
+            <summary>
+              <Text color=Sx.gray700 weight=#bold uppercase=true size=#xs>
+                "Closed Pull Requests"
+              </Text>
+            </summary>
+            <PullsList
+              repoId
+              pullNumberInfos={closedPullNumberInfos}
+              ?selectedPull
+              ?selectedBenchmarkName
+              worker
+            />
+          </details>
+        : Rx.null}
+    </Column>
   }
 }
 
@@ -139,10 +177,7 @@ module SidebarMenu = {
           </Column>
         | false => Rx.null
         }}
-        <Column>
-          <Text color=Sx.gray700 weight=#bold uppercase=true size=#sm> "Pull Requests" </Text>
-          <PullsMenu repoId pullsMenuData ?selectedPull ?selectedBenchmarkName worker />
-        </Column>
+        <PullsMenu repoId pullsMenuData ?selectedPull ?selectedBenchmarkName worker />
       </>
     }
   }
