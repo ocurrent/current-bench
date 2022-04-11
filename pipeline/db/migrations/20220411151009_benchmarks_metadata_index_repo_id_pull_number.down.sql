@@ -1,0 +1,2 @@
+DROP INDEX benchmark_metadata_pull_number_idx;
+DROP INDEX benchmark_metadata_repo_id_pull_number_idx;
