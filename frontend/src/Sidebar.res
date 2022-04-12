@@ -157,15 +157,15 @@ module WorkersSelect = {
       workers->Belt.Array.getIndexBy(w => worker == Some((w.worker, w.docker_image)))
     }
 
-    React.useEffect1(() => {
+    React.useEffect2(() => {
       switch idx_opt {
-      | None =>
+      | None if workers->Belt.Array.length > 0 =>
         let first = workers[0]
         setWorker(Some((first.worker, first.docker_image)))
       | _ => ()
       }
       None
-    }, [idx_opt])
+    }, (idx_opt, workers))
 
     let idx = idx_opt->Belt.Option.getWithDefault(0)
 
