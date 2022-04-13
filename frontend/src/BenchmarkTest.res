@@ -75,7 +75,7 @@ let isFavourableDelta = row => {
 }
 
 let renderMetricOverviewRow = (
-  ~comparison as (comparisonTimeseries: array<LineGraph.DataRow.t>, _comparisonMetadata)=([], []),
+  ~comparison as (comparisonTimeseries: BenchmarkData.timeseries, _comparisonMetadata)=([], []),
   ~testName,
   ~metricName,
   (timeseries, metadata),
@@ -175,7 +175,7 @@ let make = (
   ~pullNumber,
   ~testName,
   ~comparison=Belt.Map.String.empty,
-  ~dataByMetricName: Belt.Map.String.t<(array<LineGraph.DataRow.t>, 'a)>,
+  ~dataByMetricName: BenchmarkData.byMetricName,
   ~lastCommit,
   ~labelColorMapping: Belt.Map.String.t<string>,
 ) => {
