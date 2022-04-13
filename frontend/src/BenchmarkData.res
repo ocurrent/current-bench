@@ -1,18 +1,16 @@
 open Belt
 
 type timeseries = array<LineGraph.DataRow.t>
-type byMetricName = Map.String.t<(
-  timeseries,
-  array<{
-    "commit": string,
-    "runAt": Js.Date.t,
-    "units": LineGraph.DataRow.units,
-    "description": string,
-    "trend": string,
-    "lines": list<(int, int)>,
-    "run_job_id": option<string>,
-  }>,
-)>
+type metadata = {
+  "commit": string,
+  "runAt": Js.Date.t,
+  "units": LineGraph.DataRow.units,
+  "description": string,
+  "trend": string,
+  "lines": list<(int, int)>,
+  "run_job_id": option<string>,
+}
+type byMetricName = Map.String.t<(timeseries, array<metadata>)>
 type byTestName = Map.String.t<(int, byMetricName)>
 type t = byTestName
 
