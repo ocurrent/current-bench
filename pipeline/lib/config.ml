@@ -120,19 +120,20 @@ let key_of_repo ~config repository worker docker_image =
     (Repository.to_string repository)
     worker docker_image
 
+open Current.Syntax
+
+let slack_message key msg =
+  let+ state = Current.catch ~hidden:true msg in
+  let icon, msg =
+    match state with
+    | Ok msg -> (":heavy_check_mark:", msg)
+    | Error (`Msg e) -> (":x: <!here>", "*`" ^ e ^ "`*")
+  in
+  icon ^ " " ^ key ^ ": " ^ msg
+
 let slack_log ~config ~key msg =
   match config.slack with
   | None -> Current.ignore_value msg
   | Some channel ->
-      Logs.err (fun log -> log "slack_post? %s" key);
-      let msg =
-        let open Current.Syntax in
-        let+ state = Current.catch ~hidden:true msg in
-        let icon, msg =
-          match state with
-          | Ok msg -> (":heavy_check_mark:", msg)
-          | Error (`Msg e) -> (":x: <!here>", "*`" ^ e ^ "`*")
-        in
-        icon ^ " " ^ key ^ ": " ^ msg
-      in
-      Slack.post channel ~key msg
+      let+ () = Slack.post channel ~key (slack_message key msg) and+ _ = msg in
+      ()

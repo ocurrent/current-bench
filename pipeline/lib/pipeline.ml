@@ -39,7 +39,7 @@ let github_set_status ~repository result =
   | Some head ->
       let status_url = Repository.commit_status_url repository in
       Github.Api.Commit.set_status (Current.return head) "ocaml-benchmarks"
-        (Current.state result >>| github_status_of_state status_url)
+        (Current.state ~hidden:true result >>| github_status_of_state status_url)
 
 let setup_on_cancel_hook ~job_id ~serial_id ~conninfo =
   let jobs = Current.Job.jobs () in
@@ -67,7 +67,7 @@ let get_job_id x =
       | None -> None)
 
 let record_pipeline_stage ~serial_id ~conninfo image job_id =
-  let+ job_id and+ state = Current.state image in
+  let+ job_id and+ state = Current.state ~hidden:true image in
   match (job_id, state) with
   | Some job_id, Error (`Active _) ->
       (* NOTE: For some reason this hook gets called twice, even if we match for
