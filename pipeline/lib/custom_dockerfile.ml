@@ -78,7 +78,7 @@ let install_opam_dependencies ~files =
     copy ~src:[ "--chown=opam:opam ./*.opam" ] ~dst:"./" ()
     @@ run "opam exec -- opam pin -y -n --with-version=dev ."
     @@ run "opam exec -- opam install -y --depext-only ."
-    @@ run "opam exec -- opam install -y --deps-only ."
+    @@ run "opam exec -- opam install -y --deps-only --with-test ."
 
 let dockerfile ~base ~files =
   let open Dockerfile in
