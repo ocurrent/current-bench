@@ -1,16 +1,8 @@
 open Belt
 
 type timeseries = array<LineGraph.DataRow.t>
-type metadata = {
-  "commit": string,
-  "runAt": Js.Date.t,
-  "units": LineGraph.DataRow.units,
-  "description": string,
-  "trend": string,
-  "lines": list<(int, int)>,
-  "run_job_id": option<string>,
-}
-type byMetricName = Map.String.t<(timeseries, array<metadata>)>
+type metadata = array<LineGraph.DataRow.md>
+type byMetricName = Map.String.t<(timeseries, metadata)>
 type byTestName = Map.String.t<(int, byMetricName)>
 type t = byTestName
 
@@ -39,13 +31,13 @@ let add = (
   let metadata = BeltHelpers.Array.add(
     metadata,
     {
-      "commit": commit,
-      "runAt": runAt,
-      "units": units,
-      "description": description,
-      "trend": trend,
-      "lines": lines,
-      "run_job_id": run_job_id,
+      commit: commit,
+      runAt: runAt,
+      units: units,
+      description: description,
+      trend: trend,
+      lines: lines,
+      run_job_id: run_job_id,
     },
   )
 

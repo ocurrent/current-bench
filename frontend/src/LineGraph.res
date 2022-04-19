@@ -57,6 +57,16 @@ module DataRow = {
   type row = array<t>
   type rawRow = array<array<Js.Nullable.t<float>>> // type used by Dygraph
 
+  type md = {
+    commit: string,
+    runAt: Js.Date.t,
+    units: units,
+    description: string,
+    trend: string,
+    lines: list<(int, int)>,
+    run_job_id: option<string>,
+  }
+
   let single = (x: float): t => [nan, x, nan]
 
   let many = (xs: array<float>): t => {
