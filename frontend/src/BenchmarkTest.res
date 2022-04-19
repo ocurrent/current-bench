@@ -28,16 +28,13 @@ type metricRow = {
   trend: string,
 }
 
-let getRowData = (
-  ~comparison as (comparisonTimeseries, _comparisonMetadata)=([], []),
-  (timeseries, _metadata),
-) => {
+let getRowData = (~comparison as (comparisonTimeseries, _)=([], []), (timeseries, metadata)) => {
   if Belt.Array.length(timeseries) == 0 {
     let d = {delta: None, last_value: None, comparison_value: None, trend: ""}
     d
   } else {
     let last_value = BeltHelpers.Array.lastExn(timeseries)->LineGraph.DataRow.toValue
-    let trend = BeltHelpers.Array.lastExn(_metadata)["trend"]
+    let trend = BeltHelpers.Array.lastExn(metadata)["trend"]
 
     switch BeltHelpers.Array.last(comparisonTimeseries) {
     | Some(lastComparisonRow) =>
@@ -75,13 +72,13 @@ let isFavourableDelta = row => {
 }
 
 let renderMetricOverviewRow = (
-  ~comparison as (comparisonTimeseries: BenchmarkData.timeseries, _comparisonMetadata)=([], []),
+  ~comparison as (comparisonTimeseries: BenchmarkData.timeseries, comparisonMetadata)=([], []),
   ~testName,
   ~metricName,
   (timeseries, metadata),
 ) => {
   let row = getRowData(
-    ~comparison=(comparisonTimeseries, _comparisonMetadata),
+    ~comparison=(comparisonTimeseries, comparisonMetadata),
     (timeseries, metadata),
   )
   switch (row.last_value, row.comparison_value, row.delta) {
