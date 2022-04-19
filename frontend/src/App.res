@@ -20,7 +20,7 @@ let makeGetBenchmarksVariables = (
   ~startDate,
   ~endDate,
 ): GetBenchmarks.t_variables => {
-  open AppHelpers
+  open BenchmarkDataHelpers
   let isMaster = Belt.Option.isNone(pullNumber)
   let (worker, dockerImage) = switch worker {
   | None => (None, None)
@@ -109,7 +109,10 @@ module Benchmark = {
   let make = React.memo((~repoId, ~pullNumber, ~data: GetBenchmarks.t, ~lastCommit) => {
     let benchmarkDataByTestName = React.useMemo2(
       () =>
-        data.benchmarks->makeBenchmarkData->AdjustMetricUnit.adjust->AppHelpers.fillMissingValues,
+        data.benchmarks
+        ->makeBenchmarkData
+        ->AdjustMetricUnit.adjust
+        ->BenchmarkDataHelpers.fillMissingValues,
       (data.benchmarks, makeBenchmarkData),
     )
 
@@ -119,8 +122,8 @@ module Benchmark = {
         ->Belt.Array.reverse
         ->makeBenchmarkData
         ->AdjustMetricUnit.adjustComparisonData(benchmarkDataByTestName)
-        ->AppHelpers.fillMissingValues
-        ->AppHelpers.addMissingComparisonMetrics(benchmarkDataByTestName),
+        ->BenchmarkDataHelpers.fillMissingValues
+        ->BenchmarkDataHelpers.addMissingComparisonMetrics(benchmarkDataByTestName),
       (data.benchmarks, data.comparisonBenchmarks, makeBenchmarkData),
     )
 
