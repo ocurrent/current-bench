@@ -14,7 +14,7 @@ query ($repoId: String!) {
     is_open_pr
     branch
     pr_title
-  }  
+  }
   benchmarksMenuData: benchmarks(distinct_on: [benchmark_name], where: {repo_id: {_eq: $repoId}}, order_by: [{benchmark_name: asc_nulls_first}]) {
     benchmark_name
   }
@@ -168,7 +168,7 @@ module SidebarMenu = {
     | Data({benchmarksMenuData, pullsMenuData})
     | PartialData({benchmarksMenuData, pullsMenuData}, _) => <>
         {switch Belt.Array.some(benchmarksMenuData, bm => {
-          bm.benchmark_name !== AppHelpers.defaultBenchmarkName
+          bm.benchmark_name !== BenchmarkDataHelpers.defaultBenchmarkName
         }) {
         | true =>
           <Column>
