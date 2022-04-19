@@ -234,22 +234,22 @@ let make = (
       let seriesArrays =
         names->Belt.Array.map(x => getSeriesArrays(dataByMetricName, comparison, x))
       // FIXME: Filter out very small values (quick fix for demo, before we work on grouping stuff)
-      let maximum =
-        Belt.Array.reduce(seriesArrays, None, (acc, (ts, _, _, _)) => {
-          let value = ts->BeltHelpers.Array.lastExn->LineGraph.DataRow.toValue
-          switch acc {
-          | Some(best) when best >= value => acc
-          | _ => Some(value)
-          }
-        })
+      let maximum = Belt.Array.reduce(seriesArrays, None, (acc, (ts, _, _, _)) => {
+        let value = ts->BeltHelpers.Array.lastExn->LineGraph.DataRow.toValue
+        switch acc {
+        | Some(best) if best >= value => acc
+        | _ => Some(value)
+        }
+      })
       let significative = maximum->Belt.Option.getWithDefault(0.0) /. 200.0
-      let (seriesArrays, labels) = (isOverlayed && not(Js.Float.isNaN(significative)))
-        ? Belt.Array.zip(seriesArrays, suffixes)
-          ->Belt.Array.keep((((ts, _, _, _), _)) =>
-            ts->BeltHelpers.Array.lastExn->LineGraph.DataRow.toValue >= significative
-          )
-          ->Belt.Array.unzip
-        : (seriesArrays, suffixes)
+      let (seriesArrays, labels) =
+        isOverlayed && !Js.Float.isNaN(significative)
+          ? Belt.Array.zip(seriesArrays, suffixes)
+            ->Belt.Array.keep((((ts, _, _, _), _)) =>
+              ts->BeltHelpers.Array.lastExn->LineGraph.DataRow.toValue >= significative
+            )
+            ->Belt.Array.unzip
+          : (seriesArrays, suffixes)
       let mergedMetadata = seriesArrays->Belt.Array.map(((_, md, _, _)) => md)->Belt.Array.getExn(0)
       let tsArrays = seriesArrays->Belt.Array.map(((ts, _, _, _)) => ts)
       let xTicks = mergedMetadata->Belt.Array.reduceWithIndex(Belt.Map.Int.empty, (
