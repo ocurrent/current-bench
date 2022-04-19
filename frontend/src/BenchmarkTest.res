@@ -28,13 +28,16 @@ type metricRow = {
   trend: string,
 }
 
-let getRowData = (~comparison as (comparisonTimeseries, _)=([], []), (timeseries, metadata)) => {
+let getRowData = (
+  ~comparison as (comparisonTimeseries, _)=([], []),
+  (timeseries, metadata: BenchmarkData.metadata),
+) => {
   if Belt.Array.length(timeseries) == 0 {
     let d = {delta: None, last_value: None, comparison_value: None, trend: ""}
     d
   } else {
     let last_value = BeltHelpers.Array.lastExn(timeseries)->LineGraph.DataRow.toValue
-    let trend = BeltHelpers.Array.lastExn(metadata)["trend"]
+    let trend = BeltHelpers.Array.lastExn(metadata).trend
 
     switch BeltHelpers.Array.last(comparisonTimeseries) {
     | Some(lastComparisonRow) =>
@@ -188,7 +191,7 @@ let make = (
       </thead>
       <tbody>
         {dataByMetricName
-        ->Belt.Map.String.mapWithKey(metricName => {
+        ->Belt.Map.String.mapWithKey((metricName, data) => {
           let (comparisonTimeseries, comparisonMetadata) = Belt.Map.String.getWithDefault(
             comparison,
             metricName,
@@ -198,6 +201,7 @@ let make = (
             ~comparison=(comparisonTimeseries, comparisonMetadata),
             ~testName,
             ~metricName,
+            data,
           )
         })
         ->Belt.Map.String.valuesToArray
@@ -257,7 +261,7 @@ let make = (
         m,
         index,
       ) => {
-        Belt.Map.Int.set(acc, index, m["commit"])
+        Belt.Map.Int.set(acc, index, m.commit)
       })
       let rows =
         seriesArrays->Belt.Array.map(((ts, md, comp_ts, comp_md)) =>
@@ -265,13 +269,13 @@ let make = (
         )
       let subTitle: LineGraph.elementOrString = switch isOverlayed {
       | false =>
-        let description = BeltHelpers.Array.lastExn(mergedMetadata)["description"]
+        let description = BeltHelpers.Array.lastExn(mergedMetadata).description
         makeSubTitle(BeltHelpers.Array.lastExn(rows), description)
       | true => String("")
       }
-      let units = (mergedMetadata->BeltHelpers.Array.lastExn)["units"]
-      let lines = (mergedMetadata->BeltHelpers.Array.lastExn)["lines"]
-      let run_job_id = (mergedMetadata->BeltHelpers.Array.lastExn)["run_job_id"]
+      let units = (mergedMetadata->BeltHelpers.Array.lastExn).units
+      let lines = (mergedMetadata->BeltHelpers.Array.lastExn).lines
+      let run_job_id = (mergedMetadata->BeltHelpers.Array.lastExn).run_job_id
       let firstPullX =
         seriesArrays
         ->Belt.Array.map(((_, _, ts, _)) => ts)
@@ -283,7 +287,7 @@ let make = (
           ? labels->Belt.Array.map(x => makeAnnotation(firstPullX, x, repoId, pullNumber))
           : []
       let title = isOverlayed ? overlayPrefix->Belt.Option.getExn : metricName
-      let oldMetrics = mergedMetadata->Belt.Array.every(m => {Some(m["commit"]) != lastCommit})
+      let oldMetrics = mergedMetadata->Belt.Array.every(m => {Some(m.commit) != lastCommit})
       let failedMetric = rows->Belt.Array.every(row =>
         switch row.last_value {
         | Some(value) => Js.Float.isNaN(value)
