@@ -179,7 +179,10 @@ let github_repositories repo =
         try Github.Api.Ref_map.find key title_map with Not_found -> None
       in
       let commit = Github.Api.Commit.id head in
-      let repository = repository ~commit ~github_head:head ?title in
+      let message = Github.Api.Commit.message head in
+      let repository =
+        repository ~commit ~github_head:head ~commit_message:message ?title
+      in
       (* If commit is more than two weeks old, then skip it.*)
       if Github.Api.Commit.committed_date head > stale_timestamp
       then
