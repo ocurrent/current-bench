@@ -29,6 +29,7 @@ depends: [
   "ocluster-worker"  {= "dev"}
   "obuilder"         {= "dev"}
   "obuilder-spec"    {= "dev"}
+  "dockerfile"
   "duration"
   "fpath"
   "logs"
@@ -43,13 +44,13 @@ depends: [
 
 pin-depends: [
   [ "reason.dev" "git+https://github.com/reasonml/reason.git#ccc34729994b4a80d4f6274cc0165cd9113444d6"]
-  [ "current_docker.dev" "git+https://github.com/ocurrent/ocurrent.git#8b6d09b1b09e9967c0b55989ac3fe5d51f625648"]
-  [ "current_github.dev" "git+https://github.com/ocurrent/ocurrent.git#8b6d09b1b09e9967c0b55989ac3fe5d51f625648"]
-  [ "current_git.dev"    "git+https://github.com/ocurrent/ocurrent.git#8b6d09b1b09e9967c0b55989ac3fe5d51f625648"]
-  [ "current.dev"        "git+https://github.com/ocurrent/ocurrent.git#8b6d09b1b09e9967c0b55989ac3fe5d51f625648"]
-  [ "current_rpc.dev"    "git+https://github.com/ocurrent/ocurrent.git#8b6d09b1b09e9967c0b55989ac3fe5d51f625648"]
-  [ "current_slack.dev"  "git+https://github.com/ocurrent/ocurrent.git#8b6d09b1b09e9967c0b55989ac3fe5d51f625648"]
-  [ "current_web.dev"    "git+https://github.com/ocurrent/ocurrent.git#8b6d09b1b09e9967c0b55989ac3fe5d51f625648"]
+  [ "current_docker.dev" "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
+  [ "current_github.dev" "git+https://github.com/punchagan/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
+  [ "current_git.dev"    "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
+  [ "current.dev"        "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
+  [ "current_rpc.dev"    "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
+  [ "current_slack.dev"  "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
+  [ "current_web.dev"    "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
   [ "current_ocluster.dev" "git+https://github.com/art-w/ocluster.git#f5884b0e8454c29c156cda939416436565206e24" ]
   [ "ocluster-api.dev"     "git+https://github.com/art-w/ocluster.git#f5884b0e8454c29c156cda939416436565206e24" ]
   [ "ocluster-worker.dev"  "git+https://github.com/art-w/ocluster.git#f5884b0e8454c29c156cda939416436565206e24" ]

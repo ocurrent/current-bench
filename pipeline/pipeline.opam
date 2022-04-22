@@ -26,6 +26,7 @@ depends: [
   "current_incr" {>= "0.5"}
   "current_ansi"
   "current_ocluster"
+  "dockerfile"
   "duration"
   "fpath"
   "logs"
@@ -37,13 +38,13 @@ depends: [
   "timere-parse"
 ]
 pin-depends: [
-  [ "current.dev"        "git+https://github.com/ocurrent/ocurrent.git#8b6d09b1b09e9967c0b55989ac3fe5d51f625648"]
-  [ "current_docker.dev" "git+https://github.com/ocurrent/ocurrent.git#8b6d09b1b09e9967c0b55989ac3fe5d51f625648"]
-  [ "current_github.dev" "git+https://github.com/ocurrent/ocurrent.git#8b6d09b1b09e9967c0b55989ac3fe5d51f625648"]
-  [ "current_git.dev"    "git+https://github.com/ocurrent/ocurrent.git#8b6d09b1b09e9967c0b55989ac3fe5d51f625648"]
-  [ "current_rpc.dev"    "git+https://github.com/ocurrent/ocurrent.git#8b6d09b1b09e9967c0b55989ac3fe5d51f625648"]
-  [ "current_slack.dev"  "git+https://github.com/ocurrent/ocurrent.git#8b6d09b1b09e9967c0b55989ac3fe5d51f625648"]
-  [ "current_web.dev"    "git+https://github.com/ocurrent/ocurrent.git#8b6d09b1b09e9967c0b55989ac3fe5d51f625648"]
+  [ "current.dev"        "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
+  [ "current_docker.dev" "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
+  [ "current_github.dev" "git+https://github.com/punchagan/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
+  [ "current_git.dev"    "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
+  [ "current_rpc.dev"    "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
+  [ "current_slack.dev"  "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
+  [ "current_web.dev"    "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
 ]
 build: [
   ["dune" "subst"] {pinned}
