@@ -90,13 +90,13 @@ let empty_benchmarks =
       Postgresql.Expect
         (fun ?expect query ->
           let expected =
-            "INSERT INTO benchmark_metadata (run_at, repo_id, commit, branch, \
-             pull_number, pr_title, worker, docker_image) VALUES \
-             (to_timestamp(XXX), 'myowner/myrepo', 'abcd12345', 'main', NULL, \
-             NULL, 'remote', 'external') ON CONFLICT(repo_id, commit, worker, \
-             docker_image) DO UPDATE SET build_job_id = NULL, run_job_id = \
-             NULL, failed = false, cancelled = false, success = false, reason \
-             = '' RETURNING id;"
+            "INSERT INTO benchmark_metadata (run_at, repo_id, commit, \
+             commit_message, branch, pull_number, pr_title, worker, \
+             docker_image) VALUES (to_timestamp(XXX), 'myowner/myrepo', \
+             'abcd12345', NULL, 'main', NULL, NULL, 'remote', 'external') ON \
+             CONFLICT(repo_id, commit, worker, docker_image) DO UPDATE SET \
+             build_job_id = NULL, run_job_id = NULL, failed = false, cancelled \
+             = false, success = false, reason = '' RETURNING id;"
           in
           Alcotest.(check string) "setup metadata" expected query;
           assert (expect = None);
