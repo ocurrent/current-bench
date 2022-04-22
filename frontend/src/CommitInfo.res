@@ -22,6 +22,7 @@ query ($repoId: String!,
     pull_number
     branch
     commit
+    commit_message
     build_job_id
     run_job_id
     failed
@@ -63,9 +64,9 @@ let containerSx = [
 
 let linkStyle = [Sx.text.bold, Sx.text.lg, Sx.p.zero]
 
-let renderExternalLink = (~style=linkStyle, ~href, text) => {
+let renderExternalLink = (~style=linkStyle, ~href, ~title="", text) => {
   let sx = Array.concat(list{Link.sx_base, style})
-  <a target="_blank" className={Sx.make(sx)} href> {Rx.text(text)} </a>
+  <a target="_blank" title className={Sx.make(sx)} href> {Rx.text(text)} </a>
 }
 
 let renderJobIdLink = (jobId, ~text) => {
@@ -74,10 +75,11 @@ let renderJobIdLink = (jobId, ~text) => {
   renderExternalLink(~style, ~href, text)
 }
 
-let renderCommitLink = (~style=linkStyle, repoId, commit) =>
+let renderCommitLink = (~style=linkStyle, repoId, commit, commit_message) =>
   renderExternalLink(
     ~style,
     ~href=AppHelpers.commitUrl(~repoId, commit),
+    ~title=commit_message,
     DataHelpers.trimCommit(commit),
   )
 
@@ -177,7 +179,11 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setL
       <Row sx=containerSx spacing=#between alignY=#top>
         <Column spacing=Sx.sm>
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Last Commit" </Text>
-          {renderCommitLink(repoId, lastCommitInfo.commit)}
+          {renderCommitLink(
+            repoId,
+            lastCommitInfo.commit,
+            Belt.Option.getWithDefault(lastCommitInfo.commit_message, ""),
+          )}
         </Column>
         <Column spacing=Sx.sm>
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]>
@@ -227,7 +233,7 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setL
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.yellow600)]>
             "Metrics for an older commit "
           </Text>
-          {renderCommitLink(~style=[Sx.text.bold, Sx.text.xs, Sx.p.zero], repoId, benchmark)}
+          {renderCommitLink(~style=[Sx.text.bold, Sx.text.xs, Sx.p.zero], repoId, benchmark, "")}
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.yellow600)]>
             " are shown below"
           </Text>

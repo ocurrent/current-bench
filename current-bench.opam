@@ -45,7 +45,7 @@ depends: [
 pin-depends: [
   [ "reason.dev" "git+https://github.com/reasonml/reason.git#ccc34729994b4a80d4f6274cc0165cd9113444d6"]
   [ "current_docker.dev" "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
-  [ "current_github.dev" "git+https://github.com/punchagan/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
+  [ "current_github.dev" "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
   [ "current_git.dev"    "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
   [ "current.dev"        "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
   [ "current_rpc.dev"    "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]

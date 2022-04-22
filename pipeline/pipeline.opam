@@ -40,7 +40,7 @@ depends: [
 pin-depends: [
   [ "current.dev"        "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
   [ "current_docker.dev" "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
-  [ "current_github.dev" "git+https://github.com/punchagan/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
+  [ "current_github.dev" "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
   [ "current_git.dev"    "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
   [ "current_rpc.dev"    "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
   [ "current_slack.dev"  "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
