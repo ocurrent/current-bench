@@ -2603,6 +2603,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "commit_message",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "docker_image",
             "type": {
               "kind": "NON_NULL",
@@ -3299,6 +3311,16 @@
             "description": null
           },
           {
+            "name": "commit_message",
+            "defaultValue": null,
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "String_comparison_exp",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
             "name": "docker_image",
             "defaultValue": null,
             "type": {
@@ -3524,6 +3546,16 @@
             "description": null
           },
           {
+            "name": "commit_message",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
             "name": "docker_image",
             "defaultValue": null,
             "type": {
@@ -3701,6 +3733,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "commit_message",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "docker_image",
             "type": {
               "kind": "SCALAR",
@@ -3831,6 +3875,16 @@
           },
           {
             "name": "commit",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "commit_message",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -3987,6 +4041,18 @@
             "args": [],
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "commit_message",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "args": [],
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "docker_image",
             "type": {
               "kind": "SCALAR",
@@ -4117,6 +4183,16 @@
           },
           {
             "name": "commit",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "commit_message",
             "defaultValue": null,
             "type": {
               "kind": "ENUM",
@@ -4410,6 +4486,16 @@
             "description": null
           },
           {
+            "name": "commit_message",
+            "defaultValue": null,
+            "type": {
+              "kind": "ENUM",
+              "name": "order_by",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
             "name": "docker_image",
             "defaultValue": null,
             "type": {
@@ -4597,6 +4683,12 @@
           {
             "isDeprecated": false,
             "deprecationReason": null,
+            "name": "commit_message",
+            "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
             "name": "docker_image",
             "description": "column name"
           },
@@ -4704,6 +4796,16 @@
           },
           {
             "name": "commit",
+            "defaultValue": null,
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "description": null
+          },
+          {
+            "name": "commit_message",
             "defaultValue": null,
             "type": {
               "kind": "SCALAR",
@@ -5134,6 +5236,12 @@
             "isDeprecated": false,
             "deprecationReason": null,
             "name": "commit",
+            "description": "column name"
+          },
+          {
+            "isDeprecated": false,
+            "deprecationReason": null,
+            "name": "commit_message",
             "description": "column name"
           },
           {

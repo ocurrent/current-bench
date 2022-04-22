@@ -32,6 +32,7 @@
       - run_at
       - repo_id
       - commit
+      - commit_message
       - branch
       - pull_number
       - is_open_pr
