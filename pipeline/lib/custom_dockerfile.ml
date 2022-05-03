@@ -71,14 +71,24 @@ let get_all_files ~repository =
      Cache.get () { Get_files.Key.commit }
 
 let install_opam_dependencies ~files =
-  if not (List.exists (String.ends_with ~suffix:".opam") files)
-  then Dockerfile.empty
-  else
-    let open Dockerfile in
-    copy ~src:[ "--chown=opam:opam ./*.opam" ] ~dst:"./" ()
-    @@ run "opam exec -- opam pin -y -n --with-version=dev ."
-    @@ run "opam exec -- opam install -y --depext-only ."
-    @@ run "opam exec -- opam install -y --deps-only --with-test ."
+  let opam_files = List.filter (String.ends_with ~suffix:".opam") files in
+  let open Dockerfile in
+  match opam_files with
+  | [] -> empty
+  | _ ->
+      let targets =
+        match
+          List.filter (String.ends_with ~suffix:"-bench.opam") opam_files
+        with
+        | [] -> "."
+        | bench_opam ->
+            String.concat " "
+              (List.map (fun filename -> "./" ^ filename) bench_opam)
+      in
+      copy ~src:[ "--chown=opam:opam ./*.opam" ] ~dst:"./" ()
+      @@ run "opam exec -- opam pin -y -n --with-version=dev ."
+      @@ run "opam exec -- opam install -y --depext-only %s" targets
+      @@ run "opam exec -- opam install -y --deps-only --with-test %s" targets
 
 let dockerfile ~base ~files =
   let open Dockerfile in
