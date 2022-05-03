@@ -123,6 +123,7 @@ let mark_closed_pull_requests ~open_pulls (db : Postgresql.connection) =
            Fmt.str {|(repo_id = '%s' AND pull_number = %d)|} repo_id pull_number)
          open_pulls
   in
+  let open_pr_query = if open_pr_query <> "" then open_pr_query else "FALSE" in
   let query =
     Fmt.str
       {|UPDATE benchmark_metadata
