@@ -1,3 +1,4 @@
+open Bechamel
 module C = Current_bench_json
 module L = C.Latest
 module J = Yojson.Safe
@@ -83,3 +84,55 @@ module Remote = struct
     | `Bool false, `String msg -> Lwt.fail_with msg
     | _ -> Lwt.fail_with (J.to_string json)
 end
+
+let pr_bench value =
+  Format.printf
+    {|{"results": [{"name": "%s", "metrics": [{"name": "%s", "value": %f, "units": "ms"}]}]}@.|}
+    value
+
+let time (f : unit -> 'a) =
+  let t = Sys.time () in
+  let _ = f () in
+  let timing = Sys.time () -. t in
+  timing *. 1000.
+
+let test_bench t = Test.make ~name:"" (Staged.stage @@ t)
+
+let benchmark quota t name1 name2 =
+  let ols =
+    Analyze.ols ~bootstrap:0 ~r_square:true ~predictors:Measure.[| run |]
+  in
+  let instances = Toolkit.Instance.[ monotonic_clock ] in
+  let cfg = Benchmark.cfg ~start:1000 ~quota:(Time.second quota) () in
+  let raw_results =
+    Benchmark.all cfg instances
+      (Test.make_grouped ~name:"benchmark" ~fmt:"%s %s" [ test_bench t ])
+  in
+  let results =
+    List.map (fun instance -> Analyze.all ols instance raw_results) instances
+  in
+  let results = Analyze.merge ols instances results in
+  let timings = Hashtbl.find results "monotonic-clock" in
+  Hashtbl.iter
+    (fun _ v ->
+      match Analyze.OLS.estimates v with
+      | None -> ()
+      | Some ts ->
+          let t = List.hd ts in
+          pr_bench name1 name2 (t /. 1000000.))
+    timings;
+  ()
+
+let time_loop ?(quota = 1.) name1 name2 t =
+  let t_time = Sys.time () in
+  while Sys.time () -. t_time < quota do
+    let timing = time t in
+    pr_bench name1 name2 timing
+  done
+
+let bench ?(quota = 1.) name1 name2 t =
+  let timing = time t in
+  if timing > 0.1 then (
+    pr_bench name1 name2 timing;
+    time_loop ~quota name1 name2 t)
+  else benchmark quota t name1 name2
