@@ -12,6 +12,7 @@ depends: [
   "yojson"
   "cohttp-lwt-unix"
   "odoc" {with-doc}
+  "bechamel" {with-test}
 ]
 
 build: [

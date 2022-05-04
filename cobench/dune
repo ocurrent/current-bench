@@ -1,6 +1,6 @@
 (library
  (public_name cobench)
- (libraries lwt cohttp-lwt-unix yojson ptime))
+ (libraries lwt cohttp-lwt-unix yojson ptime ptime.clock.os bechamel eqaf))
 
 (rule
  (copy ../pipeline/lib/current_bench_json.ml current_bench_json.ml))

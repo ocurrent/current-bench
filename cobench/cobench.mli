@@ -45,3 +45,5 @@ module Remote : sig
     t ->
     unit Lwt.t
 end
+
+val bench : ?quota:float -> string -> string -> (unit -> 'a) -> unit
