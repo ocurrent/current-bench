@@ -139,3 +139,53 @@ let mark_closed_pull_requests ~open_pulls (db : Postgresql.connection) =
 
 let mark_closed_pull_requests ~open_pulls ~conninfo =
   Db_util.with_db ~conninfo (mark_closed_pull_requests ~open_pulls)
+
+let parse_result result =
+  Array.map
+    (function
+      | [| commit; bench_name; test_name; metrics |] ->
+          ( commit,
+            bench_name,
+            test_name,
+            metrics
+            |> Yojson.Safe.from_string
+            |> Current_bench_json.Latest.metrics_of_json [] )
+      | _ -> failwith "Unexpected format of query result")
+    result
+
+let get_main_branch_metrics ~repository ~worker ~docker_image
+    (db : Postgresql.connection) =
+  let repo_id = Db_util.string @@ Repository.info repository
+  and commit = Db_util.string @@ Repository.commit_hash repository
+  and worker = Db_util.string @@ worker
+  and docker_image = Db_util.string @@ docker_image in
+  let main_commit =
+    Fmt.str
+      {|(SELECT commit FROM benchmarks
+       WHERE pull_number is NULL AND repo_id=%s AND worker=%s AND docker_image=%s
+       ORDER BY run_at DESC LIMIT 1)
+       |}
+      repo_id worker docker_image
+  in
+  let query_tmpl =
+    Fmt.str
+      {|SELECT commit, benchmark_name, test_name, metrics FROM benchmarks
+       WHERE commit = %s AND repo_id=%s AND worker=%s AND docker_image=%s;
+       |}
+  in
+  let query = query_tmpl main_commit repo_id worker docker_image in
+  let result_main = db#exec query in
+  let query = query_tmpl commit repo_id worker docker_image in
+  let result = db#exec query in
+  match (result_main#get_all, result#get_all) with
+  | result_main, result ->
+      (Some (parse_result result_main), Some (parse_result result))
+  | exception exn ->
+      Logs.err (fun log ->
+          log "Could not fetch metrics for comparison %s:%s\n%a" repo_id commit
+            Fmt.exn exn);
+      raise exn
+
+let get_main_branch_metrics ~conninfo ~repository ~worker ~docker_image =
+  Db_util.with_db ~conninfo
+    (get_main_branch_metrics ~repository ~worker ~docker_image)

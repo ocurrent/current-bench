@@ -11,6 +11,7 @@ type repo = {
   image : string; [@default default_docker]
   schedule : string option; [@default None]
   build_args : string list; [@default []]
+  notify_github : bool; [@default false]
 }
 [@@deriving yojson]
 
@@ -95,6 +96,7 @@ let find t name =
           image = default_docker;
           schedule = None;
           build_args = [];
+          notify_github = false;
         };
       ]
   | configs -> configs
