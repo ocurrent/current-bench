@@ -137,7 +137,11 @@ let pipeline ~config ~ocluster ~conninfo ~repository env =
     Config.slack_log ~config ~key:(key ^ " worker")
     @@ Current.map (fun () -> "(ok)")
     @@ ocluster_worker
-  and+ () = Config.slack_log ~config ~key:(key ^ " jsons") @@ output in
+  and+ () = Config.slack_log ~config ~key:(key ^ " jsons") @@ output
+  and+ _ =
+    Metric.notify_metric_changes ~conninfo ~repository ~worker ~docker_image
+      ~config output
+  in
   ()
 
 let pipeline ~config ~ocluster ~conninfo ~repository =
