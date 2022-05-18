@@ -96,9 +96,9 @@ let time (f : unit -> 'a) =
   let timing = Sys.time () -. t in
   timing *. 1000.
 
-let test_bench t = Test.make ~name:"" (Staged.stage @@ t)
+let test_bench f = Test.make ~name:"" (Staged.stage @@ f)
 
-let benchmark quota t name1 name2 =
+let benchmark quota f test_name metric_name =
   let ols =
     Analyze.ols ~bootstrap:0 ~r_square:true ~predictors:Measure.[| run |]
   in
@@ -106,7 +106,7 @@ let benchmark quota t name1 name2 =
   let cfg = Benchmark.cfg ~start:1000 ~quota:(Time.second quota) () in
   let raw_results =
     Benchmark.all cfg instances
-      (Test.make_grouped ~name:"benchmark" ~fmt:"%s %s" [ test_bench t ])
+      (Test.make_grouped ~name:"benchmark" ~fmt:"%s %s" [ test_bench f ])
   in
   let results =
     List.map (fun instance -> Analyze.all ols instance raw_results) instances
@@ -119,20 +119,20 @@ let benchmark quota t name1 name2 =
       | None -> ()
       | Some ts ->
           let t = List.hd ts in
-          pr_bench name1 name2 (t /. 1000000.))
+          pr_bench test_name metric_name (t /. 1000000.))
     timings;
   ()
 
-let time_loop ?(quota = 1.) name1 name2 t =
+let time_loop ?(quota = 1.) initial_timing test_name metric_name f =
   let t_time = Sys.time () in
-  while Sys.time () -. t_time < quota do
-    let timing = time t in
-    pr_bench name1 name2 timing
+  while Sys.time () -. t_time +. initial_timing < quota do
+    let timing = time f in
+    pr_bench test_name metric_name timing
   done
 
-let bench ?(quota = 1.) name1 name2 t =
-  let timing = time t in
+let bench ?(quota = 1.) test_name metric_name f =
+  let timing = time f in
   if timing > 0.1 then (
-    pr_bench name1 name2 timing;
-    time_loop ~quota name1 name2 t)
-  else benchmark quota t name1 name2
+    pr_bench test_name metric_name timing;
+    time_loop ~quota timing test_name metric_name f)
+  else benchmark quota f test_name metric_name
