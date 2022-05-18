@@ -91,10 +91,9 @@ let pr_bench value =
     value
 
 let time (f : unit -> 'a) =
-  let t = Sys.time () in
+  let t = Mtime_clock.counter () in
   let _ = f () in
-  let timing = Sys.time () -. t in
-  timing *. 1000.
+  Mtime.Span.to_ms (Mtime_clock.count t)
 
 let test_bench f = Test.make ~name:"" (Staged.stage @@ f)
 
@@ -119,20 +118,22 @@ let benchmark quota f test_name metric_name =
       | None -> ()
       | Some ts ->
           let t = List.hd ts in
-          pr_bench test_name metric_name (t /. 1000000.))
+          pr_bench test_name metric_name (t /. 1_000_000.))
     timings;
   ()
 
-let time_loop ?(quota = 1.) initial_timing test_name metric_name f =
+let time_loop ?(quota = 1.) test_name metric_name f =
   let t_time = Sys.time () in
-  while Sys.time () -. t_time +. initial_timing < quota do
+  while Sys.time () -. t_time < quota do
     let timing = time f in
     pr_bench test_name metric_name timing
   done
 
 let bench ?(quota = 1.) test_name metric_name f =
   let timing = time f in
-  if timing > 0.1 then (
+  let quota_timing = quota -. timing in
+  if timing > 0.1
+  then (
     pr_bench test_name metric_name timing;
-    time_loop ~quota timing test_name metric_name f)
-  else benchmark quota f test_name metric_name
+    time_loop ~quota:quota_timing test_name metric_name f)
+  else benchmark quota_timing f test_name metric_name
