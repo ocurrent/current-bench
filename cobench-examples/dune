@@ -3,9 +3,5 @@
  (modules example)
  (libraries cobench))
 
-; (library
-;  (name cobench)
-;  (modules cobench))
-
 (rule
  (copy ../pipeline/lib/current_bench_json.ml current_bench_json.ml))

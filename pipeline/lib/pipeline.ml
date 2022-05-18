@@ -111,7 +111,8 @@ let pipeline ~config ~ocluster ~conninfo ~repository env =
       v ~repo:"git://pipeline/" ~gref:(gref commit) ~hash:(hash commit)
   in
   let ocluster_worker =
-    Current_ocluster.build ~pool:worker ~src:(Current.return [ src ])
+    Current_ocluster.build ~pool:worker 
+      ~src:(Current.return [ src ])
       ~options:docker_options ocluster dockerfile
   in
   let worker_job_id = get_job_id ocluster_worker in
