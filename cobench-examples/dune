@@ -2,6 +2,3 @@
  (name example)
  (modules example)
  (libraries cobench))
-
-(rule
- (copy ../pipeline/lib/current_bench_json.ml current_bench_json.ml))
