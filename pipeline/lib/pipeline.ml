@@ -167,7 +167,6 @@ let github_repositories repo =
        Refs.refs api repo
   in
   let default_branch = Github.Api.default_ref refs in
-  let stale_timestamp = Util.stale_timestamp () in
   let default_branch_name = Util.get_branch_name default_branch in
   let ref_map = Github.Api.all_refs refs in
   let title_map = refs_with_title in
@@ -183,17 +182,26 @@ let github_repositories repo =
       let repository =
         repository ~commit ~github_head:head ~commit_message:message ?title
       in
-      (* If commit is more than two weeks old, then skip it.*)
-      if Github.Api.Commit.committed_date head > stale_timestamp
-      then
-        match key with
-        (* Skip all branches other than the default branch, and check PRs *)
-        | `Ref branch when branch = default_branch ->
-            repository ~branch:default_branch_name () :: lst
-        | `Ref _ -> lst
-        | `PR pull_number -> repository ~pull_number () :: lst
-      else lst)
+      match key with
+      (* Skip all branches other than the default branch, and check PRs *)
+      | `Ref branch when branch = default_branch ->
+          repository ~branch:default_branch_name () :: lst
+      | `Ref _ -> lst
+      | `PR pull_number -> repository ~pull_number () :: lst)
     ref_map []
+
+let filter_stale_repositories repos =
+  let stale_timestamp = Util.stale_timestamp () in
+  List.filter_map
+    (fun repo ->
+      let head = Repository.github_head repo in
+      (* If commit is more than two weeks old, then skip it.*)
+      match head with
+      | Some head when Github.Api.Commit.committed_date head > stale_timestamp
+        ->
+          Some repo
+      | _ -> None)
+    repos
 
 let repositories = function
   | Source.Local path ->
@@ -248,7 +256,11 @@ let pull_requests_from_repositories repos =
 
 let process_pipeline ~config ~ocluster ~conninfo ~sources () =
   let repos = repositories sources in
+  let fresh_repos = Current.map filter_stale_repositories repos in
   let+ () =
+    let+ open_pulls = Current.map pull_requests_from_repositories repos in
+    Storage.mark_closed_pull_requests ~open_pulls ~conninfo
+  and+ () =
     Config.slack_log ~config ~key:"*repositories outcome*"
     @@ Current.map (fun () -> "ALL GOOD")
     @@ Current.list_iter ~collapse_key:"pipeline"
@@ -256,13 +268,10 @@ let process_pipeline ~config ~ocluster ~conninfo ~sources () =
          (fun repo ->
            let* repo in
            pipeline ~config ~ocluster ~conninfo repo)
-         repos
+         fresh_repos
   and+ () =
     Config.slack_log ~config ~key:"*repositories*"
-      (Current.map string_of_repositories repos)
-  and+ () =
-    let+ open_pulls = Current.map pull_requests_from_repositories repos in
-    Storage.mark_closed_pull_requests ~open_pulls ~conninfo
+      (Current.map string_of_repositories fresh_repos)
   in
   ()
 
