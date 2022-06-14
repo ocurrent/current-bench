@@ -200,6 +200,7 @@ let filter_stale_repositories repos =
       | Some head when Github.Api.Commit.committed_date head > stale_timestamp
         ->
           Some repo
+      | None when Repository.info repo = "local/local" -> Some repo
       | _ -> None)
     repos
 
