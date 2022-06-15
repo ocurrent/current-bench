@@ -21,45 +21,126 @@ let read ~start path =
   let len = min max_log_chunk_size (len - start) in
   (really_input_string ch (Int64.to_int len), start + len)
 
+let is_whitespace = function '\n' | ' ' | '\t' | '\r' -> true | _ -> false
+let is_numeric = function '0' .. '9' | '-' | '.' -> true | _ -> false
+
+type automata =
+  (* | Init Waiting for a open curly brace to start json identification
+   *        Not an actual value since the empty list does this job *)
+  | BeforeID  (** Curly brace received, waiting for a string id *)
+  | InArray  (** Waiting for a value or a ] *)
+  | InString  (** Inside the identifier: "foo" *)
+  | InNumber  (** Parsing the full number *)
+  | Escaped  (** Right after a \ inside a string *)
+  | AfterID  (** After string, waiting for a colon *)
+  | BeforeValue  (** After colon, waiting for any value on the right side *)
+  | AfterValue  (** After value, waiting for a comma or closing bracket *)
+  | BoolT  (** Ugly but seems necessary *)
+  | BoolR
+  | BoolU
+  | BoolF
+  | BoolA
+  | BoolL
+  | BoolS
+  | NullN
+  | NullU
+  | NullL
+
 type json_parser = {
   current : Buffer.t;
-  stack : char list;
+  stack : automata list;
   lines : int;
   start_line : int;
+  carriage_seen : bool;
 }
 
-let json_step stack chr =
-  match (stack, chr) with
-  | [], '\n' -> [ '\n' ]
-  | [], '\r' -> [ '\r' ]
-  | [], _ -> []
-  | [ '\r' ], '\r' -> [ '\r' ]
-  | [ '\r' ], '\n' -> [ '\n' ]
-  | [ '\r' ], '{' -> [ '{' ]
-  | [ '\r' ], _ -> []
-  | [ '\n' ], '\n' -> [ '\n' ]
-  | [ '\n' ], '{' -> [ '{' ]
-  | [ '\n' ], _ -> []
-  | '\\' :: stack, _ -> stack
-  | '{' :: stack, '}' -> stack
-  | '[' :: stack, ']' -> stack
-  | '"' :: stack, '"' -> stack
-  | '"' :: stack, '\\' -> '\\' :: stack
-  | _, (('{' | '[' | '"') as chr) -> chr :: stack
-  | _ -> stack
+let json_step_aux stack chr =
+  if is_whitespace chr
+  then stack
+  else
+    match (stack, chr) with
+    (* Initial state *)
+    | [], '{' -> [ BeforeID ]
+    | [], _ -> []
+    (* Brace open *)
+    | BeforeID :: _, '"' -> InString :: stack
+    | BeforeID :: BeforeValue :: st, '}' -> AfterValue :: st
+    | BeforeID :: st, '}' -> st
+    | BeforeID :: _, _ -> [] (* Error case *)
+    (* Inside string *)
+    | InString :: _, '\\' -> Escaped :: stack
+    | Escaped :: st, _ -> st
+    | InString :: BeforeID :: st, '"' -> AfterID :: st
+    | InString :: BeforeValue :: st, '"' -> AfterValue :: st
+    | InString :: _, _ -> stack
+    (* After string *)
+    | AfterID :: st, ':' -> BeforeValue :: st
+    | AfterID :: _, _ -> [] (* Error case *)
+    (* After value *)
+    | AfterValue :: InArray :: st, ']' -> AfterValue :: st
+    | AfterValue :: InArray :: st, ',' -> BeforeValue :: InArray :: st
+    | AfterValue :: st, '}' -> st
+    | AfterValue :: st, ',' -> BeforeID :: st
+    | AfterValue :: _, _ -> [] (* Error case *)
+    (* Before value *)
+    | BeforeValue :: _, '"' -> InString :: stack
+    | BeforeValue :: _, '{' -> BeforeID :: stack
+    (*     Booleans + null *)
+    | BeforeValue :: st, 't' -> BoolT :: st
+    | BoolT :: st, 'r' -> BoolR :: st
+    | BoolR :: st, 'u' -> BoolU :: st
+    | BoolU :: st, 'e' -> AfterValue :: st
+    | BeforeValue :: st, 'f' -> BoolF :: st
+    | BoolF :: st, 'a' -> BoolA :: st
+    | BoolA :: st, 'l' -> BoolL :: st
+    | BoolL :: st, 's' -> BoolS :: st
+    | BoolS :: st, 'e' -> AfterValue :: st
+    | BeforeValue :: st, 'n' -> NullN :: st
+    | NullN :: st, 'u' -> NullU :: st
+    | NullU :: st, 'l' -> NullL :: st
+    | NullL :: st, 'l' -> AfterValue :: st
+    | BoolT :: _, _
+    | BoolR :: _, _
+    | BoolU :: _, _
+    | BoolF :: _, _
+    | BoolA :: _, _
+    | BoolL :: _, _
+    | BoolS :: _, _
+    | NullN :: _, _
+    | NullU :: _, _
+    | NullL :: _, _ ->
+        [] (* Error case*)
+    (*     Arrays *)
+    | BeforeValue :: st, '[' -> BeforeValue :: InArray :: st
+    (* Impossible case *)
+    | InArray :: _, _ -> failwith "unreachable"
+    (*     Numbers *)
+    | BeforeValue :: st, chr when is_numeric chr -> InNumber :: st
+    | InNumber :: _, chr when is_numeric chr -> stack
+    | InNumber :: InArray :: st, ']' -> AfterValue :: st
+    | InNumber :: InArray :: st, ',' -> BeforeValue :: InArray :: st
+    | InNumber :: st, '}' -> st
+    | InNumber :: st, ',' -> AfterValue :: st
+    | InNumber :: _, _ -> [] (* Error case *)
+    | BeforeValue :: _, _ -> [] (* Error case*)
 
 let make_json_parser () =
-  { current = Buffer.create 16; stack = [ '\n' ]; lines = 1; start_line = 1 }
+  {
+    current = Buffer.create 16;
+    stack = [];
+    lines = 1;
+    start_line = 1;
+    carriage_seen = false;
+  }
 
 let json_step state chr =
   let state =
-    match chr with
-    | '\r' -> { state with lines = state.lines + 1 }
-    | '\n' when not (state.stack = [ '\r' ]) ->
-        { state with lines = state.lines + 1 }
-    | _ -> state
+    match (chr, state.carriage_seen) with
+    | '\r', _ -> { state with lines = state.lines + 1; carriage_seen = true }
+    | '\n', false -> { state with lines = state.lines + 1 }
+    | _ -> { state with carriage_seen = false }
   in
-  match json_step state.stack chr with
+  match json_step_aux state.stack chr with
   | [] ->
       if Buffer.length state.current = 0
       then (None, { state with stack = [] })
@@ -70,10 +151,10 @@ let json_step state chr =
         ( Some str,
           { st with lines = state.lines; start_line = state.start_line } ))
   | hd :: _ as stack ->
-      if (chr <> '\n' && chr <> '\r') || hd = '"'
+      if (chr <> '\n' && chr <> '\r') || hd = InString
       then Buffer.add_char state.current chr;
       let start_line =
-        if state.stack = [] || state.stack = [ '\r' ]
+        if state.stack = [] (* || state.stack = [ '\r' ] *)
         then state.lines
         else state.start_line
       in
@@ -90,6 +171,11 @@ let json_steps (parsed, state) str =
       in
       (parsed, state))
     (parsed, state) str
+
+let json_full str =
+  let state = make_json_parser () in
+  let parsed, _ = json_steps ([], state) str in
+  parsed
 
 let job_output_stream job_id =
   match Current.Job.log_path job_id with
