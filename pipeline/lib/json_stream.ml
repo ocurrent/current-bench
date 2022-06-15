@@ -25,8 +25,6 @@ let is_whitespace = function '\n' | ' ' | '\t' | '\r' -> true | _ -> false
 let is_numeric = function '0' .. '9' | '-' | '.' -> true | _ -> false
 
 type automata =
-  (* | Init Waiting for a open curly brace to start json identification
-   *        Not an actual value since the empty list does this job *)
   | BeforeID  (** Curly brace received, waiting for a string id *)
   | InArray  (** Waiting for a value or a ] *)
   | InString  (** Inside the identifier: "foo" *)
@@ -46,6 +44,9 @@ type automata =
   | NullU
   | NullL
 
+exception Finished_JSON
+exception Invalid_JSON
+
 type json_parser = {
   current : Buffer.t;
   stack : automata list;
@@ -62,29 +63,29 @@ let json_step_aux stack chr =
     (* Initial state *)
     | [], '{' -> [ BeforeID ]
     | [], _ -> []
-    (* Brace open *)
-    | BeforeID :: _, '"' -> InString :: stack
-    | BeforeID :: BeforeValue :: st, '}' -> AfterValue :: st
+    (* Bracket open or after a comma *)
+    | BeforeID :: st, '"' -> InString :: AfterID :: st
+    | [ BeforeID ], '}' -> raise Finished_JSON
     | BeforeID :: st, '}' -> st
-    | BeforeID :: _, _ -> [] (* Error case *)
+    | BeforeID :: _, _ -> raise Invalid_JSON
     (* Inside string *)
     | InString :: _, '\\' -> Escaped :: stack
     | Escaped :: st, _ -> st
-    | InString :: BeforeID :: st, '"' -> AfterID :: st
-    | InString :: BeforeValue :: st, '"' -> AfterValue :: st
+    | InString :: st, '"' -> st
     | InString :: _, _ -> stack
     (* After string *)
     | AfterID :: st, ':' -> BeforeValue :: st
-    | AfterID :: _, _ -> [] (* Error case *)
+    | AfterID :: _, _ -> raise Invalid_JSON
     (* After value *)
     | AfterValue :: InArray :: st, ']' -> AfterValue :: st
     | AfterValue :: InArray :: st, ',' -> BeforeValue :: InArray :: st
+    | [ AfterValue ], '}' -> raise Finished_JSON
     | AfterValue :: st, '}' -> st
     | AfterValue :: st, ',' -> BeforeID :: st
-    | AfterValue :: _, _ -> [] (* Error case *)
+    | AfterValue :: _, _ -> raise Invalid_JSON
     (* Before value *)
-    | BeforeValue :: _, '"' -> InString :: stack
-    | BeforeValue :: _, '{' -> BeforeID :: stack
+    | BeforeValue :: st, '"' -> InString :: AfterValue :: st
+    | BeforeValue :: st, '{' -> BeforeID :: AfterValue :: st
     (*     Booleans + null *)
     | BeforeValue :: st, 't' -> BoolT :: st
     | BoolT :: st, 'r' -> BoolR :: st
@@ -109,27 +110,28 @@ let json_step_aux stack chr =
     | NullN :: _, _
     | NullU :: _, _
     | NullL :: _, _ ->
-        [] (* Error case*)
+        raise Invalid_JSON
     (*     Arrays *)
     | BeforeValue :: st, '[' -> BeforeValue :: InArray :: st
-    (* Impossible case *)
-    | InArray :: _, _ -> failwith "unreachable"
+    (*     Impossible case *)
+    | InArray :: _, _ -> failwith "InArray shouldn't be on top of the stack"
     (*     Numbers *)
     | BeforeValue :: st, chr when is_numeric chr -> InNumber :: st
     | InNumber :: _, chr when is_numeric chr -> stack
     | InNumber :: InArray :: st, ']' -> AfterValue :: st
     | InNumber :: InArray :: st, ',' -> BeforeValue :: InArray :: st
+    | [ InNumber ], '}' -> raise Finished_JSON
     | InNumber :: st, '}' -> st
     | InNumber :: st, ',' -> AfterValue :: st
-    | InNumber :: _, _ -> [] (* Error case *)
-    | BeforeValue :: _, _ -> [] (* Error case*)
+    | InNumber :: _, _ -> raise Invalid_JSON
+    | BeforeValue :: _, _ -> raise Invalid_JSON
 
-let make_json_parser () =
+let make_json_parser ?(lines = 1) ?(start_line = 1) () =
   {
     current = Buffer.create 16;
     stack = [];
-    lines = 1;
-    start_line = 1;
+    lines;
+    start_line;
     carriage_seen = false;
   }
 
@@ -141,24 +143,18 @@ let json_step state chr =
     | _ -> { state with carriage_seen = false }
   in
   match json_step_aux state.stack chr with
-  | [] ->
-      if Buffer.length state.current = 0
-      then (None, { state with stack = [] })
-      else (
-        Buffer.add_char state.current chr;
-        let str = Buffer.contents state.current in
-        let st = make_json_parser () in
-        ( Some str,
-          { st with lines = state.lines; start_line = state.start_line } ))
+  | [] -> (None, { state with start_line = state.lines; stack = [] })
+  | exception Invalid_JSON ->
+      (None, make_json_parser ~lines:state.lines ~start_line:state.start_line ())
+  | exception Finished_JSON ->
+      Buffer.add_char state.current chr;
+      let str = Buffer.contents state.current in
+      ( Some str,
+        make_json_parser ~lines:state.lines ~start_line:state.start_line () )
   | hd :: _ as stack ->
-      if (chr <> '\n' && chr <> '\r') || hd = InString
+      if hd = InString || (chr <> '\n' && chr <> '\r')
       then Buffer.add_char state.current chr;
-      let start_line =
-        if state.stack = [] (* || state.stack = [ '\r' ] *)
-        then state.lines
-        else state.start_line
-      in
-      (None, { state with start_line; stack })
+      (None, { state with stack })
 
 let json_steps (parsed, state) str =
   String.fold_left
