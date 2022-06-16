@@ -73,4 +73,56 @@ let parse_wrong_longer =
   Alcotest.(check (list parsed_location)) "jsons" expect parsed;
   ()
 
-let tests = [ parse_one; parse_two; parse_wrong; parse_wrong_longer ]
+let parse_real_log =
+  Alcotest_lwt.test_case_sync "parse_real_log" `Quick @@ fun () ->
+  let str =
+    {|> Start benchmarks on [fn¹].
+    [                                        ] 0%
+    [########################################] 100%
+    > Merge results.
+    > Start linear regression.
+    Eqaf.find_uint8: 23845.568626 ns/run.
+    String.index: 78.197706 ns/run.
+    B¹ = -7.603465, B² = 11355.394897.
+    1 trial(s) for Eqaf.find_uint8.
+    {"results": [{"name": "eqaf", "metrics": [{"name": "find_uint8", "value": 1}]}]}
+    > Start to test Eqaf.divmod (B¹).
+    > Start benchmarks on [fn⁰].
+    [                                        ] 0%
+    [########################################] 100%
+    > Start benchmarks on [fn¹].
+    [                                        ] 0%
+    [########################################] 100%
+    > Merge results.
+    > Start linear regression.
+    > Start to test Int32.unsigned_div,Int32.unsigned_rem (B²).
+    > Start benchmarks on [fn⁰].
+    [                                        ] 0%
+    [########################################] 100%
+    > Start benchmarks on [fn¹].
+    [                                        ] 0%
+    [########################################] 100%
+    > Merge results.
+    > Start linear regression.
+    Eqaf.divmod: 130.514954 ns/run.
+    Int32.unsigned_div,Int32.unsigned_rem: 53.477230 ns/run.
+    B¹ = 0.014185, B² = -0.136687.
+    1 trial(s) for Eqaf.divmod.
+    {"results": [{"name": "eqaf", "metrics": [{"name": "divmod", "value": 1}]}]}
+    Job succeeded
+    2022-05-03 10:02.42: Job succeeded|}
+  in
+  let parsed = Json_stream.json_full str in
+  let expect =
+    [
+      ( {|{"results": [{"name": "eqaf", "metrics": [{"name": "divmod", "value": 1}]}]}|},
+        (33, 33) );
+      ( {|{"results": [{"name": "eqaf", "metrics": [{"name": "find_uint8", "value": 1}]}]}|},
+        (10, 10) );
+    ]
+  in
+  Alcotest.(check (list parsed_location)) "jsons" expect parsed;
+  ()
+
+let tests =
+  [ parse_one; parse_two; parse_wrong; parse_wrong_longer; parse_real_log ]
