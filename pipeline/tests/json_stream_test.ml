@@ -56,4 +56,21 @@ let parse_wrong =
   Alcotest.(check (list parsed_location)) "jsons" expect parsed;
   ()
 
-let tests = [ parse_one; parse_two; parse_wrong ]
+let parse_wrong_longer =
+  Alcotest_lwt.test_case_sync "parse_wrong_longer" `Quick @@ fun () ->
+  let str =
+    "{\n\
+    \      s =\n\
+    \        (module struct\n\
+    \          type t = int\n\
+    \    \n\
+    \          let x = 1\n\
+    \        end);\n\
+    \    }"
+  in
+  let parsed = Json_stream.json_full str in
+  let expect = [] in
+  Alcotest.(check (list parsed_location)) "jsons" expect parsed;
+  ()
+
+let tests = [ parse_one; parse_two; parse_wrong; parse_wrong_longer ]
