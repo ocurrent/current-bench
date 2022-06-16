@@ -49,7 +49,7 @@ let parse_two =
   ()
 
 let parse_wrong =
-  Alcotest_lwt.test_case_sync "parse wrong" `Quick @@ fun () ->
+  Alcotest_lwt.test_case_sync "parse json: invalid" `Quick @@ fun () ->
   let str = "{{{ this isn't json }}}" in
   let parsed = Json_stream.json_full str in
   let expect = [] in
@@ -57,7 +57,7 @@ let parse_wrong =
   ()
 
 let parse_wrong_longer =
-  Alcotest_lwt.test_case_sync "parse_wrong_longer" `Quick @@ fun () ->
+  Alcotest_lwt.test_case_sync "parse json: longer invalid" `Quick @@ fun () ->
   let str =
     {|{
       s =
@@ -74,7 +74,7 @@ let parse_wrong_longer =
   ()
 
 let parse_real_log =
-  Alcotest_lwt.test_case_sync "parse_real_log" `Quick @@ fun () ->
+  Alcotest_lwt.test_case_sync "parse json: real log" `Quick @@ fun () ->
   let str =
     {|> Start benchmarks on [fn¹].
     [                                        ] 0%
@@ -124,5 +124,24 @@ let parse_real_log =
   Alcotest.(check (list parsed_location)) "jsons" expect parsed;
   ()
 
+let parse_wrong_then_right =
+  Alcotest_lwt.test_case_sync "parse json: valid in invalid" `Quick @@ fun () ->
+  let str =
+    {|{"Hey now",
+    "you're an all star", {"get your game on": "go play"}
+    }|}
+  in
+  let parsed = Json_stream.json_full str in
+  let expect = [ ({|{"get your game on": "go play"}|}, (2, 2)) ] in
+  Alcotest.(check (list parsed_location)) "jsons" expect parsed;
+  ()
+
 let tests =
-  [ parse_one; parse_two; parse_wrong; parse_wrong_longer; parse_real_log ]
+  [
+    parse_one;
+    parse_two;
+    parse_wrong;
+    parse_wrong_longer;
+    parse_real_log;
+    parse_wrong_then_right;
+  ]
