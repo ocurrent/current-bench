@@ -59,14 +59,14 @@ let parse_wrong =
 let parse_wrong_longer =
   Alcotest_lwt.test_case_sync "parse_wrong_longer" `Quick @@ fun () ->
   let str =
-    "{\n\
-    \      s =\n\
-    \        (module struct\n\
-    \          type t = int\n\
-    \    \n\
-    \          let x = 1\n\
-    \        end);\n\
-    \    }"
+    {|{
+      s =
+        (module struct
+          type t = int
+    
+          let x = 1
+        end);
+    }|}
   in
   let parsed = Json_stream.json_full str in
   let expect = [] in
