@@ -34,6 +34,7 @@ depends: [
   "fpath"
   "logs"
   "postgresql"
+  "prometheus-app" {= "1.1"}
   "rresult"
   "omigrate"
   "timere"
