@@ -7,6 +7,7 @@ type t = {
   pull_number : int option;
   branch : string option;
   github_head : Current_github.Api.Commit.t option;
+  github_api : Current_github.Api.t option;
   title : string option;
 }
 
@@ -16,7 +17,7 @@ let default_src ?src commit =
   | Some src -> src
 
 let v ~owner ~name ?src ~commit ?commit_message ?pull_number ?branch
-    ?github_head ?title () =
+    ?github_head ?github_api ?title () =
   {
     owner;
     name;
@@ -25,6 +26,7 @@ let v ~owner ~name ?src ~commit ?commit_message ?pull_number ?branch
     pull_number;
     branch;
     github_head;
+    github_api;
     src = default_src ?src commit;
     title;
   }
@@ -39,6 +41,7 @@ let pull_number t = t.pull_number
 let title t = t.title
 let branch t = t.branch
 let github_head t = t.github_head
+let github_api t = t.github_api
 let id t = (t.owner, t.name)
 let info t = t.owner ^ "/" ^ t.name
 
