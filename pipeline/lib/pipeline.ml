@@ -170,8 +170,10 @@ let github_repositories repo =
   let default_branch_name = Util.get_branch_name default_branch in
   let ref_map = Github.Api.all_refs refs in
   let title_map = refs_with_title in
-  let+ _, repo = repo in
-  let repository = Repository.v ~name:repo.name ~owner:repo.owner in
+  let+ api, repo = repo in
+  let repository =
+    Repository.v ~name:repo.name ~owner:repo.owner ~github_api:api
+  in
   Github.Api.Ref_map.fold
     (fun key head lst ->
       let title =
