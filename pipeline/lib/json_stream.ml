@@ -122,7 +122,7 @@ let json_step_aux stack chr =
     | InNumber :: InArray :: st, ',' -> BeforeValue :: InArray :: st
     | [ InNumber ], '}' -> raise Finished_JSON
     | InNumber :: st, '}' -> st
-    | InNumber :: st, ',' -> AfterValue :: st
+    | InNumber :: st, ',' -> BeforeID :: st
     | InNumber :: _, _ -> raise Invalid_JSON
     | BeforeValue :: _, _ -> raise Invalid_JSON
 
