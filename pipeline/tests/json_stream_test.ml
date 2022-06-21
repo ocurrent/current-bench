@@ -148,6 +148,37 @@ let parse_wrong_then_right =
   Alcotest.(check (list parsed_location)) "jsons" expect parsed;
   ()
 
+let exec_command cmd =
+  let in_chan = Unix.open_process_in cmd in
+  let rec loop buffer =
+    try
+      let line = input_line in_chan in
+      Buffer.add_string buffer line;
+      Buffer.add_char buffer '\n';
+      loop buffer
+    with End_of_file ->
+      ignore (Unix.close_process_in in_chan);
+      buffer
+  in
+  Buffer.contents @@ loop (Buffer.create 1024)
+
+let parse_local_test =
+  Alcotest_lwt.test_case_sync "parse json: local test repo" `Quick @@ fun () ->
+  let str = exec_command "cd ../../../../local-test-repo; make bench" in
+  let parsed = Json_stream.json_full str in
+  let expect =
+    [
+      ( {|{  "config": null,  "version": 1,  "results": [    {      "name": "bench_1_test_2",      "metrics": {        "time": "11.04secs",        "ops_per_sec": "1455.0num/sec",        "mbs_per_sec": "17.0mbps"      }    }  ]}|},
+        (64, 77) );
+      ( {|{  "config": null,  "version": 2,  "results": [    {      "name": "bench_1_test_1",      "metrics": [        {          "name": "ops_per_sec",          "value": 690,          "units": "num/sec",          "description": "The number of awesome things done in a second",          "trend": "higher-is-better"        },        {          "name": "mbs_per_sec",          "value": 199,          "units": "mbps",          "description": "Quantity of awesome data downloaded"        }      ]    }  ]}|},
+        (36, 59) );
+      ( {|{  "config": null,  "version": 2,  "results": [    {      "name": "bench_1_test_1",      "metrics": [        {          "name": "grammarFunctor/parsing",          "value": 0.19,          "units": "secs",          "trend": "lower-is-better"        },        {          "name": "grammarFunctor/typing",          "value": 0.28,          "units": "secs",          "trend": "lower-is-better"        },        {          "name": "grammarFunctor/generate",          "value": 0.14,          "units": "secs",          "trend": "lower-is-better"        }      ]    }  ]}|},
+        (5, 33) );
+    ]
+  in
+  Alcotest.(check (list parsed_location)) "jsons" expect parsed;
+  ()
+
 let tests =
   [
     parse_one;
@@ -157,4 +188,5 @@ let tests =
     parse_real_log;
     parse_non_last_num;
     parse_wrong_then_right;
+    parse_local_test;
   ]
