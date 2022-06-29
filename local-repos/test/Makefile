@@ -1,6 +1,9 @@
 define BENCH_DATA_B1_T1_A
 {
-  "config": null,
+  "config": {
+    "target_version": "bcffd84a9b0e38a3ca02a1ffd2de54541f3bcb9f",
+    "target_name": "ocaml/ocaml"
+  },
   "version": 2,
   "results": [
     {
@@ -32,7 +35,10 @@ endef
 
 define BENCH_DATA_B1_T1_B
 {
-  "config": null,
+  "config": {
+    "target_version": "bcffd84a9b0e38a3ca02a1ffd2de54541f3bcb9f",
+    "target_name": "ocaml/ocaml"
+  },
   "version": 2,
   "results": [
     {
@@ -59,7 +65,10 @@ endef
 
 define BENCH_DATA_B1_T2
 {
-  "config": null,
+  "config": {
+    "target_version": "bcffd84a9b0e38a3ca02a1ffd2de54541f3bcb9f",
+    "target_name": "ocaml/ocaml"
+  },
   "version": 1,
   "results": [
     {

@@ -5,6 +5,8 @@ module Benchmark = struct
     duration : Ptime.span;
     repo_id : string * string;
     commit : string;
+    target_version : string option;
+    target_name : string option;
     branch : string option;
     pull_number : int option;
     build_job_id : string option;
@@ -18,7 +20,8 @@ module Benchmark = struct
   }
 
   let make ~version ?build_job_id ?run_job_id ~run_at ~duration ~worker
-      ~docker_image ~benchmark_name ~test_index ~repository data =
+      ~docker_image ~benchmark_name ~target_version ~target_name ~test_index
+      ~repository data =
     let test_name = Yojson.Safe.Util.(member "name" data |> to_string) in
     let metrics = Yojson.Safe.Util.(member "metrics" data) in
     let benchmark_name = Option.value ~default:"default" benchmark_name in
@@ -30,6 +33,8 @@ module Benchmark = struct
       commit = Repository.commit_hash repository;
       branch = Repository.branch repository;
       pull_number = Repository.pull_number repository;
+      target_version;
+      target_name;
       build_job_id;
       run_job_id;
       worker;
@@ -45,6 +50,8 @@ module Benchmark = struct
   let duration self = self.duration
   let repo_id self = self.repo_id
   let commit self = self.commit
+  let target_version self = self.target_version
+  let target_name self = self.target_name
   let branch self = self.branch
   let pull_number self = self.pull_number
   let build_job_id self = self.build_job_id
@@ -65,6 +72,8 @@ module Benchmark = struct
         field "duration" duration Ptime.Span.pp;
         field "repo_id" repo_id Fmt.(pair ~sep:(Fmt.any "/") string string);
         field "commit" commit Fmt.string;
+        field "target_version" target_version Fmt.(option string);
+        field "target_name" target_name Fmt.(option string);
         field "branch" branch Fmt.(option string);
         field "pull_number" pull_number Fmt.(option int);
         field "build_job_id" build_job_id Fmt.(option string);
@@ -86,6 +95,8 @@ module Benchmark = struct
         Db_util.string (fst self.repo_id ^ "/" ^ snd self.repo_id)
       in
       let commit = Db_util.string self.commit in
+      let target_version = Db_util.(option string) self.target_version in
+      let target_name = Db_util.(option string) self.target_name in
       let branch = Db_util.(option string) self.branch in
       let pull_number = Db_util.(option int) self.pull_number in
       let build_job_id = Db_util.(option string) self.build_job_id in
@@ -96,15 +107,17 @@ module Benchmark = struct
       let metrics = Db_util.json self.metrics in
       let worker = Db_util.string self.worker in
       let docker_image = Db_util.string self.docker_image in
+      (* FIXME: CONFLICT condition should include target_version *)
+      (* FIXME: target_version should be non NULL field for CONFLICT to work correctly *)
       Fmt.str
-        {|INSERT INTO benchmarks(version, run_at, duration, repo_id, commit, branch, pull_number, build_job_id, run_job_id, worker, docker_image, benchmark_name, test_name,  test_index, metrics)
-          VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        {|INSERT INTO benchmarks(version, run_at, duration, repo_id, commit, target_version, target_name, branch, pull_number, build_job_id, run_job_id, worker, docker_image, benchmark_name, test_name,  test_index, metrics)
+          VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
           ON CONFLICT (commit, benchmark_name, test_name, run_job_id)
           DO UPDATE SET metrics = EXCLUDED.metrics
         |}
-        version run_at duration repository commit branch pull_number
-        build_job_id run_job_id worker docker_image benchmark_name test_name
-        test_index metrics
+        version run_at duration repository commit target_version target_name
+        branch pull_number build_job_id run_job_id worker docker_image
+        benchmark_name test_name test_index metrics
 
     let insert self (db : Postgresql.connection) =
       let query = insert_query self in

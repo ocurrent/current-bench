@@ -1,10 +1,12 @@
 let db_save ~conninfo benchmark output =
   output
   |> Cb_schema.S.to_list
-  |> List.iter (fun (benchmark_name, version, results) ->
+  |> List.iter
+       (fun (benchmark_name, version, results, target_version, target_name) ->
          results
          |> List.mapi (fun test_index res ->
-                benchmark ~version ~benchmark_name ~test_index res)
+                benchmark ~version ~benchmark_name ~target_version ~target_name
+                  ~test_index res)
          |> List.iter (Models.Benchmark.Db.insert ~conninfo))
 
 let max_log_chunk_size = 102400L (* 100K at a time *)
@@ -133,6 +135,7 @@ module Save = struct
       json_stream ([], [])
     >>= fun results ->
     Storage.record_success ~conninfo ~serial_id;
+    Storage.record_target_info ~conninfo ~serial_id ~results;
     let output = to_slack ~config worker_job_id results in
     Lwt.return (Ok output)
 end

@@ -125,6 +125,33 @@ let record_success ~serial_id (db : Postgresql.connection) =
 let record_success ~serial_id ~conninfo =
   Db_util.with_db ~conninfo (record_success ~serial_id)
 
+let record_target_info ~serial_id ~results (db : Postgresql.connection) =
+  Logs.debug (fun log -> log "Recording target version...");
+  let serial_id = Db_util.int serial_id in
+  let metadata, _ = results in
+  let target_version, target_name =
+    metadata
+    (* FIXME: Check if all the versions are the same? *)
+    |> List.hd
+    |> fun { Current_bench_json.Latest.target_version; target_name; _ } ->
+    ( Option.value target_version ~default:"",
+      Option.value target_name ~default:"" )
+  in
+
+  let query =
+    Fmt.str
+      {|UPDATE benchmark_metadata
+        SET target_version = '%s',
+            target_name = '%s'
+        WHERE id = %s
+       |}
+      target_version target_name serial_id
+  in
+  ignore (db#exec ~expect:[ Postgresql.Command_ok ] query)
+
+let record_target_info ~serial_id ~conninfo ~results =
+  Db_util.with_db ~conninfo (record_target_info ~serial_id ~results)
+
 let mark_closed_pull_requests ~open_pulls (db : Postgresql.connection) =
   Logs.debug (fun log -> log "Updating open and closed pulls...");
   let open_pr_query =

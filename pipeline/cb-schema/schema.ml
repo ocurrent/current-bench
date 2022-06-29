@@ -32,7 +32,14 @@ type metric = {
 }
 
 type result = { test_name : string; metrics : metric list }
-type t = { benchmark_name : string option; results : result list }
+
+type t = {
+  benchmark_name : string option;
+  results : result list;
+  target_version : string option;
+  target_name : string option;
+}
+
 type ts = t list
 
 let to_floats = function
@@ -227,6 +234,12 @@ let of_json t =
     | _ -> []
   in
   {
+    target_version =
+      Json.get "config" t
+      |> Json.get_opt "target_version"
+      |> Json.to_string_option;
+    target_name =
+      Json.get "config" t |> Json.get_opt "target_name" |> Json.to_string_option;
     benchmark_name = Json.get_opt "name" t |> Json.to_string_option;
     results =
       Json.get "results" t
@@ -234,16 +247,27 @@ let of_json t =
       |> List.map (fun r -> result_of_json r lines);
   }
 
-let to_json { benchmark_name; results } =
+let to_json { benchmark_name; results; target_version; target_name } =
   let name =
     match benchmark_name with None -> `Null | Some name -> `String name
   in
+  let target_version =
+    match target_version with None -> `Null | Some label -> `String label
+  in
+  let target_name =
+    match target_name with None -> `Null | Some label -> `String label
+  in
   `Assoc
-    [ ("name", name); ("results", `List (List.map json_of_result results)) ]
+    [
+      ("name", name);
+      ("target_version", target_version);
+      ("target_name", target_name);
+      ("results", `List (List.map json_of_result results));
+    ]
 
 let to_list ts =
   List.map
-    (fun { benchmark_name; results } ->
+    (fun { benchmark_name; results; target_version; target_name } ->
       let results = List.map json_of_result results in
-      (benchmark_name, version, results))
+      (benchmark_name, version, results, target_version, target_name))
     ts

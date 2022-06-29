@@ -10,6 +10,8 @@ module Benchmark : sig
     worker:string ->
     docker_image:string ->
     benchmark_name:string option ->
+    target_version:string option ->
+    target_name:string option ->
     test_index:int ->
     repository:Repository.t ->
     Yojson.Safe.t ->
@@ -20,6 +22,8 @@ module Benchmark : sig
   val duration : t -> Ptime.span
   val repo_id : t -> string * string
   val commit : t -> string
+  val target_version : t -> string option
+  val target_name : t -> string option
   val branch : t -> string option
   val pull_number : t -> int option
   val build_job_id : t -> string option
