@@ -9,6 +9,8 @@
       - run_at
       - repo_id
       - commit
+      - target_version
+      - target_name
       - branch
       - pull_number
       - benchmark_name
@@ -33,6 +35,8 @@
       - repo_id
       - commit
       - commit_message
+      - target_version
+      - target_name
       - branch
       - pull_number
       - is_open_pr
