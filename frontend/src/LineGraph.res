@@ -59,6 +59,8 @@ module DataRow = {
 
   type md = {
     commit: string,
+    target_version: option<string>,
+    target_name: option<string>,
     runAt: Js.Date.t,
     units: units,
     description: string,

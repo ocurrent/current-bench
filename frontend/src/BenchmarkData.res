@@ -15,6 +15,8 @@ let add = (
   ~metricName,
   ~runAt: Js.Date.t,
   ~commit,
+  ~target_version,
+  ~target_name,
   ~value: LineGraph.DataRow.t,
   ~units: LineGraph.DataRow.units,
   ~description,
@@ -32,6 +34,8 @@ let add = (
     metadata,
     {
       commit: commit,
+      target_version: target_version,
+      target_name: target_name,
       runAt: runAt,
       units: units,
       description: description,

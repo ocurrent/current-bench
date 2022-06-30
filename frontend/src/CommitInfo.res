@@ -32,6 +32,8 @@ query ($repoId: String!,
     pr_title
     worker
     docker_image
+    target_version
+    target_name
   }
 }
 `)
@@ -152,17 +154,31 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setL
   | PartialData(data, _) =>
     let lastCommitInfo = data.lastCommitInfo[0]
     let lastBenchmark = Belt.Array.get(benchmarks, Belt.Array.length(benchmarks) - 1)
+    let isSeparateBenchmarkRepo = switch lastBenchmark {
+    | Some(lastBenchmark) => lastBenchmark.target_name !== ""
+    | _ => false
+    }
+    let repository = isSeparateBenchmarkRepo
+      ? Belt.Option.getExn(lastBenchmark).target_name
+      : repoId
     let lastBenchmarkCommit = switch lastBenchmark {
-    | Some(lastBenchmark) => Some(lastBenchmark.commit)
+    | Some(lastBenchmark) =>
+      Some(
+        lastBenchmark.target_version === "" ? lastBenchmark.commit : lastBenchmark.target_version,
+      )
     | _ => None
     }
-    let noCommitMetrics = lastBenchmarkCommit == Some(lastCommitInfo.commit)
-    setLastCommit(Some(lastCommitInfo.commit))
+    let versionInfo = isSeparateBenchmarkRepo
+      ? lastCommitInfo.target_version
+      : lastCommitInfo.commit
+    let noCommitMetrics = lastBenchmarkCommit === Some(versionInfo)
+    setLastCommit(Some(versionInfo))
     let sameBuildJobLog = switch (lastCommitInfo.build_job_id, lastCommitInfo.run_job_id) {
     | (Some(buildID), Some(jobID)) => buildID == jobID
     | (_, _) => false
     }
     let status = buildStatus(lastCommitInfo)
+
     <>
       {switch lastCommitInfo.pull_number {
       | Some(pullNumber) => {
@@ -180,8 +196,8 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setL
         <Column spacing=Sx.sm>
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.gray700)]> "Last Commit" </Text>
           {renderCommitLink(
-            repoId,
-            lastCommitInfo.commit,
+            repository,
+            versionInfo,
             Belt.Option.getWithDefault(lastCommitInfo.commit_message, ""),
           )}
         </Column>
@@ -229,15 +245,39 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setL
         </Column>
       </Row>
       {switch (lastBenchmarkCommit, noCommitMetrics) {
-      | (Some(benchmark), false) => <>
+      | (Some(benchmark), false) =>
+        <p>
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.yellow600)]>
             "Metrics for an older commit "
           </Text>
-          {renderCommitLink(~style=[Sx.text.bold, Sx.text.xs, Sx.p.zero], repoId, benchmark, "")}
+          {renderCommitLink(
+            ~style=[Sx.text.bold, Sx.text.xs, Sx.p.zero],
+            repository,
+            benchmark,
+            "",
+          )}
           <Text sx=[Sx.text.bold, Sx.text.xs, Sx.text.color(Sx.yellow600)]>
             " are shown below"
           </Text>
-        </>
+        </p>
+      | _ => Rx.null
+      }}
+      {switch (isSeparateBenchmarkRepo, lastBenchmark) {
+      | (true, Some(benchmark)) =>
+        <p>
+          <Text sx=[Sx.text.xs, Sx.text.color(Sx.black)]>
+            "The benchmarks are in a separate repository, and the commit "
+          </Text>
+          {renderCommitLink(
+            ~style=[Sx.text.bold, Sx.text.xs, Sx.p.zero],
+            repoId,
+            benchmark.commit,
+            "",
+          )}
+          <Text sx=[Sx.text.xs, Sx.text.color(Sx.black)]>
+            " was used to run the benchmarks."
+          </Text>
+        </p>
       | _ => Rx.null
       }}
     </>

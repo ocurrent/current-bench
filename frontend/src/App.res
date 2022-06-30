@@ -58,7 +58,23 @@ module Benchmark = {
     let metrics = yojson_of_result(result)
     let metrics = Schema.of_json(metrics)
     let run_at = result.run_at->decodeRunAt->Belt.Option.getExn
-    (result.commit, result.run_job_id, run_at, result.test_index, metrics)
+    (
+      result.commit,
+      if result.target_version == "" {
+        None
+      } else {
+        Some(result.target_version)
+      },
+      if result.target_name == "" {
+        None
+      } else {
+        Some(result.target_name)
+      },
+      result.run_job_id,
+      run_at,
+      result.test_index,
+      metrics,
+    )
   }
 
   let tryDecode = result => {
@@ -82,7 +98,7 @@ module Benchmark = {
     ->Belt.Array.keepMap(tryDecode)
     ->Belt.Array.reduce(BenchmarkData.empty, (
       acc,
-      (commit, run_job_id, run_at, test_index, item),
+      (commit, target_version, target_name, run_job_id, run_at, test_index, item),
     ) => {
       List.fold_left((acc, result: Schema.result) => {
         List.fold_left((acc, metric: Schema.metric) => {
@@ -93,6 +109,8 @@ module Benchmark = {
             ~metricName=metric.name,
             ~runAt=run_at,
             ~commit,
+            ~target_version,
+            ~target_name,
             ~value=toLineGraph(metric.value),
             ~units=metric.units,
             ~description=metric.description,

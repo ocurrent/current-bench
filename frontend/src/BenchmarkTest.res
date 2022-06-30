@@ -164,6 +164,13 @@ let getSeriesArrays = (data, comparison, metricName) => {
   (timeseries, metadata, comparisonTimeseries, comparisonMetadata)
 }
 
+let useCommitOrTargetVersion = (benchmark: LineGraph.DataRow.md) => {
+  switch benchmark.target_version {
+  | None | Some("") => benchmark.commit
+  | Some(target_version) => target_version
+  }
+}
+
 @react.component
 let make = (
   ~repoId,
@@ -256,7 +263,8 @@ let make = (
         m,
         index,
       ) => {
-        Belt.Map.Int.set(acc, index, m.commit)
+        let value = useCommitOrTargetVersion(m)
+        Belt.Map.Int.set(acc, index, value)
       })
       let rows =
         seriesArrays->Belt.Array.map(((ts, md, comp_ts, comp_md)) =>
@@ -282,15 +290,19 @@ let make = (
           ? labels->Belt.Array.map(x => makeAnnotation(firstPullX, x, repoId, pullNumber))
           : []
       let title = isOverlayed ? overlayPrefix->Belt.Option.getExn : metricName
-      let oldMetrics = mergedMetadata->Belt.Array.every(m => {Some(m.commit) != lastCommit})
+      let oldMetrics =
+        mergedMetadata->Belt.Array.every(m => {Some(useCommitOrTargetVersion(m)) != lastCommit})
       let failedMetric = rows->Belt.Array.every(row =>
         switch row.last_value {
         | Some(value) => Js.Float.isNaN(value)
         | _ => false
         }
       )
-
-      let goToCommit = AppHelpers.goToCommitLink(~repoId)
+      let repository = switch (mergedMetadata->BeltHelpers.Array.lastExn).target_name {
+      | Some(repository) => repository
+      | None => repoId
+      }
+      let goToCommit = AppHelpers.goToCommitLink(~repoId=repository)
       let id = `line-graph-${testName}-${title}`
 
       <div key=metricName className={Sx.make(oldMetrics ? [Sx.opacity25] : [])}>

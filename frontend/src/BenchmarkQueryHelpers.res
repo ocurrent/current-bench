@@ -3,6 +3,8 @@ fragment BenchmarkMetrics on benchmarks {
   version
   run_at
   commit
+  target_version
+  target_name
   test_name
   test_index
   metrics

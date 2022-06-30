@@ -116,6 +116,8 @@ let addMissingComparisonMetrics = (comparisonBenchmarkDataByTestName, benchmarkD
               run_job_id,
             )): LineGraph.DataRow.md => {
               commit: commit,
+              target_version: Some(""),
+              target_name: Some(""),
               runAt: runAt,
               run_job_id: run_job_id,
               lines: []->Belt.List.fromArray,
