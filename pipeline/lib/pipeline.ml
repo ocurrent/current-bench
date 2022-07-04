@@ -67,7 +67,7 @@ let get_job_id x =
       | None -> None)
 
 let record_pipeline_stage ~serial_id ~conninfo image job_id =
-  let+ job_id and+ state = Current.state ~hidden:true image in
+  let+ job_id = job_id and+ state = Current.state ~hidden:true image in
   match (job_id, state) with
   | Some job_id, Error (`Active _) ->
       (* NOTE: For some reason this hook gets called twice, even if we match for
@@ -94,7 +94,7 @@ let pipeline ~config ~ocluster ~conninfo ~repository env =
   let docker_options =
     {
       Cluster_api.Docker.Spec.defaults with
-      build_args = env.Custom_dockerfile.Env.build_args;
+      build_args = env.Custom_dockerfile.Env.config.build_args;
     }
   in
   let dockerfile =
@@ -111,8 +111,7 @@ let pipeline ~config ~ocluster ~conninfo ~repository env =
       v ~repo:"git://pipeline/" ~gref:(gref commit) ~hash:(hash commit)
   in
   let ocluster_worker =
-    Current_ocluster.build ~pool:worker
-      ~src:(Current.return [ src ])
+    Current_ocluster.build ~pool:worker ~src:(Current.return [ src ])
       ~options:docker_options ocluster dockerfile
   in
   let worker_job_id = get_job_id ocluster_worker in
@@ -148,7 +147,7 @@ let pipeline ~config ~ocluster ~conninfo ~repository =
   Current.list_iter
     (module Custom_dockerfile.Env)
     (fun env ->
-      let* env in
+      let* env = env in
       if Benchmark.Db.exists ~conninfo ~env repository
       then Current.return ()
       else pipeline ~config ~ocluster ~conninfo ~repository env)
@@ -183,10 +182,10 @@ let github_repositories repo =
       (* Skip all branches other than the default branch, and check PRs *)
       | `Ref branch when branch = default_branch ->
           repository ~branch:default_branch_name () :: lst
-      | `Ref _ -> lst
       | `PR pull_number ->
           repository ~title:pull_number.title ~pull_number:pull_number.id ()
-          :: lst)
+          :: lst
+      | _ -> lst)
     ref_map []
 
 let filter_stale_repositories repos =
@@ -266,7 +265,7 @@ let process_pipeline ~config ~ocluster ~conninfo ~sources () =
     @@ Current.list_iter ~collapse_key:"pipeline"
          (module Repository)
          (fun repo ->
-           let* repo in
+           let* repo = repo in
            pipeline ~config ~ocluster ~conninfo repo)
          fresh_repos
   and+ () =

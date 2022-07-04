@@ -7,20 +7,20 @@ module Env = struct
     image : string;
     dockerfile : [ `File of Fpath.t | `Contents of Dockerfile.t Current.t ];
     clock : string;
-    build_args : string list;
+    config : Config.repo;
   }
 
   let compare a b =
     Stdlib.compare (a.worker, a.image, a.clock) (b.worker, b.image, b.clock)
 
-  let pp f t = Fmt.pf f "%s %s" t.worker t.image
+  let pp f t = Fmt.pf f "%s %s" t.config.worker t.config.image
 
   let find config repository =
     Current.list_seq
     @@ List.map (fun conf ->
            let+ clock = Config.get_clock config conf in
            (clock, conf))
-    @@ Config.find config (Repository.info repository)
+    @@ Config.find config repository
 end
 
 module Get_files = struct
@@ -70,6 +70,11 @@ let get_all_files ~repository =
   |> let> commit = Repository.src repository in
      Cache.get () { Get_files.Key.commit }
 
+let get_all_files ~cond ~repository =
+  Current.component "run-benchmarks?"
+  |> let** ok = cond in
+     if ok then get_all_files ~repository else Current.return []
+
 let install_opam_dependencies ~files =
   let opam_files = List.filter (String.ends_with ~suffix:".opam") files in
   let open Dockerfile in
@@ -109,8 +114,9 @@ let dockerfile ~base ~files = Dockerfile.crunch (dockerfile ~base ~files)
 
 let dockerfiles ~config ~repository =
   let custom_dockerfile = "bench.Dockerfile" in
-  let+ files = get_all_files ~repository
-  and+ envs = Env.find config repository in
+  let envs = Env.find config repository in
+  let not_empty = Current.map (fun envs -> envs <> []) envs in
+  let+ files = get_all_files ~cond:not_empty ~repository and+ envs = envs in
   let dockerfile_exists = List.mem custom_dockerfile files in
   List.map
     (fun (clock, conf) ->
@@ -131,6 +137,6 @@ let dockerfiles ~config ~repository =
         image;
         dockerfile;
         clock;
-        build_args = conf.Config.build_args;
+        config = conf;
       })
     envs
