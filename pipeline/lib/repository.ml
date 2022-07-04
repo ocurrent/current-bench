@@ -9,6 +9,7 @@ type t = {
   github_head : Current_github.Api.Commit.t option;
   github_api : Current_github.Api.t option;
   title : string option;
+  tags : string list;
 }
 
 let default_src ?src commit =
@@ -17,7 +18,7 @@ let default_src ?src commit =
   | Some src -> src
 
 let v ~owner ~name ?src ~commit ?commit_message ?pull_number ?branch
-    ?github_head ?github_api ?title () =
+    ?github_head ?github_api ?title ?(tags = []) () =
   {
     owner;
     name;
@@ -29,6 +30,7 @@ let v ~owner ~name ?src ~commit ?commit_message ?pull_number ?branch
     github_api;
     src = default_src ?src commit;
     title;
+    tags;
   }
 
 let owner t = t.owner
@@ -39,6 +41,7 @@ let commit_message t = t.commit_message
 let commit_hash t = Current_git.Commit_id.hash t.commit
 let pull_number t = t.pull_number
 let title t = t.title
+let tags t = t.tags
 let branch t = t.branch
 let github_head t = t.github_head
 let github_api t = t.github_api
@@ -92,4 +95,5 @@ let pp =
       field "branch" branch Fmt.(option string);
       field "pull_number" pull_number Fmt.(option int);
       field "commit" commit_hash Fmt.string;
+      field "tags" tags Fmt.(list string);
     ]

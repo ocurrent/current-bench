@@ -294,7 +294,7 @@ module SC = Current_cache.Output (Save)
 let save ~config ~conninfo ~repository ~serial_id ~worker ~docker_image job_id =
   let open Current.Syntax in
   Current.component "db-save"
-  |> let> job_id in
+  |> let> job_id = job_id in
      match job_id with
      | None -> Current_incr.const (Error (`Active `Ready), None)
      | Some job_id ->

@@ -12,6 +12,7 @@ type repo = {
   schedule : string option; [@default None]
   build_args : string list; [@default []]
   notify_github : bool; [@default false]
+  if_label : string option; [@default None]
 }
 [@@deriving yojson]
 
@@ -86,20 +87,27 @@ let of_file ~frontend_url ~pipeline_url filename : t =
       }
   | Error err -> failwith (Printf.sprintf "Config.of_file %S : %s" filename err)
 
-let find t name =
+let default name =
+  {
+    name;
+    worker = default_worker;
+    image = default_docker;
+    schedule = None;
+    build_args = [];
+    notify_github = false;
+    if_label = None;
+  }
+
+let must_benchmark repo conf =
+  match (conf.if_label, Repository.pull_number repo) with
+  | Some tag, Some _ -> List.mem tag (Repository.tags repo)
+  | _ -> true
+
+let find t repo =
+  let name = Repository.info repo in
   match List.filter (fun r -> r.name = name) t.repos with
-  | [] ->
-      [
-        {
-          name;
-          worker = default_worker;
-          image = default_docker;
-          schedule = None;
-          build_args = [];
-          notify_github = false;
-        };
-      ]
-  | configs -> configs
+  | [] -> [ default name ]
+  | configs -> List.filter (must_benchmark repo) configs
 
 let find_image t image_name = Images.find image_name t.images
 
