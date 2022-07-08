@@ -75,6 +75,8 @@ let record_stage_failure ~serial_id ~reason (db : Postgresql.connection) =
     Fmt.str
       {|UPDATE benchmark_metadata
         SET failed = true,
+            cancelled = false,
+            success = false,
             reason = %s
         WHERE id = %s
       |}
@@ -92,6 +94,8 @@ let record_cancel ~serial_id ~reason (db : Postgresql.connection) =
     Fmt.str
       {|UPDATE benchmark_metadata
         SET cancelled = true,
+            failed = false,
+            success = false,
             reason = %s
         WHERE id = %s
       |}
@@ -108,7 +112,10 @@ let record_success ~serial_id (db : Postgresql.connection) =
   let query =
     Fmt.str
       {|UPDATE benchmark_metadata
-        SET success = true
+        SET success = true,
+            failed = false,
+            cancelled = false,
+            reason = ''
         WHERE id = %s
       |}
       serial_id
