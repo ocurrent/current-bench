@@ -87,9 +87,12 @@ module Env = Custom_dockerfile.Env
 let pipeline ~config ~ocluster ~conninfo ~repository env =
   let worker = env.Env.worker in
   let docker_image = env.Env.image in
+  let target_version = env.Env.config.target_version in
+  let target_name = env.Env.config.target_name in
   let key = Config.key_of_repo ~config repository worker docker_image in
   let serial_id =
-    Storage.setup_metadata ~repository ~conninfo ~worker ~docker_image
+    Storage.setup_metadata ~repository ~target_version ~target_name ~conninfo
+      ~worker ~docker_image
   in
   let docker_options =
     {

@@ -135,5 +135,17 @@ let dockerfiles ~config ~repository =
             in
             (image, docker)
       in
-      { Env.worker = conf.worker; image; dockerfile; clock; config = conf })
+      let build_args =
+        match conf.Config.target_version with
+        | Some version ->
+            ("TARGET_VERSION=" ^ version) :: conf.Config.build_args
+        | _ -> conf.Config.build_args
+      in
+      let build_args =
+        match conf.Config.target_name with
+        | Some name -> ("TARGET_NAME=" ^ name) :: build_args
+        | _ -> build_args
+      in
+      let config = { conf with build_args } in
+      { Env.worker = conf.worker; image; dockerfile; clock; config })
     envs

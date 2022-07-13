@@ -101,6 +101,7 @@ let make_benchmark_from_request ~conninfo ~body ~token =
   authorize_token token repository;
   let serial_id =
     Storage.setup_metadata ~repository ~conninfo ~worker ~docker_image
+      ~target_version:(Some "") ~target_name:(Some "")
   in
   ignore
     (benchmarks

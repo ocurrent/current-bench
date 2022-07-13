@@ -1,5 +1,5 @@
-let setup_metadata ~repository ~worker ~docker_image
-    (db : Postgresql.connection) =
+let setup_metadata ~repository ~target_version ~target_name ~worker
+    ~docker_image (db : Postgresql.connection) =
   Logs.debug (fun log -> log "Inserting metadata ...");
   let run_at = Db_util.time (Ptime_clock.now ()) in
   let repo_id = Db_util.string (Repository.info repository) in
@@ -12,18 +12,22 @@ let setup_metadata ~repository ~worker ~docker_image
   let title = Db_util.(option string) (Repository.title repository) in
   let worker = Db_util.string worker in
   let docker_image = Db_util.string docker_image in
+  let target_version =
+    Db_util.string @@ Option.value target_version ~default:""
+  in
+  let target_name = Db_util.string @@ Option.value target_name ~default:"" in
   let query =
     (*
       When setting up metadata, we only insert the details that we know at the
       beginning. If we see a conflict here, that means we have started running the
       benchmarks again for this repo and commit, so we reset the build_job_id
       and the run_job_id.
-    *)
+     *)
     Fmt.str
       {|INSERT INTO benchmark_metadata
-          (run_at, repo_id, commit, commit_message, branch, pull_number, pr_title, worker, docker_image)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT(repo_id, commit, worker, docker_image)
+          (run_at, repo_id, commit, target_version, target_name, commit_message, branch, pull_number, pr_title, worker, docker_image)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT(repo_id, commit, target_version, worker, docker_image)
         DO UPDATE
         SET build_job_id = NULL,
             run_job_id = NULL,
@@ -33,8 +37,8 @@ let setup_metadata ~repository ~worker ~docker_image
             reason = NULL
         RETURNING id;
       |}
-      run_at repo_id commit commit_message branch pull_number title worker
-      docker_image
+      run_at repo_id commit target_version target_name commit_message branch
+      pull_number title worker docker_image
   in
   let result = db#exec query in
   match result#get_all with
@@ -48,8 +52,11 @@ let setup_metadata ~repository ~worker ~docker_image
             result);
       -1
 
-let setup_metadata ~repository ~conninfo ~worker ~docker_image =
-  Db_util.with_db ~conninfo (setup_metadata ~repository ~worker ~docker_image)
+let setup_metadata ~repository ~conninfo ~worker ~docker_image ~target_version
+    ~target_name =
+  Db_util.with_db ~conninfo
+    (setup_metadata ~repository ~worker ~docker_image ~target_version
+       ~target_name)
 
 let record_stage_start ~job_id ~serial_id (db : Postgresql.connection) =
   Logs.debug (fun log -> log "Recording build start...");
@@ -131,7 +138,7 @@ let record_target_info ~serial_id ~results (db : Postgresql.connection) =
   let metadata, _ = results in
   let target_version, target_name =
     metadata
-    (* FIXME: Check if all the versions are the same? *)
+    (* FIXME: Check if all the versions and names are the same? *)
     |> List.hd
     |> fun { Current_bench_json.Latest.target_version; target_name; _ } ->
     ( Option.value target_version ~default:"",

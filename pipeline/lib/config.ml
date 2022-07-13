@@ -14,6 +14,8 @@ type repo = {
   build_args : string list; [@default []]
   notify_github : bool; [@default false]
   if_label : string option; [@default None]
+  target_version : string option; [@default None]
+  target_name : string option; [@default None]
 }
 [@@deriving yojson]
 
@@ -97,6 +99,8 @@ let default name =
     schedule = None;
     build_args = [];
     notify_github = false;
+    target_version = None;
+    target_name = None;
     if_label = None;
   }
 

@@ -95,8 +95,12 @@ module Benchmark = struct
         Db_util.string (fst self.repo_id ^ "/" ^ snd self.repo_id)
       in
       let commit = Db_util.string self.commit in
-      let target_version = Db_util.(option string) self.target_version in
-      let target_name = Db_util.(option string) self.target_name in
+      let target_version =
+        Db_util.string @@ Option.value self.target_version ~default:""
+      in
+      let target_name =
+        Db_util.string @@ Option.value self.target_name ~default:""
+      in
       let branch = Db_util.(option string) self.branch in
       let pull_number = Db_util.(option int) self.pull_number in
       let build_job_id = Db_util.(option string) self.build_job_id in
@@ -107,8 +111,6 @@ module Benchmark = struct
       let metrics = Db_util.json self.metrics in
       let worker = Db_util.string self.worker in
       let docker_image = Db_util.string self.docker_image in
-      (* FIXME: CONFLICT condition should include target_version *)
-      (* FIXME: target_version should be non NULL field for CONFLICT to work correctly *)
       Fmt.str
         {|INSERT INTO benchmarks(version, run_at, duration, repo_id, commit, target_version, target_name, branch, pull_number, build_job_id, run_job_id, worker, docker_image, benchmark_name, test_name,  test_index, metrics)
           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -136,6 +138,10 @@ module Benchmark = struct
       and commit = Db_util.string @@ Repository.commit_hash repository
       and worker = Db_util.string @@ env.Custom_dockerfile.Env.worker
       and docker_image = Db_util.string @@ env.Custom_dockerfile.Env.image
+      and target_version =
+        Db_util.string
+        @@ Option.value env.Custom_dockerfile.Env.config.target_version
+             ~default:""
       and date = Db_util.string @@ env.Custom_dockerfile.Env.clock in
       (* NOTE: We check if an entry exists in the benchmarks table, and not the
          benchmark_metadata table since we want to re-run the benchmarks if
@@ -144,8 +150,8 @@ module Benchmark = struct
          dependencies, etc. *)
       Fmt.str
         "SELECT COUNT(*) FROM benchmarks WHERE repo_id=%s AND (commit=%s OR \
-         run_at >= %s) AND worker=%s AND docker_image=%s"
-        repo_id commit date worker docker_image
+         run_at >= %s) AND worker=%s AND docker_image=%s AND target_version=%s"
+        repo_id commit date worker docker_image target_version
 
     let exists ~env repository (db : Postgresql.connection) =
       let query = exists_query ~env ~repository in

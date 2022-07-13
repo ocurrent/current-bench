@@ -20,7 +20,12 @@ let of_metrics ~name ms = { L.test_name = name; metrics = ms }
 type t = L.t
 
 let of_results results =
-  { L.benchmark_name = None; results; target_version = None }
+  {
+    L.benchmark_name = None;
+    results;
+    target_version = None;
+    target_name = None;
+  }
 
 let to_json = L.to_json
 let of_json = L.of_json
