@@ -89,7 +89,7 @@ coverage: ./local-repos/test/.git
 
 .PHONY: local-make-bench
 local-make-bench: ./local-repos/test/.git
-	cd local-repos/test/; git add .; git commit --amend -m "New commit: $$(date)"; cd ..
+	cd local-repos/test/; git add .; git commit --amend -m "New commit: $$(date)"; echo "Created new commit: $$(git rev-parse HEAD)"; cd ..
 
 .PHONY: migration
 migration:
