@@ -105,7 +105,8 @@ let empty_benchmarks =
       Postgresql.Expect
         (fun ?expect query ->
           let expected =
-            "UPDATE benchmark_metadata SET success = true, failed = false, cancelled = false, reason = '' WHERE id = 421"
+            "UPDATE benchmark_metadata SET success = true, failed = false, \
+             cancelled = false, reason = '' WHERE id = 421"
           in
           Alcotest.(check string) "success" expected query;
           assert (expect = Some [ Postgresql.Command_ok ]);
