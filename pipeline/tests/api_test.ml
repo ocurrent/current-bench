@@ -96,7 +96,7 @@ let empty_benchmarks =
              'abcd12345', NULL, 'main', NULL, NULL, 'remote', 'external') ON \
              CONFLICT(repo_id, commit, worker, docker_image) DO UPDATE SET \
              build_job_id = NULL, run_job_id = NULL, failed = false, cancelled \
-             = false, success = false, reason = '' RETURNING id;"
+             = false, success = false, reason = NULL RETURNING id;"
           in
           Alcotest.(check string) "setup metadata" expected query;
           assert (expect = None);
@@ -106,7 +106,7 @@ let empty_benchmarks =
         (fun ?expect query ->
           let expected =
             "UPDATE benchmark_metadata SET success = true, failed = false, \
-             cancelled = false, reason = '' WHERE id = 421"
+             cancelled = false, reason = NULL WHERE id = 421"
           in
           Alcotest.(check string) "success" expected query;
           assert (expect = Some [ Postgresql.Command_ok ]);
