@@ -34,7 +34,7 @@ depends: [
   "fpath"
   "logs"
   "postgresql"
-  "prometheus-app" {= "1.1"}
+  "prometheus-app" {= "1.2"}
   "rresult"
   "omigrate"
   "timere"
@@ -45,18 +45,18 @@ depends: [
 
 pin-depends: [
   [ "reason.dev" "git+https://github.com/reasonml/reason.git#ccc34729994b4a80d4f6274cc0165cd9113444d6"]
-  [ "current_docker.dev" "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
-  [ "current_github.dev" "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
-  [ "current_git.dev"    "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
-  [ "current.dev"        "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
-  [ "current_rpc.dev"    "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
-  [ "current_slack.dev"  "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
-  [ "current_web.dev"    "git+https://github.com/ocurrent/ocurrent.git#f43ba4485dcd599c15139d8b923328fd0a777aa9"]
-  [ "current_ocluster.dev" "git+https://github.com/art-w/ocluster.git#f5884b0e8454c29c156cda939416436565206e24" ]
-  [ "ocluster-api.dev"     "git+https://github.com/art-w/ocluster.git#f5884b0e8454c29c156cda939416436565206e24" ]
-  [ "ocluster-worker.dev"  "git+https://github.com/art-w/ocluster.git#f5884b0e8454c29c156cda939416436565206e24" ]
-  [ "obuilder.dev"        "git+https://github.com/ocurrent/obuilder#8ca1207671d9c603885b17f1f909840c0a798a7e" ]
-  [ "obuilder-spec.dev"   "git+https://github.com/ocurrent/obuilder#8ca1207671d9c603885b17f1f909840c0a798a7e" ]
+  [ "current_docker.dev" "git+https://github.com/ocurrent/ocurrent.git#d1c7cce458c816a62da61ba3915f9e9c77c8e89c"]
+  [ "current_github.dev" "git+https://github.com/ocurrent/ocurrent.git#d1c7cce458c816a62da61ba3915f9e9c77c8e89c"]
+  [ "current_git.dev"    "git+https://github.com/ocurrent/ocurrent.git#d1c7cce458c816a62da61ba3915f9e9c77c8e89c"]
+  [ "current.dev"        "git+https://github.com/ocurrent/ocurrent.git#d1c7cce458c816a62da61ba3915f9e9c77c8e89c"]
+  [ "current_rpc.dev"    "git+https://github.com/ocurrent/ocurrent.git#d1c7cce458c816a62da61ba3915f9e9c77c8e89c"]
+  [ "current_slack.dev"  "git+https://github.com/ocurrent/ocurrent.git#d1c7cce458c816a62da61ba3915f9e9c77c8e89c"]
+  [ "current_web.dev"    "git+https://github.com/ocurrent/ocurrent.git#d1c7cce458c816a62da61ba3915f9e9c77c8e89c"]
+  [ "current_ocluster.dev" "git+https://github.com/art-w/ocluster.git#951b2a8cc3812df4628062ff849035f0eaecf588" ]
+  [ "ocluster-api.dev"     "git+https://github.com/art-w/ocluster.git#951b2a8cc3812df4628062ff849035f0eaecf588" ]
+  [ "ocluster-worker.dev"  "git+https://github.com/art-w/ocluster.git#951b2a8cc3812df4628062ff849035f0eaecf588" ]
+  [ "obuilder.dev"        "git+https://github.com/ocurrent/obuilder#dc987c12ccc6cd9729809359e9375bfe5443add9" ]
+  [ "obuilder-spec.dev"   "git+https://github.com/ocurrent/obuilder#dc987c12ccc6cd9729809359e9375bfe5443add9" ]
 ]
 
 depexts: [
