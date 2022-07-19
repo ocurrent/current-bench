@@ -30,7 +30,7 @@ let setup_metadata ~repository ~worker ~docker_image
             failed = false,
             cancelled = false,
             success = false,
-            reason = ''
+            reason = NULL
         RETURNING id;
       |}
       run_at repo_id commit commit_message branch pull_number title worker
@@ -115,7 +115,7 @@ let record_success ~serial_id (db : Postgresql.connection) =
         SET success = true,
             failed = false,
             cancelled = false,
-            reason = ''
+            reason = NULL
         WHERE id = %s
       |}
       serial_id
