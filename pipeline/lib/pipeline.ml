@@ -165,35 +165,28 @@ let github_repositories repo =
     |> let> api, repo = repo in
        Github.Api.refs api repo
   in
-  let* refs_with_title =
-    Current.component "Get refs with title"
-    |> let> api, repo = repo in
-       Refs.refs api repo
-  in
   let default_branch = Github.Api.default_ref refs in
   let default_branch_name = Util.get_branch_name default_branch in
   let ref_map = Github.Api.all_refs refs in
-  let title_map = refs_with_title in
   let+ api, repo = repo in
   let repository =
     Repository.v ~name:repo.name ~owner:repo.owner ~github_api:api
   in
   Github.Api.Ref_map.fold
     (fun key head lst ->
-      let title =
-        try Github.Api.Ref_map.find key title_map with Not_found -> None
-      in
       let commit = Github.Api.Commit.id head in
       let message = Github.Api.Commit.message head in
       let repository =
-        repository ~commit ~github_head:head ~commit_message:message ?title
+        repository ~commit ~github_head:head ~commit_message:message
       in
       match key with
       (* Skip all branches other than the default branch, and check PRs *)
       | `Ref branch when branch = default_branch ->
           repository ~branch:default_branch_name () :: lst
       | `Ref _ -> lst
-      | `PR pull_number -> repository ~pull_number () :: lst)
+      | `PR pull_number ->
+          repository ~title:pull_number.title ~pull_number:pull_number.id ()
+          :: lst)
     ref_map []
 
 let filter_stale_repositories repos =
@@ -300,7 +293,7 @@ let v ~config ~server:mode ~sources conninfo () =
     | Some webhook_secret ->
         let webhook =
           Github.webhook ~engine ~webhook_secret
-            ~has_role:Current_web.Site.allow_all
+            ~get_job_ids:(fun ~owner:_ ~name:_ ~hash:_ -> [])
         in
         [ Routes.((s "webhooks" / s "github" /? nil) @--> webhook) ]
   in

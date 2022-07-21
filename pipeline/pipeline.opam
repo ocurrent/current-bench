@@ -25,7 +25,7 @@ depends: [
   "current_web"    {= "dev"}
   "current_incr" {>= "0.5"}
   "current_ansi"
-  "current_ocluster"
+  "current_ocluster" {= "dev"}
   "dockerfile"
   "duration"
   "fpath"
@@ -33,7 +33,7 @@ depends: [
   "postgresql"
   "rresult"
   "omigrate"
-  "ocluster"
+  "ocluster" {= "dev"}
   "timere"
   "timere-parse"
 ]
@@ -45,6 +45,12 @@ pin-depends: [
   [ "current_rpc.dev"    "git+https://github.com/ocurrent/ocurrent.git#d1c7cce458c816a62da61ba3915f9e9c77c8e89c"]
   [ "current_slack.dev"  "git+https://github.com/ocurrent/ocurrent.git#d1c7cce458c816a62da61ba3915f9e9c77c8e89c"]
   [ "current_web.dev"    "git+https://github.com/ocurrent/ocurrent.git#d1c7cce458c816a62da61ba3915f9e9c77c8e89c"]
+  [ "current_ocluster.dev"  "git+https://github.com/art-w/ocluster.git#e32a5022b90c288a14947520a77bdc2ab7789a07"]
+  [ "obuilder.dev"        "git+https://github.com/ocurrent/obuilder#dc987c12ccc6cd9729809359e9375bfe5443add9" ]
+  [ "ocluster.dev"          "git+https://github.com/art-w/ocluster.git#e32a5022b90c288a14947520a77bdc2ab7789a07"]
+  [ "ocluster-api.dev"      "git+https://github.com/art-w/ocluster.git#e32a5022b90c288a14947520a77bdc2ab7789a07"]
+  [ "ocluster-worker.dev"  "git+https://github.com/art-w/ocluster.git#e32a5022b90c288a14947520a77bdc2ab7789a07" ]
+  [ "obuilder-spec.dev"   "git+https://github.com/ocurrent/obuilder#dc987c12ccc6cd9729809359e9375bfe5443add9" ]
 ]
 build: [
   ["dune" "subst"] {pinned}
