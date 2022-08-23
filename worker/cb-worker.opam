@@ -27,10 +27,10 @@ depends: [
   "yojson"
 ]
 pin-depends: [
-  [ "ocluster-worker.dev" "git+https://github.com/art-w/ocluster.git#e32a5022b90c288a14947520a77bdc2ab7789a07" ]
-  [ "ocluster-api.dev"    "git+https://github.com/art-w/ocluster.git#e32a5022b90c288a14947520a77bdc2ab7789a07" ]
-  [ "obuilder.dev"        "git+https://github.com/ocurrent/obuilder#dc987c12ccc6cd9729809359e9375bfe5443add9" ]
-  [ "obuilder-spec.dev"   "git+https://github.com/ocurrent/obuilder#dc987c12ccc6cd9729809359e9375bfe5443add9" ]
+  [ "ocluster-worker.dev" "git+https://github.com/art-w/ocluster.git#957b6e422befddc4274ab9421fae75bdced7b1e9" ]
+  [ "ocluster-api.dev"    "git+https://github.com/art-w/ocluster.git#957b6e422befddc4274ab9421fae75bdced7b1e9" ]
+  [ "obuilder.dev"        "git+https://github.com/art-w/obuilder#a473fcb7be6c236e9ee61e6549a803525b8f4021" ]
+  [ "obuilder-spec.dev"   "git+https://github.com/art-w/obuilder#a473fcb7be6c236e9ee61e6549a803525b8f4021" ]
 ]
 build: [
   ["dune" "subst"] {pinned}
