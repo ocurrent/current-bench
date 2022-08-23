@@ -85,7 +85,7 @@ let install_opam_dependencies ~files =
             String.concat " "
               (List.map (fun filename -> "./" ^ filename) bench_opam)
       in
-      copy ~src:[ "--chown=opam:opam ./*.opam" ] ~dst:"./" ()
+      copy ~chown:"opam:opam" ~src:[ "./*.opam" ] ~dst:"./" ()
       @@ run "opam exec -- opam pin -y -n --with-version=dev ."
       @@ run "opam exec -- opam install -y --depext-only %s" targets
       @@ run "opam exec -- opam install -y --deps-only --with-test %s" targets
@@ -103,7 +103,7 @@ let dockerfile ~base ~files =
   @@ run "mkdir bench-dir && chown opam:opam bench-dir"
   @@ workdir "bench-dir"
   @@ install_opam_dependencies ~files
-  @@ copy ~src:[ "--chown=opam:opam ." ] ~dst:"." ()
+  @@ copy ~chown:"opam:opam" ~src:[ "." ] ~dst:"." ()
 
 let dockerfile ~base ~files = Dockerfile.crunch (dockerfile ~base ~files)
 
