@@ -127,9 +127,9 @@ let parse_real_log =
 let parse_exponents =
   Alcotest_lwt.test_case_sync "parse json: with exponent in numbers" `Quick
   @@ fun () ->
-  let str = {|{"name": "foo", "value": 0e0}|} in
+  let str = {|{"name": "foo", "value": 3.1415926535e-09}|} in
   let parsed = Json_stream.json_full str in
-  let expect = [ ({|{"name": "foo", "value": 0e0}|}, (1, 1)) ] in
+  let expect = [ ({|{"name": "foo", "value": 3.1415926535e-09}|}, (1, 1)) ] in
   Alcotest.(check (list parsed_location)) "jsons" expect parsed;
   ()
 
