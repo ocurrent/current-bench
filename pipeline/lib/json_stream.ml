@@ -22,11 +22,11 @@ let read ~start path =
   (really_input_string ch (Int64.to_int len), start + len)
 
 let is_whitespace = function '\n' | ' ' | '\t' | '\r' -> true | _ -> false
-let is_numeric = function '0' .. '9' | '-' | '.' -> true | _ -> false
+let is_numeric = function '0' .. '9' | '-' | '.' | 'e' -> true | _ -> false
 
 type automata =
   | BeforeID  (** Curly brace received, waiting for a string id *)
-  | InArray  (** Waiting for a value or a ] *)
+  | InArray  (** Waiting for a value or a \] *)
   | InString  (** Inside the identifier: "foo" *)
   | InNumber  (** Parsing the full number *)
   | Escaped  (** Right after a \ inside a string *)
