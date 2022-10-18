@@ -124,6 +124,15 @@ let parse_real_log =
   Alcotest.(check (list parsed_location)) "jsons" expect parsed;
   ()
 
+let parse_exponents =
+  Alcotest_lwt.test_case_sync "parse json: with exponent in numbers" `Quick
+  @@ fun () ->
+  let str = {|{"name": "foo", "value": 0e0}|} in
+  let parsed = Json_stream.json_full str in
+  let expect = [ ({|{"name": "foo", "value": 0e0}|}, (1, 1)) ] in
+  Alcotest.(check (list parsed_location)) "jsons" expect parsed;
+  ()
+
 let parse_non_last_num =
   Alcotest_lwt.test_case_sync "parse json: non-last num" `Quick @@ fun () ->
   let str = {|
@@ -179,6 +188,7 @@ let tests =
     parse_wrong;
     parse_wrong_longer;
     parse_real_log;
+    parse_exponents;
     parse_non_last_num;
     parse_wrong_then_right;
     parse_local_test;
