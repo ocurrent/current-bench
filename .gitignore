@@ -4,5 +4,7 @@ _build
 _coverage
 environments/cb-dev-test.pem
 environments/github.secret
+environments/production.conf
 capnp-secrets
 /prometheus/scripts/node_exporter*
+sqlite.db
