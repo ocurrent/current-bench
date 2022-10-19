@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Helper script to run docker-compose commands easily
+# Helper script to run development docker-compose commands easily
 
 # Ensure script is always run from the root of the repository
 cd $(dirname $0)/..

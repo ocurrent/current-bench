@@ -92,12 +92,12 @@ For more details on Hasura see: <https://hasura.io/docs/1.0/graphql/manual/deplo
 
 ### Running commands in the docker containers
 
-The `scripts/` directory has a helper script `dc.sh` that makes it easy to run
+The `scripts/` directory has two helper scripts `dev.sh` and `prod.sh` that makes it easy to run
 `docker-compose` commands without having to manually provide the `--file`,
 `--env` and `--project-name` arguments.
 
 ```sh
-./scripts/dc.sh exec db psql -U docker
+./scripts/dev.sh exec db psql -U docker
 ```
 
 ### Restarting services upon source code changes
@@ -117,7 +117,7 @@ make rebuild-pipeline
 It is possible to start just the database and the front-end without starting the `pipeline` that watches repositories and runs benchmarks. This is useful to visualize benchmarks run elsewhere using current-bench's frontend. To run only the db, frontend and graphq-engine containers, run the following command:
 
 ```sh
-./scripts/dc.sh up --build frontend db graphql-engine db-migrate
+./scripts/dev.sh up --build frontend db graphql-engine db-migrate
 ```
 
 ## Inspecting the benchmark results in the database
