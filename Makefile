@@ -1,28 +1,14 @@
 .PHONY: start-production
 start-production: update-version-info validate-env
-	docker-compose \
-		--project-name="current-bench" \
-		--file=./environments/production.docker-compose.yaml \
-		--env-file=./environments/production.env \
-		up \
-		--detach \
-		--build
+	./scripts/prod.sh up --detach --build
 
 .PHONY: build-production
 build-production:
-	docker-compose \
-		--project-name="current-bench" \
-		--file=./environments/production.docker-compose.yaml \
-		--env-file=./environments/production.env \
-		build
+	./scripts/prod.sh build
 
 .PHONY: stop-production
 stop-production:
-	docker-compose \
-		--project-name="current-bench" \
-		--file=./environments/production.docker-compose.yaml \
-		--env-file=./environments/production.env \
-		down
+	./scripts/prod.sh down
 
 .PHONY: redeploy-production
 redeploy-production: \
@@ -51,46 +37,24 @@ clean-local-test-repo:
 
 .PHONY: start-development
 start-development: ./local-test-repo/.git update-version-info validate-env
-	docker-compose \
-		--project-name="current-bench" \
-		--file=./environments/development.docker-compose.yaml \
-		--env-file=./environments/development.env \
-		up \
-		--remove-orphans \
-		--build
+	./scripts/dev.sh up --remove-orphans --build
 
 .PHONY: stop-development
 stop-development: ./local-test-repo/.git
-	docker-compose \
-		--project-name="current-bench" \
-		--file=./environments/development.docker-compose.yaml \
-		--env-file=./environments/development.env \
-		down
+	./scripts/dev.sh down
 
 .PHONY: update-graphql-schema
 update-graphql-schema: ./local-test-repo/.git
-	docker-compose \
-		--project-name="current-bench" \
-		--file=./environments/development.docker-compose.yaml \
-		--env-file=./environments/development.env \
-		exec frontend /app/scripts/update-graphql-schema.sh
+	./scripts/dev.sh exec frontend /app/scripts/update-graphql-schema.sh
 
 
 .PHONY: rebuild-pipeline
 rebuild-pipeline: ./local-test-repo/.git
-	docker-compose \
-		--project-name="current-bench" \
-		--file=./environments/development.docker-compose.yaml \
-		--env-file=./environments/development.env \
-		up --detach --build pipeline
+	./scripts/dev.sh up --detach --build pipeline
 
 .PHONY: rebuild-frontend
 rebuild-frontend: ./local-test-repo/.git
-	docker-compose \
-		--project-name="current-bench" \
-		--file=./environments/development.docker-compose.yaml \
-		--env-file=./environments/development.env \
-		up --detach --build frontend
+	./scripts/dev.sh up --detach --build frontend
 
 .PHONY: bench
 bench:
@@ -112,18 +76,12 @@ start-node-exporter:
 
 .PHONY: runtest
 runtest: ./local-test-repo/.git
-	docker-compose \
-		--project-name="current-bench" \
-		--file=./environments/development.docker-compose.yaml \
-		--env-file=./environments/development.env \
+	./scripts/dev.sh \
 		exec pipeline bash -c 'cd /mnt/project; opam exec -- dune runtest'
 
 .PHONY: coverage
 coverage: ./local-test-repo/.git
-	docker-compose \
-		--project-name="current-bench" \
-		--file=./environments/development.docker-compose.yaml \
-		--env-file=./environments/development.env \
+	./scripts/dev.sh \
 		exec pipeline bash -c \
 		'cd /mnt/project; opam exec -- dune runtest --instrument-with bisect_ppx --force; \
 		opam exec -- bisect-ppx-report summary --per-file; opam exec -- bisect-ppx-report html' \
@@ -135,8 +93,5 @@ local-make-bench: ./local-test-repo/.git
 
 .PHONY: migration
 migration:
-	docker-compose \
-		--project-name="current-bench" \
-		--file=./environments/development.docker-compose.yaml \
-		--env-file=./environments/development.env \
+	./scripts/dev.sh \
 		exec pipeline omigrate create --verbose --dir=/app/db/migrations $(NAME)
