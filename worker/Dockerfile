@@ -1,4 +1,4 @@
-FROM ocaml/opam:debian-11-ocaml-4.13 AS build
+FROM ocaml/opam:debian-11-ocaml-4.14 AS build
 
 RUN sudo apt-get update && \
     sudo apt-get install -qq -yy \
@@ -33,20 +33,20 @@ ARG TARGET_ARCH=amd64
 
 RUN apt-get update \
     && apt-get install --no-install-recommends --assume-yes \
-        netbase \
-        ca-certificates \
-        apt-transport-https \
-        curl \
-        netcat \
-        gnupg \
-        lsb-release \
-        git \
-        libpq-dev \
-        libsqlite3-dev \
-        libev-dev \
+    netbase \
+    ca-certificates \
+    apt-transport-https \
+    curl \
+    netcat \
+    gnupg \
+    lsb-release \
+    git \
+    libpq-dev \
+    libsqlite3-dev \
+    libev-dev \
     && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
     && echo "deb [arch=${TARGET_ARCH} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
-        > /etc/apt/sources.list.d/docker.list \
+    > /etc/apt/sources.list.d/docker.list \
     && apt-get update \
     && apt-get install docker-ce-cli graphviz --assume-yes \
     && rm -r /var/lib/apt/lists /var/cache/apt
