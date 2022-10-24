@@ -29,9 +29,10 @@ depends: [
 pin-depends: [
   # This pin is necessary until ocurrent/ocluster/pull/151 is merged, as the ocluster-worker package doesn't exist yet on the main repo.
   [ "ocluster-worker.dev" "git+https://github.com/art-w/ocluster.git#public-worker" ]
-  [ "ocluster-api.dev"    "git+https://github.com/ocurrent/ocluster.git" ]
-  [ "obuilder.dev"        "git+https://github.com/ocurrent/obuilder" ]
-  [ "obuilder-spec.dev"   "git+https://github.com/ocurrent/obuilder" ]
+  [ "ocluster-api.dev"    "git+https://github.com/art-w/ocluster.git#public-worker" ]
+  # This pin is necessary to build obuilder, but the commit SHA is kinda random. Remove if it builds fine on latest.
+  [ "obuilder.dev"        "git+https://github.com/ocurrent/obuilder#671a2400528f29736dc446813f0699055d8e631b" ]
+  [ "obuilder-spec.dev"   "git+https://github.com/ocurrent/obuilder#671a2400528f29736dc446813f0699055d8e631b" ]
 ]
 build: [
   ["dune" "subst"] {pinned}
