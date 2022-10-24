@@ -283,7 +283,13 @@ let of_json json = Latest.of_json json
 let to_json t = Latest.to_json t
 
 let of_list jsons =
-  List.fold_left (fun acc json -> Latest.merge acc [ of_json json ]) [] jsons
+  List.fold_left
+    (fun acc json ->
+       match of_json json with
+       | t -> Latest.merge acc [t]
+       | exception _ -> acc)
+    []
+    jsons
 
 let to_list ts =
   List.map
