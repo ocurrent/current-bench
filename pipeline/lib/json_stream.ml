@@ -238,7 +238,7 @@ module Save = struct
             failures
         in
         let cb_output =
-          let jsons = List.map Current_bench_json.to_json cb in
+          let jsons = List.map Current_bench_json.Latest.to_json cb in
           "```" ^ Yojson.Safe.to_string (`List jsons) ^ "```"
         in
         String.concat "\n" ("" :: cb_output :: failures_output)
