@@ -99,7 +99,7 @@ let make_benchmark_from_request ~conninfo ~body ~token =
     (benchmarks
     |> List.map (fun bench ->
            Json_stream.db_save ~conninfo benchmark
-             [ Current_bench_json.of_json bench ]));
+             [ Current_bench_json.Latest.of_json bench ]));
   Storage.record_success ~conninfo ~serial_id
 
 let error_message msg =

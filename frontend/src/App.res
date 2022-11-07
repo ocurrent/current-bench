@@ -56,7 +56,7 @@ module Benchmark = {
 
   let decode = (result: BenchmarkMetrics.t) => {
     let metrics = yojson_of_result(result)
-    let metrics = Current_bench_json.of_json(metrics)
+    let metrics = Current_bench_json.Latest.of_json(metrics)
     let run_at = result.run_at->decodeRunAt->Belt.Option.getExn
     (result.commit, result.run_job_id, run_at, result.test_index, metrics)
   }

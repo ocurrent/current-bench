@@ -257,7 +257,7 @@ module V2 = struct
   let of_json t =
     let lines =
       match Json.get "lines" t with
-      | `Tuple [ `Int start; `Int end_ ] -> [ (start, end_) ]
+      | `Tuple [ `Int start; `Int finish ] -> [ (start, finish) ]
       | _ -> []
     in
     {
@@ -278,22 +278,17 @@ end
 
 module Latest = V2
 
-let version = 2
-let of_json json = Latest.of_json json
-let to_json t = Latest.to_json t
-
 let of_list jsons =
   List.fold_left
     (fun acc json ->
-       match of_json json with
-       | t -> Latest.merge acc [t]
+      match Latest.of_json json with
+      | t -> Latest.merge acc [ t ]
        | exception _ -> acc)
-    []
-    jsons
+    [] jsons
 
 let to_list ts =
   List.map
     (fun { Latest.benchmark_name; results } ->
       let results = List.map Latest.json_of_result results in
-      (benchmark_name, version, results))
+      (benchmark_name, Latest.version, results))
     ts
