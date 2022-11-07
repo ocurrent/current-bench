@@ -17,6 +17,38 @@ module Json = struct
     | `Tuple of t list
     | `Variant of string * t option ]
 
+  let rec pp () : t -> string = function
+    | `Null -> "null"
+    | `Bool b -> Format.sprintf "%b" b
+    | `Int i -> Format.sprintf "%d" i
+    | `Float f -> Format.sprintf "%f" f
+    | `Intlit s | `String s -> Format.sprintf "%s" s
+    | `Assoc l -> Format.sprintf "@[{%a}@]" pp_assoc l
+    | `List l -> Format.sprintf "@[[%a]@]" pp_list l
+    | `Tuple l -> Format.sprintf "@[(%a)@]" pp_tuple l
+    | `Variant (s, Some j) -> Format.sprintf "@[<%S:@ %a" s pp j
+    | `Variant (s, None) -> Format.sprintf "@[<%S>@]" s
+
+  and pp_assoc () = function
+    | [] -> ""
+    | (s, x) :: xs -> Format.sprintf "%S: %a,@.%a" s pp x pp_assoc xs
+
+  and pp_list () = function
+    | [] -> ""
+    | x :: xs -> Format.sprintf "%a;@ %a" pp x pp_list xs
+
+  and pp_tuple () = function
+    | [] -> ""
+    | x :: xs -> Format.sprintf "%a,@ %a" pp x pp_tuple xs
+
+  let error expected gotten =
+    invalid_arg
+    @@ Format.sprintf
+         "Json type error: the expected type was `%s`, but the value didn't \
+          fit. If it is indeed the correct type, please report.@.The value \
+          was: @[%a@]@."
+         expected pp gotten
+
   let member field = function
     | `Assoc obj -> (
         match List.assoc_opt field obj with None -> `Null | Some x -> x)
@@ -25,31 +57,15 @@ module Json = struct
   let to_string_option = function `String s -> Some s | _ -> None
   let to_int_option = function `Int s -> Some s | _ -> None
   let to_list_option = function `List xs -> Some xs | _ -> None
-  let to_list = function `List xs -> xs | _ -> invalid_arg "Json: not a list"
-
-  let to_assoc = function
-    | `Assoc xs -> xs
-    | _ -> invalid_arg "Json: not a list"
-
+  let to_list = function `List xs -> xs | j -> error "list" j
+  let to_assoc = function `Assoc xs -> xs | j -> error "json object" j
   let get = member
-
-  let to_string = function
-    | `String s -> s
-    | `Null -> invalid_arg "Json: not a string but a null"
-    | `Bool _ -> invalid_arg "Json: not a string but a bool"
-    | `Int _ -> invalid_arg "Json: not a string int"
-    | `Intlit _ -> invalid_arg "Json: not a string intlit"
-    | `Float _ -> invalid_arg "Json: not a string float"
-    | `Assoc _ -> invalid_arg "Json: not a string assoc"
-    | `List _ -> invalid_arg "Json: not a string list"
-    | `Tuple _ -> invalid_arg "Json: not a string tuple"
-    | `Variant _ -> invalid_arg "Json: not a string variant"
-    | _ -> invalid_arg "Json: not a string"
+  let to_string = function `String s -> s | j -> error "string" j
 
   let to_float = function
     | `Float x -> x
     | `Int x -> float_of_int x
-    | _ -> invalid_arg "Json: not a float"
+    | j -> error "float" j
 end
 
 let default d = function None -> d | Some x -> x
@@ -246,7 +262,7 @@ module V2 = struct
   let metrics_of_json lines = function
     | `List lst -> List.map (fun m -> metric_of_json m lines) lst
     | `Assoc lst -> List.map (fun m -> metric_of_json_v1 m lines) lst
-    | _ -> invalid_arg "Json: expected a list or an object"
+    | j -> Json.error "list or object" j
 
   let result_of_json t lines =
     {
@@ -283,7 +299,7 @@ let of_list jsons =
     (fun acc json ->
       match Latest.of_json json with
       | t -> Latest.merge acc [ t ]
-       | exception _ -> acc)
+      | exception _ -> acc)
     [] jsons
 
 let to_list ts =
