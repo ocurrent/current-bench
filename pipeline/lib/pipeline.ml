@@ -284,7 +284,8 @@ let v ~config ~server:mode ~sources conninfo () =
     | Error (`Msg msg) -> failwith msg
     | Ok sr -> sr
   in
-  let ocluster = Current_ocluster.(v (Connection.create sr)) in
+  let timeout = Duration.of_hour 2 in
+  let ocluster = Current_ocluster.(v ~timeout (Connection.create sr)) in
   let pipeline = process_pipeline ~config ~ocluster ~conninfo ~sources in
   let engine = Current.Engine.create pipeline in
   let webhook =
