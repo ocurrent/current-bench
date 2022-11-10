@@ -294,14 +294,6 @@ end
 
 module Latest = V2
 
-let of_list jsons =
-  List.fold_left
-    (fun acc json ->
-      match Latest.of_json json with
-      | t -> Latest.merge acc [ t ]
-      | exception _ -> acc)
-    [] jsons
-
 let to_list ts =
   List.map
     (fun { Latest.benchmark_name; results } ->

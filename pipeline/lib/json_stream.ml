@@ -243,9 +243,9 @@ module Save = struct
         in
         String.concat "\n" ("" :: cb_output :: failures_output)
 
-  let json_merge_lines json (start, end_) =
+  let json_merge_lines (start, finish) json =
     Yojson.Safe.Util.combine json
-      (`Assoc [ ("lines", `Tuple [ `Int start; `Int end_ ]) ])
+      (`Assoc [ ("lines", `Tuple [ `Int start; `Int finish ]) ])
 
   let publish { config; conninfo; repository; serial_id; worker; docker_image }
       job worker_job_id () =
@@ -260,13 +260,19 @@ module Save = struct
         let jsons, json_failures =
           parsed
           |> List.rev
-          |> List.partition_map (fun (json, range) ->
+          |> List.fold_left
+               (fun (jsons, exns) (json, range) ->
                  try
-                   let json = Yojson.Safe.from_string json in
-                   Left (json_merge_lines json range)
-                 with exn -> Right (json, range, Printexc.to_string exn))
+                   ( json
+                     |> Yojson.Safe.from_string
+                     |> json_merge_lines range
+                     |> Current_bench_json.Latest.of_json
+                     |> Current_bench_json.Latest.add jsons,
+                     exns )
+                 with exn ->
+                   (jsons, (json, range, Printexc.to_string exn) :: exns))
+               ([], [])
         in
-        let jsons = Current_bench_json.of_list jsons in
         let cb = Current_bench_json.Latest.merge cb jsons in
         let duration = Ptime.diff (Ptime_clock.now ()) run_at in
         let () =
