@@ -8,7 +8,7 @@ authors: ["Rizo Isrof <rizo@tarides.com" "Craig Ferguson <craig@tarides.com>" "G
 homepage: "https://github.com/ocurrent/current-bench"
 bug-reports: "https://github.com/ocurrent/current-bench/issues"
 depends: [
-  "dune" {>= "2.0"}
+  "dune" {>= "2.0" & <= "3.5"}
   "capnp-rpc-unix"
   "cmdliner" {>= "1.1.0"}
   "dockerfile"
