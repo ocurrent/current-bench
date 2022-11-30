@@ -112,15 +112,25 @@ let run_command ~arch =
     "opam exec -- make bench";
   ]
 
+let runner_name =
+  let runner_nb = ref 0 in
+  fun () ->
+    let nb = !runner_nb in
+    incr runner_nb;
+    "cb_worker_runner_" ^ string_of_int nb
+
 let docker_run ~switch ~log ~docker_config ~cpu img_hash =
   let run_args = Docker_config.run_args ~cpu docker_config in
+  let name = runner_name () in
   let command =
     ("docker" :: "run" :: run_args)
+    @ [ "--name"; name ]
     @ [ "--rm"; "-i"; img_hash ]
     @ run_command ~arch:docker_config.arch
   in
-  Process.check_call ~label:"docker-run" ~switch ~log command >>!= fun () ->
-  Lwt.return (Ok ())
+  Lwt_switch.add_hook_or_exec (Some switch) (fun () ->
+      Lwt_unix.system ("docker kill " ^ name) >>= fun _ -> Lwt.return_unit)
+  >>= fun () -> Process.check_call ~label:"docker-run" ~switch ~log command
 
 let docker_run ~switch ~log ~docker_config img_hash =
   Docker_config.with_cpu docker_config @@ fun cpu ->
