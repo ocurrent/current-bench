@@ -386,10 +386,12 @@ module RepoView = {
               })}
             </Row>
           let githubLink =
-            <Link
-              href={"https://github.com/" ++ repoId} sx=[Sx.ml.auto, Sx.mr.xl] icon=Icon.github
-            />
-
+            <a
+              href={"https://github.com/" ++ repoId}
+              className={Sx.make([Sx.ml.auto, Sx.mr.xl, Sx.text.color(Sx.black)])}
+              target="_blank">
+              {Icon.github}
+            </a>
           <>
             sidebar
             <Column sx=[Sx.w.full, Sx.minW.zero]>
