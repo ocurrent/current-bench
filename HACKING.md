@@ -49,24 +49,13 @@ Before you start your docker containers for the first time, you'll
 need to create an external docker volume, like this:
 
 ```
-docker volume create --name=current-bench-data
+$ docker volume create --name=current-bench-data
 ```
 
-Start the docker-compose environment:
+Then you can start the full docker-compose environment:
 
 ```
 $ make start-development
-docker-compose \
-        --project-name="current-bench" \
-        --file=./environments/development.docker-compose.yaml \
-        --env-file=development.env \
-        up \
-        --remove-orphans
-Starting current-bench_db_1 ... done
-Starting current-bench_db-migrate_1 ... done
-Recreating current-bench_pipeline_1 ... done
-Attaching to current-bench_db_1, current-bench_db-migrate_1, current-bench_pipeline_1
-...
 ```
 
 This will start multiple services:
@@ -75,7 +64,7 @@ This will start multiple services:
 * `db` - a PostgreSQL database for storing benchmark results.
 * `db-migrate` - sets up the database and runs all schema migrations.
 * `graphql-engine` - the GraphQL engine powered by [Hasura](https://hasura.io/docs/latest/graphql/core/index.html) that serves the benchmark results from the `db`.
-* `frontend` - the frontend application for showing the benchmark results. Currently deployed at: <http://autumn.ocamllabs.io>.
+* `frontend` - the frontend application for showing the benchmark results. Currently deployed at: <https://autumn.ocamllabs.io>.
 
 > The `db-migrate` service is unique to the development environment. In production the database migrations MUST be applied manually.
 
@@ -243,6 +232,12 @@ $ cp ./environments/production.env.template ./environments/production.env
 
 Edit the `./environments/production.env` file and adjust the configurations variables to your liking.
 
+### Adding new users to the allowlist
+
+The file mentioned above (`production.env`) is also the way to add new users to the allowlist.<br>
+Simply add the name of the org or individual to `OCAML_BENCH_GITHUB_ACCOUNT_ALLOW_LIST`.<br>
+If that user needs a specific version of OCaml but can't add a Dockerfile, or needs special build args, add those to `production.conf`.
+
 
 #### Copy the production GitHub private key
 
@@ -300,7 +295,7 @@ ERROR: for current-bench_db_1  Cannot start service db: driver failed programmin
 ```
 You have a postgres server running on your machine, kill the postgres process and run the make command again.
 
-4. If the database isn't getting populated, it is most likely that the `make bench` command that the pipeline runs failed. You can look for the logs in`var/job/<date>/<-docker-pread-.log>` to find out why the command failed. Once you fix it, the pipeline should start populating the database.
+4. If the database isn't getting populated, it is most likely that the `make bench` command that the pipeline runs failed. You can look for the logs in `var/job/<date>/<-docker-pread-.log>` to find out why the command failed. Once you fix it, the pipeline should start populating the database.
 
 ### Configuring where to run benchmarks
 
