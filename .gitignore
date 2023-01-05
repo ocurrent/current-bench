@@ -1,6 +1,7 @@
 local-test-repo/.git
 *.env
 _build
+_opam
 _coverage
 environments/cb-dev-test.pem
 environments/github.secret
