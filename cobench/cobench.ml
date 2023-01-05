@@ -93,7 +93,7 @@ let pr_bench value =
 let time (f : unit -> 'a) =
   let t = Mtime_clock.counter () in
   let _ = f () in
-  Mtime.Span.to_ms (Mtime_clock.count t)
+  Mtime.Span.to_float_ns (Mtime_clock.count t) /. 1e6
 
 let test_bench f = Test.make ~name:"" (Staged.stage @@ f)
 
