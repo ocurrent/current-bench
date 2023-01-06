@@ -2,39 +2,60 @@
 
 # OCaml - Continuous benchmarks
 
-Prototype for running predictable, IO-bound benchmarks in an ocurrent pipeline. This is *work in progress*.
-If you want to be on the allowlist for running benchmarks for your repository, please contact @gs0510, or you can open an issue.
+Prototype for running predictable, IO-bound benchmarks in an ocurrent pipeline. This is *work in progress*. If you want to be on the allowlist for running benchmarks for your repository, please contact @ElectreAAS, @shakthimaan, or @punchagan, or [open an issue](https://github.com/ocurrent/current-bench/issues/new).
 
-## Enroll your project
+If you're here just to enroll your repo to see nice graphs, you're in the right place, you can jump to the next section.
+If you want to run this project locally on a tuned machine, see [TUNING.md](TUNING.md).
+If you're here to contribute to improving current-bench, see [HACKING.md](HACKING.md)
 
-If you want to enroll your repository or setup this benchmark repository for your repository, we make the following assumptions.
+## The github application
+- First, you'll need to make sure you have admin access to the organization that hosts your repo. If it's a private repo that just means your own account.
+- Then go to the app's page on the [Github Marketplace](https://github.com/marketplace/ocaml-benchmarks), scroll down and click on "Install it for free". 
+- Choose "only select repositories" and select the repo you want benchmarked. If this is a personal project, you might have to deal with 2FA there.
 
-1. There is a `make bench` target which can run the benchmarks.
-2. The benchmarks result is a JSON object of the following format:
+Done!
 
-```bash
+## Tell us about it
+Since current-bench is in an experimental stage, users have to be approved manually. Ask us to approve you or your org. Someone on our team will notify you when it's been taken care of.
+
+Now, you should be able to see your repo in the dropdown menu at https://autumn.ocamllabs.io
+
+## Ensuring we can run your benchmarks
+To be able to run your benchmarks, current-bench assumes certain things about your repo:
+- You have a `.opam` file at the root of your project specifying your dependencies and all the usual metadata.
+- Your benchmarks can be run by using `make bench` at the root of your project. If you don't have one, you'll need a `Makefile`. (For example, see [this simple Makefile](https://github.com/example-ocaml-org/my-ocaml-project/blob/main/Makefile))
+- Either you want OCaml 4.14, or you have a custom `bench.Dockerfile` at the root of your project that installs the necessary system dependencies (including opam) and the correct OCaml version.
+- The results of the benchmarks are in json, with a few specific fields, see below for the exact format.
+
+⚠️ The benchmarks are run on a single core (for now), so either don't include parallel benchmarks, or don't take the results at face value.
+
+### JSon format
+To be able to draw graphs from your results, they need to follow this format:
+
+```json
 {
-  "name": <optional-name-of-the-benchmark>,
-  "config": <optional-config-object>,
+  "name": "optional-name-of-the-benchmark",
+  "config": "optional-config-object",
   "results": [
     {
-      "name": <name-of-the-test>,
+      "name": "name-of-the-test",
       "metrics": [
-          {"name": "benchmark-name", "value": benchmark-value, "units": "benchmark-unit", "description": "benchmark-description"},
-          {"name": "num_ops", "value": [0.5, 1.5,...], "units": "ops/sec", "description": "total number of ops"},
-          {"name": "time", "value": 20, "units": "sec", "description": "time for action"},
-          {"name": "data-transfer", "value": {"min": 1, "max": 25.2, "avg": 19.8}, "units": "mbps", "description": "data transfer per second"},
+        {"name": "benchmark-name", "value": "benchmark-value", "units": "benchmark-unit", "description": "benchmark-description"},
+        {"name": "num_ops", "value": [0.5, 1.5, ...], "units": "ops/sec", "description": "total number of ops", "trend": "lower-is-better"},
+        {"name": "time", "value": 20, "units": "sec", "description": "time for action"},
+        {"name": "data-transfer", "value": {"min": 1, "max": 25.2, "avg": 19.8}, "units": "mbps", "description": "data transfer per second", "trend": "higher-is-better"},
         ...
       ],
-     ...
+      ...
     }
   ]
 }
 ```
+Note that the only valid `"trend"`s are `"higher-is-better"` and `"lower-is-better"`.
 
 [Here's](https://gist.github.com/gs0510/9ef5d47582b7fbf8dda6df0af08537e4) an example from [index](https://github.com/mirage/index) with regards to what the format looks like.
 
-The metadata about `repo`, `branch` and `commit` is added by the pipeline.
+The metadata about `repo`, `branch` and `commit` is added by current-bench.
 
 
 ### Multiple benchmarks per project
@@ -92,35 +113,4 @@ curl -X POST -H 'Authorization: Bearer <token>' <scheme>://<host>/benchmarks/met
 ## Data dependencies in your project
 
 If you have a data dependency, then currently we add the dependency to the docker volume called `current-bench-data`.
-The dependency lives in `<org_name>/<repo_name>` folder so you can assume the depdency to live in `current-bench-data/<org_name>/<repo_name>` folder.
-
-## Tuning the environment
-
-See general instructions in [ocaml-bench-scripts](https://github.com/ocaml-bench/ocaml_bench_scripts/) for configuring the benchmarking hardware. In particular, you need an isolated CPU to run the benchmarks on.
-
-Use the `—docker-cpu` parameter to pin the benchmark to a single CPU. This will pass the `—cpuset-cpus` parameter to Docker behind the scenes to run the container on a single core.
-
-The main difference from the scripts hosted in [ocaml-bench-scripts](https://github.com/ocaml-bench/ocaml_bench_scripts/) and this ocurrent pipeline is that the tasks will be executed inside docker containers. This requires a few more adjustments to how the containers are launched. Most of this is handled automatically by the pipeline by passing parameters to Docker. Some additional details are documented below.
-
-
-## IO performance
-
-The results of IO bound benchmarks can vary greatly between different device/storage types and how they are configured. For this prototype we’re aiming for predictable results so we are using an in-memory `tmpfs` partition in `/dev/shm` for all storage.
-
-The `—docker-shm-size` parameter can be passed to the pipeline to adjust the size of the `tmpfs` partition. The default is 4G.
-
-`tmpfs` partitions are similar to `ramfs` partitions in that the content will be stored entirely in internal kernel cache, but they have a size limitation and may trigger swapping. It is therefore important to make sure that the system is configured in such a way that swapping doesn’t occur while the benchmark is running. For more details about `tmpfs`/`ramfs` see https://www.kernel.org/doc/Documentation/filesystems/tmpfs.txt.
-
-
-## NUMA considerations
-
-If running on a system with NUMA enabled the `tmpfs` file system should be allocated in a memory area that is local to the core running the benchmark. Otherwise the kernel could allocate this in different areas over time and affect the IO performance results. To avoid this issue, the `tmpfs` volume can be created with a specific memory allocation policy.
-
-The pipeline provides a `—docker-numa-node` command line parameter that forces the `tmpfs` volume in `/dev/shm` to be allocated from a specific NUMA node. `lscpu` shows which NUMA nodes are local to each core.
-
-NOTE: Although it should be possible to get good results on a NUMA enabled system, we do not plan to use this in production and have limited experience with it. The main reason is that the system wide optimisations required would likely reduce performance for general tasks, while the benchmark itself only runs on a single core. This makes it more suitable to run on a dedicated, smaller server, which typically has less memory and doesn’t require NUMA.
-
-
-## ASLR
-
-ASLR affects performance as the memory layout is changed each time the benchmark is loaded. The ocurrent pipeline disables ASLR inside the container automatically by wrapping the benchmark command in a call to `setarch [...] --addr-no-randomize`. This is normally blocked by the default Docker seccomp profile, so we have modified the profile to allow [`personality(2)`](http://man7.org/linux/man-pages/man2/personality.2.html) to be invoked with the `ADDR_NO_RANDOMIZE` flag.
+The dependency lives in `<org_name>/<repo_name>` folder so you can assume the dependency to live in `current-bench-data/<org_name>/<repo_name>` folder.
