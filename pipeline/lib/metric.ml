@@ -260,7 +260,7 @@ module NGC = Current_cache.Output (NotifyGithub)
 let notify ~conninfo ~repository ~worker ~docker_image ~pull_number job_id =
   let open Current.Syntax in
   Current.component "notify-github"
-  |> let> job_id in
+  |> let> job_id = job_id in
      let github_api = Repository.github_api repository in
      NGC.set
        { conninfo; repository; github_api; worker; docker_image; pull_number }
@@ -270,7 +270,7 @@ let notify_metric_changes ~conninfo ~repository ~worker ~docker_image ~config
     output =
   let repo_id = Repository.info repository in
   let commit_hash = Repository.commit_hash repository in
-  let repo_configs = Config.find config repo_id in
+  let repo_configs = Config.find config repository in
   let should_notify =
     List.find_map
       (fun (repo_config : Config.repo) ->
