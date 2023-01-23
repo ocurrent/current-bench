@@ -69,7 +69,7 @@ Benchmarks data could also be added directly to the DB without having
 `current-bench` running the benchmarks using a HTTP end-point.
 
 ```sh
-curl -X POST -H 'Authorization: Bearer <token>' <scheme>://<host>/benchmarks/metrics --data-raw '
+curl -X POST -H 'Authorization: Bearer <token>' https://autumn.ocamllabs.io/benchmarks/metrics --data-raw '
 {
   "repo_owner": "ocurrent",
   "repo_name": "current-bench",
