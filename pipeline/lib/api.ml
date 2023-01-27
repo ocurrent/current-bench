@@ -22,9 +22,9 @@ let request_token req =
   | _ -> raise Missing_token
 
 let authenticate_token req api_tokens =
-  (* This function only that the token is a valid token, and doesn't process
+  (* This function only checks that the token is a valid token, and doesn't process
      the body of the request. Essentially, we only do "authentication" of the
-     token. The authorization is done in a separate function.*)
+     token. The authorization is done in a separate function. *)
   (match api_tokens with [] -> raise Server_config_error | _ -> ());
 
   let token = request_token req in
@@ -43,9 +43,15 @@ let authorize_token (api_token : Config.api_token option) repository =
   | _ -> raise Invalid_token
 
 let check_key key json =
-  match Yojson.Safe.Util.(member key json) with
+  match Yojson.Safe.Util.member key json with
   | `Null -> Data_validation_error (Fmt.str "Key '%s' is missing" key) |> raise
   | s -> s
+
+let get_labels json =
+  let open Yojson.Safe.Util in
+  match member "labels" json with
+  | `List _ as l -> to_list l |> List.map to_string
+  | _ -> []
 
 let make_benchmark_from_request ~conninfo ~body ~token =
   let json_body = body |> Yojson.Safe.from_string in
@@ -58,6 +64,7 @@ let make_benchmark_from_request ~conninfo ~body ~token =
   | None, None ->
       Data_validation_error "Need either 'branch' or 'pull_number'" |> raise
   | _ -> ());
+  let labels = get_labels json_body in
   let commit = check_key "commit" json_body |> to_string in
   let run_at =
     check_key "run_at" json_body |> to_string |> Ptime.of_rfc3339 |> function
@@ -85,7 +92,7 @@ let make_benchmark_from_request ~conninfo ~body ~token =
   in
   let repository =
     Repository.v ?branch ?pull_number ~name:repository_name
-      ~owner:repository_owner ~commit ()
+      ~owner:repository_owner ~commit ~labels ()
   in
   let benchmark =
     Models.Benchmark.make ~duration ~run_at ~repository ~worker ~docker_image

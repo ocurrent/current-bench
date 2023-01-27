@@ -100,7 +100,7 @@ let default name =
 
 let must_benchmark repo conf =
   match (conf.if_label, Repository.pull_number repo) with
-  | Some tag, Some _ -> List.mem tag (Repository.tags repo)
+  | Some tag, Some _ -> List.mem tag (Repository.labels repo)
   | _ -> true
 
 let find t repo =
