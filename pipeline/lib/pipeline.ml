@@ -181,9 +181,9 @@ let github_repositories repo =
       match key with
       (* Skip all branches other than the default branch, and check PRs *)
       | `Ref branch when branch = default_branch ->
-          repository ~branch:default_branch_name () :: lst
-      | `PR pull_number ->
-          repository ~title:pull_number.title ~pull_number:pull_number.id ()
+          repository ~branch:default_branch_name ~labels:[] () :: lst
+      | `PR pr ->
+          repository ~title:pr.title ~pull_number:pr.id ~labels:pr.labels ()
           :: lst
       | _ -> lst)
     ref_map []
@@ -218,7 +218,10 @@ let repositories = function
                     log "Could not extract branch name from: %s" git_ref);
                 None)
       in
-      [ Repository.v ?branch ~src ~commit ~name:"local" ~owner:"local" () ]
+      [
+        Repository.v ?branch ~src ~commit ~name:"local" ~owner:"local"
+          ~labels:[] ();
+      ]
   | Github { repo; token; webhook_secret } ->
       let token = token |> Util.read_fpath |> String.trim in
       let api = Current_github.Api.of_oauth ~token ~webhook_secret in
