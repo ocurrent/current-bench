@@ -3,7 +3,7 @@ module Slack = Current_slack
 module Images = Map.Make (String)
 
 let default_worker = "autumn"
-let default_docker = "ocaml/opam:debian-11-ocaml-4.13"
+let default_docker = "ocaml/opam:debian-ocaml-5.0"
 
 type repo = {
   name : string;

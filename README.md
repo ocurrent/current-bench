@@ -24,7 +24,7 @@ Now, you should be able to see your repo in the dropdown menu at https://autumn.
 To be able to run your benchmarks, current-bench assumes certain things about your repo:
 - You have a `.opam` file at the root of your project specifying your dependencies and all the usual metadata.
 - Your benchmarks can be run by using `make bench` at the root of your project. If you don't have one, you'll need a `Makefile`. (For example, see [this simple Makefile](https://github.com/example-ocaml-org/my-ocaml-project/blob/main/Makefile))
-- Either you want OCaml 4.14, or you have a custom `bench.Dockerfile` at the root of your project that installs the necessary system dependencies (including opam) and the correct OCaml version.
+- Either you want OCaml 5.0.0, or you have a custom `bench.Dockerfile` at the root of your project that installs the necessary system dependencies (including opam) and the correct OCaml version.
 - The results of the benchmarks are in json, with a few specific fields, see below for the exact format.
 
 ⚠️ The benchmarks are run on a single core (for now), so either don't include parallel benchmarks, or don't take the results at face value.
