@@ -40,7 +40,7 @@ To be able to draw graphs from your results, they need to follow this format:
     {
       "name": "name-of-the-test",
       "metrics": [
-        {"name": "benchmark-name", "value": "benchmark-value", "units": "benchmark-unit", "description": "benchmark-description"},
+        {"name": "benchmark-name", "value": 42, "units": "benchmark-unit", "description": "benchmark-description"},
         {"name": "num_ops", "value": [0.5, 1.5, ...], "units": "ops/sec", "description": "total number of ops", "trend": "lower-is-better"},
         {"name": "time", "value": 20, "units": "sec", "description": "time for action"},
         {"name": "data-transfer", "value": {"min": 1, "max": 25.2, "avg": 19.8}, "units": "mbps", "description": "data transfer per second", "trend": "higher-is-better"},
