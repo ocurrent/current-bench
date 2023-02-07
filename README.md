@@ -27,7 +27,10 @@ To be able to run your benchmarks, current-bench assumes certain things about yo
 - Either you want OCaml 5.0.0, or you have a custom `bench.Dockerfile` at the root of your project that installs the necessary system dependencies (including opam) and the correct OCaml version.
 - The results of the benchmarks are in json, with a few specific fields, see below for the exact format. The standard output of `make bench` will be searched for json matching this format.
 - If a `bench.Dockerfile` is present then benchmarks will be run from within a docker container built from this file. This means `bench.Dockerfile` must set up an image containing a `Makefile` which runs benchmarks by running `make bench`.
-- Benchmarks only run when a pull request is opened and when pushing to a remote branch which is the source of a pull request.
+- Benchmarks only run when:
+  - opening a pull request
+  - updating a remote branch which is the source of a pull request
+  - merging a pull request
 
 ⚠️ The benchmarks are run on a single core (for now), so either don't include parallel benchmarks, or don't take the results at face value.
 
