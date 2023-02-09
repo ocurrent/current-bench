@@ -49,14 +49,30 @@ is_graphql_url() {
     fi
 }
 
-is_digit_csv() {
-    regex='^[0-9](,[0-9])*$'
-    if [[ $1 =~ $regex ]]
+is_digit_or_range_csv() {
+    digit_regex='^[0-9]+(,[0-9]+)*$'
+    range_regex='^[0-9]+-[0-9]+(,[0-9]+-[0-9]+)*$'
+    if [[ $1 =~ $digit_regex ]]
     then
         echo "$1 is valid"
     else
-        echo "$1 is NOT valid. Use comma separated CPU numbers"
-        ERRORS="yes"
+        if [[ $1 =~ $range_regex ]]
+        then
+            ranges=()
+            for i in ${1//,/ }
+            do
+                range=$(echo "($i) * -1" | bc -q)
+                ranges+=("${range}")
+            done
+            if grep -qE '^([0-9]+)( \1)*$' <<< "${ranges[@]}"; then
+                echo "$1 is valid"
+            else
+                echo "$1 is NOT valid. All CPU ranges should be equal length"
+            fi
+        else
+            echo "$1 is NOT valid. Use comma separated CPU numbers or ranges"
+            ERRORS="yes"
+        fi
     fi
 }
 
@@ -66,7 +82,7 @@ validations () {
     validate_var $1 OCAML_BENCH_FRONTEND_URL url_with_schema
     validate_var $1 OCAML_BENCH_PIPELINE_URL url_with_schema
     validate_var $1 OCAML_BENCH_GRAPHQL_URL is_graphql_url
-    validate_var $1 OCAML_BENCH_DOCKER_CPU is_digit_csv
+    validate_var $1 OCAML_BENCH_DOCKER_CPU is_digit_or_range_csv
 }
 
 validate () {
