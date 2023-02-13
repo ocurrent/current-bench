@@ -68,6 +68,8 @@ Multiple concatenated JSON objects can be produced and will be interpreted as di
 Benchmarks data could also be added directly to the DB without having
 `current-bench` running the benchmarks using a HTTP end-point.
 
+For that you'll need a valid HTTP `token`, ask us and we'll provide one for you.
+
 ```sh
 curl -X POST -H 'Authorization: Bearer <token>' https://autumn.ocamllabs.io/benchmarks/metrics --data-raw '
 {
