@@ -129,10 +129,12 @@ let docker_run ~switch ~log ~docker_config ~cpu img_hash =
     @ run_command ~arch:docker_config.arch
   in
   Lwt_switch.add_hook_or_exec (Some switch) (fun () ->
-      Lwt_unix.system ("docker ps -q | grep -q " ^ name) >>= function
-      | Unix.WEXITED 0 ->
-          Lwt_unix.system ("docker kill " ^ name) >>= fun _ -> Lwt.return_unit
-      | _ -> Lwt.return_unit)
+      Lwt_process.pread ("docker", [| "docker"; "ps"; "-qf"; "name=" ^ name |])
+      >>= function
+      | "" -> Lwt.return_unit
+      | _ ->
+          Lwt_process.exec ("docker", [| "docker"; "kill"; name |]) >>= fun _ ->
+          Lwt.return_unit)
   >>= fun () -> Process.check_call ~label:"docker-run" ~switch ~log command
 
 let docker_run ~switch ~log ~docker_config img_hash =

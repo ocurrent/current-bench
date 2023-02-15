@@ -23,7 +23,7 @@ type api_token_list = api_token list [@@deriving yojson]
 type config = {
   repositories : repo_list;
   api_tokens : api_token_list;
-  slack : (string option[@default None]);
+  slack : string option; [@default None]
 }
 [@@deriving yojson]
 
