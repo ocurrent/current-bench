@@ -9,6 +9,7 @@ type repo = {
   name : string;
   worker : string; [@default default_worker]
   image : string; [@default default_docker]
+  dockerfile : string option; [@default None]
   schedule : string option; [@default None]
   build_args : string list; [@default []]
   notify_github : bool; [@default false]
@@ -92,6 +93,7 @@ let default name =
     name;
     worker = default_worker;
     image = default_docker;
+    dockerfile = None;
     schedule = None;
     build_args = [];
     notify_github = false;

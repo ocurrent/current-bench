@@ -113,30 +113,27 @@ let dockerfile ~base ~files =
 let dockerfile ~base ~files = Dockerfile.crunch (dockerfile ~base ~files)
 
 let dockerfiles ~config ~repository =
-  let custom_dockerfile = "bench.Dockerfile" in
+  let default_file = "bench.Dockerfile" in
   let envs = Env.find config repository in
   let not_empty = Current.map (fun envs -> envs <> []) envs in
   let+ files = get_all_files ~cond:not_empty ~repository and+ envs = envs in
-  let dockerfile_exists = List.mem custom_dockerfile files in
+  let default_file_exists = List.mem default_file files in
   List.map
-    (fun (clock, conf) ->
+    (fun (clock, (conf : Config.repo)) ->
       let image, dockerfile =
-        if dockerfile_exists
-        then (custom_dockerfile, `File (Fpath.v custom_dockerfile))
-        else
-          let image = conf.Config.image in
-          let docker =
-            `Contents
-              (let+ base = Config.find_image config image in
-               dockerfile ~base ~files)
-          in
-          (image, docker)
+        match conf.dockerfile with
+        | Some custom_dockerfile ->
+            (custom_dockerfile, `File (Fpath.v custom_dockerfile))
+        | None when default_file_exists ->
+            (default_file, `File (Fpath.v default_file))
+        | None ->
+            let image = conf.image in
+            let docker =
+              `Contents
+                (let+ base = Config.find_image config image in
+                 dockerfile ~base ~files)
+            in
+            (image, docker)
       in
-      {
-        Env.worker = conf.Config.worker;
-        image;
-        dockerfile;
-        clock;
-        config = conf;
-      })
+      { Env.worker = conf.worker; image; dockerfile; clock; config = conf })
     envs
