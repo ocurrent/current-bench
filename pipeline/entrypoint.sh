@@ -1,7 +1,11 @@
 #!/bin/sh
+# DO NOT RUN THIS SCRIPT DIRECTLY ON YOUR MACHINE (not inside a docker)
+# latest git version adds a 'safe.directory' check that breaks everything.
+# we remove this check globally, which would be very dangerous outside a docker environment.
 
 if [ -d /app/local-test-repo ]; then
   cd /app/local-test-repo
+  git config --global --add safe.directory '*'
   git daemon --verbose --export-all --base-path=.git --reuseaddr --strict-paths .git/ &
 fi
 
