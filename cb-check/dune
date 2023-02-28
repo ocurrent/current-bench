@@ -1,0 +1,5 @@
+(executable
+ (name cb_check)
+ (package cb-check)
+ (public_name cb-check)
+ (libraries cb-schema yojson))

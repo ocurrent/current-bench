@@ -1,0 +1,3 @@
+(library
+ (name cb_schema)
+ (public_name cb-schema))
