@@ -1,6 +1,5 @@
 open Bechamel
-module C = Current_bench_json
-module L = C.Latest
+module L = Cb_schema.S
 module J = Yojson.Safe
 
 type value = L.value
@@ -10,7 +9,8 @@ let list vs = L.Floats vs
 
 type metric = L.metric
 
-let metric ~name ?(description = "") ?(units = "") ?(trend = "") value =
+let metric ~name ?(description = "") ?(units = "") ?(trend = L.Unspecified)
+    value =
   { L.name; description; units; trend; value; lines = [] }
 
 type result = L.result
