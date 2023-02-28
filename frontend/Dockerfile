@@ -17,7 +17,8 @@ RUN apt-get update \
 # set working directory
 WORKDIR /app
 
-COPY ./pipeline/lib/current_bench_json.ml /pipeline/lib/current_bench_json.ml
+COPY ./cb-schema/schema.ml /cb-schema/schema.ml
+COPY ./cb-schema/json.ml /cb-schema/json.ml
 
 # Build frontend code for production
 FROM dev AS builder

@@ -5,6 +5,8 @@ let rec list_find_map f = function
 
 (* Added because it was introduced to stdlib in 5.0 *)
 let sscanf_opt fmt fn ~str = try Some (Scanf.sscanf str fmt fn) with _ -> None
+
+(* Added because it isn't available in reason for some reason *)
 let option_value default = function None -> default | Some x -> x
 
 let longest_string s0 s1 =

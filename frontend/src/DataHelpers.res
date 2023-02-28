@@ -1,6 +1,6 @@
 let trimCommit = commit => String.length(commit) > 7 ? String.sub(commit, 0, 7) : commit
 
-let rec yojson_of_json = (json : Js.Json.t) : Current_bench_json.Json.t => {
+let rec yojson_of_json = (json : Js.Json.t) : Json.t => {
   switch Js.Json.classify(json) {
     | JSONFalse => #Bool(false)
     | JSONTrue => #Bool(true)
