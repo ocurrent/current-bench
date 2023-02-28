@@ -1,1 +1,5 @@
-pipeline/.ocamlformat
+version = 0.24.1
+profile = conventional
+parse-docstrings = true
+break-infix = fit-or-vertical
+if-then-else = keyword-first
