@@ -31,7 +31,7 @@ let read_file path =
 
 let key_of_file filename =
   let data = read_file filename in
-  Mirage_crypto_rng_unix.initialize ();
+  Mirage_crypto_rng_unix.initialize (module Mirage_crypto_rng.Fortuna);
   match X509.Private_key.decode_pem (Cstruct.of_string data) with
   | Error (`Msg msg) -> Fmt.failwith "Failed to parse secret key!@ %s" msg
   | Ok (`RSA key) -> key

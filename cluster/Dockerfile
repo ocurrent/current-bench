@@ -5,7 +5,7 @@ RUN sudo ln -f /usr/bin/opam-2.1 /usr/bin/opam
 RUN opam install dune>=2.8 ppx_expect>=v0.14.1 prometheus ppx_sexp_conv dune-build-info lwt>=5.4.1 capnp-rpc-lwt>=1.2 capnp-rpc-net capnp-rpc-unix>=1.2 extunix>=0.3.2 logs conf-libev digestif>=0.8 fpath lwt-dllist prometheus-app=1.1 cohttp-lwt-unix sqlite3 psq mirage-crypto>=0.8.5 ppx_deriving ppx_deriving_yojson astring fmt>=0.8.9 cmdliner tar-unix>=2.0.0 yojson sexplib sha
 RUN mkdir src && cd src && git clone --recurse-submodules 'https://github.com/ocurrent/ocluster'
 WORKDIR src/ocluster
-RUN opam pin -yn .
+RUN opam pin -yn . --with-version=dev
 RUN opam install -y --deps-only ./ocluster.opam
 RUN opam exec -- dune build \
   ./_build/install/default/bin/ocluster-scheduler \
