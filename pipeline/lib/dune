@@ -1,9 +1,10 @@
 (library
  (name pipeline)
  (public_name pipeline)
- (libraries current current.fs current_docker current_git current_github
-   current_ocluster capnp-rpc-unix current_web current_slack dockerfile
-   fmt.tty logs logs.fmt prometheus rresult uri postgresql ptime.clock.os
-   yojson str timedesc.tzdb.full timedesc.tzlocal.unix timedesc timere-parse)
+ (libraries cb-schema current current.fs current_docker current_git
+   current_github current_ocluster capnp-rpc-unix current_web current_slack
+   dockerfile fmt.tty logs logs.fmt prometheus rresult uri postgresql
+   ptime.clock.os yojson str timedesc.tzdb.full timedesc.tzlocal.unix
+   timedesc timere-parse)
  (preprocess
   (pps ppx_deriving_yojson)))

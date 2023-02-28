@@ -14,7 +14,7 @@ let setup_metadata ~repository ~worker ~docker_image
   let docker_image = Db_util.string docker_image in
   let query =
     (*
-      When setting up metadata, we are only insert the details that we know at th
+      When setting up metadata, we only insert the details that we know at the
       beginning. If we see a conflict here, that means we have started running the
       benchmarks again for this repo and commit, so we reset the build_job_id
       and the run_job_id.
@@ -156,7 +156,7 @@ let parse_result result =
             test_name,
             metrics
             |> Yojson.Safe.from_string
-            |> Current_bench_json.Latest.metrics_of_json [] )
+            |> Cb_schema.S.metrics_of_json [] )
       | _ -> failwith "Unexpected format of query result")
     result
 
