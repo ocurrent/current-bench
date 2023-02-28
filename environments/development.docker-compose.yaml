@@ -71,6 +71,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ../pipeline/db/migrations:/app/db/migrations
       - ../pipeline:/mnt/project
+      - ../cb-schema:/mnt/project/cb-schema
       - ../capnp-secrets:/app/capnp-secrets
     ports:
       # Expose git server for local-repos/ to workers

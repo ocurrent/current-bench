@@ -1,2 +1,7 @@
 (lang dune 2.0)
-(name pipeline)
+
+(package
+ (name pipeline))
+
+(package
+ (name cb-schema))
