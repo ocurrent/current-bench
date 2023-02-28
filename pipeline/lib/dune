@@ -3,8 +3,8 @@
  (public_name pipeline)
  (libraries cb-schema current current.fs current_docker current_git
    current_github current_ocluster capnp-rpc-unix current_web current_slack
-   dockerfile fmt.tty logs logs.fmt prometheus rresult uri postgresql
-   ptime.clock.os yojson str timedesc.tzdb.full timedesc.tzlocal.unix
-   timedesc timere-parse)
+   dockerfile fmt.tty logs logs.fmt postgresql prometheus ptime.clock.os
+   rresult str timedesc.tzdb.full timedesc.tzlocal.unix timedesc timere-parse
+   uri yojson)
  (preprocess
   (pps ppx_deriving_yojson)))
