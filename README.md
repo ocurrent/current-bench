@@ -35,7 +35,19 @@ To be able to run your benchmarks, current-bench assumes certain things about yo
 ⚠️ The benchmarks are run on a single core (for now), so either don't include parallel benchmarks, or don't take the results at face value.
 
 ### JSon format
-To be able to draw graphs from your results, they need to follow this format:
+To be able to draw graphs from your results, they need to follow a specific format.
+You can automatically check that your output conforms to that format by calling `cb-check`:
+
+<!-- remove the pin when cb-check hits opam -->
+```bash
+opam pin -n cb-check git@github.com:ocurrent/current-bench.git
+opam install cb-check
+your_executable | cb-check
+# OR, if your_executable writes in some_file.txt
+cb-check some_file.txt
+```
+
+A description of that format is also specified below for convenience:
 
 ```json
 {
