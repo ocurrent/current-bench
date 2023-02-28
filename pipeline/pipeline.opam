@@ -30,6 +30,7 @@ depends: [
   "fpath"
   "logs"
   "postgresql"
+  "ptime" {>= "0.8.1"}
   "rresult"
   "omigrate"
   "ocluster" {= "dev"}
