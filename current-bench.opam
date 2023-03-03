@@ -15,13 +15,13 @@ depends: [
   "bos"
   "capnp-rpc-unix"
   "cmdliner" {>= "1.1.0"}
-  "current"        {= "dev"}
-  "current_docker" {= "dev"}
-  "current_git"    {= "dev"}
-  "current_github" {= "dev"}
-  "current_rpc"    {= "dev"}
-  "current_slack"  {= "dev"}
-  "current_web"    {= "dev"}
+  "current"        {>= "0.6.4"}
+  "current_docker" {>= "0.6.4"}
+  "current_git"    {>= "0.6.4"}
+  "current_github" {>= "0.6.4"}
+  "current_rpc"    {>= "0.6.4"}
+  "current_slack"  {>= "0.6.4"}
+  "current_web"    {>= "0.6.4"}
   "current_incr" {>= "0.5"}
   "current_ansi"
   "current_ocluster" {= "dev"}
@@ -45,17 +45,6 @@ depends: [
 
 pin-depends: [
   [ "reason.dev" "git+https://github.com/reasonml/reason.git#ccc34729994b4a80d4f6274cc0165cd9113444d6"]
-# These pins point to the latest version of ocurrent
-# When the next ocurrent release hits opam, the pins can be removed entirely
-# When modifying, don't forget to also modify pipeline/pipeline.opam
-  [ "current_docker.dev"   "git+https://github.com/ocurrent/ocurrent.git#c611b108dbb9af2611a34dc57e13eb2ce5af886d"]
-  [ "current_github.dev"   "git+https://github.com/ocurrent/ocurrent.git#c611b108dbb9af2611a34dc57e13eb2ce5af886d"]
-  [ "current_git.dev"      "git+https://github.com/ocurrent/ocurrent.git#c611b108dbb9af2611a34dc57e13eb2ce5af886d"]
-  [ "current.dev"          "git+https://github.com/ocurrent/ocurrent.git#c611b108dbb9af2611a34dc57e13eb2ce5af886d"]
-  [ "current_rpc.dev"      "git+https://github.com/ocurrent/ocurrent.git#c611b108dbb9af2611a34dc57e13eb2ce5af886d"]
-  [ "current_slack.dev"    "git+https://github.com/ocurrent/ocurrent.git#c611b108dbb9af2611a34dc57e13eb2ce5af886d"]
-  [ "current_web.dev"      "git+https://github.com/ocurrent/ocurrent.git#c611b108dbb9af2611a34dc57e13eb2ce5af886d"]
-# The above comment is only relevant to the above pins. Ask art-w for the pins below.
   [ "current_ocluster.dev" "git+https://github.com/art-w/ocluster.git#e32a5022b90c288a14947520a77bdc2ab7789a07"]
   [ "ocluster-api.dev"     "git+https://github.com/art-w/ocluster.git#e32a5022b90c288a14947520a77bdc2ab7789a07"]
   [ "ocluster-worker.dev"  "git+https://github.com/art-w/ocluster.git#e32a5022b90c288a14947520a77bdc2ab7789a07"]
