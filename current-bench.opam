@@ -24,11 +24,11 @@ depends: [
   "current_web"    {>= "0.6.4"}
   "current_incr" {>= "0.5"}
   "current_ansi"
-  "current_ocluster" {= "dev"}
-  "ocluster-api"     {= "dev"}
-  "ocluster-worker"  {= "dev"}
-  "obuilder"         {= "dev"}
-  "obuilder-spec"    {= "dev"}
+  "current_ocluster" {>= "0.2.1"}
+  "ocluster-api"     {>= "0.2.1"}
+  "ocluster-worker"  {>= "0.2.1"}
+  "obuilder"         {>= "0.5.1"}
+  "obuilder-spec"    {>= "0.5.1"}
   "dockerfile"
   "duration"
   "fpath"
@@ -45,11 +45,6 @@ depends: [
 
 pin-depends: [
   [ "reason.dev" "git+https://github.com/reasonml/reason.git#ccc34729994b4a80d4f6274cc0165cd9113444d6"]
-  [ "current_ocluster.dev" "git+https://github.com/art-w/ocluster.git#e32a5022b90c288a14947520a77bdc2ab7789a07"]
-  [ "ocluster-api.dev"     "git+https://github.com/art-w/ocluster.git#e32a5022b90c288a14947520a77bdc2ab7789a07"]
-  [ "ocluster-worker.dev"  "git+https://github.com/art-w/ocluster.git#e32a5022b90c288a14947520a77bdc2ab7789a07"]
-  [ "obuilder.dev"         "git+https://github.com/ocurrent/obuilder#dc987c12ccc6cd9729809359e9375bfe5443add9"]
-  [ "obuilder-spec.dev"    "git+https://github.com/ocurrent/obuilder#dc987c12ccc6cd9729809359e9375bfe5443add9"]
 ]
 
 depexts: [
