@@ -10,7 +10,6 @@ depends: [
   "ocaml"   {>= "4.13.0"}
   "dune" {>= "2.0"}
   "yojson"
-  "reason" {>= "dev"}
   "bechamel"
   "bos"
   "capnp-rpc-unix"
@@ -41,10 +40,6 @@ depends: [
   "timere-parse"
   "alcotest" {with-test}
   "alcotest-lwt" {with-test}
-]
-
-pin-depends: [
-  [ "reason.dev" "git+https://github.com/reasonml/reason.git#ccc34729994b4a80d4f6274cc0165cd9113444d6"]
 ]
 
 depexts: [
