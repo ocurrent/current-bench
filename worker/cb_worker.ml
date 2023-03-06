@@ -178,7 +178,7 @@ let build_and_run ~switch ~log ~src ~docker_config = function
 let update () = Lwt.return (fun () -> Lwt.return ())
 let or_die = function Ok x -> x | Error (`Msg msg) -> failwith msg
 
-let run ~state_dir ~docker_config ~name ~registration_path =
+let run ~state_dir ~docker_config ~name ~registration_path ~healthcheck_period =
   let vat = Capnp_rpc_unix.client_only_vat () in
   let sr = Capnp_rpc_unix.Cap_file.load vat registration_path |> or_die in
   let build ~switch ~log ~src ~secrets:_ request =
@@ -186,7 +186,8 @@ let run ~state_dir ~docker_config ~name ~registration_path =
   in
   let capacity = Docker_config.cpus_count docker_config in
   let worker =
-    Cluster_worker.run ~build ~update ~name ~capacity ~state_dir sr
+    Cluster_worker.run ~build ~update ~name ~capacity ~state_dir
+      ~healthcheck_period sr
   in
   Lwt_main.run worker
 
@@ -245,13 +246,25 @@ let state_dir =
   @@ Arg.info ~doc:"Directory for worker internal state" ~docv:"state_dir"
        [ "state-dir" ]
 
+let healthcheck_period =
+  Arg.value
+  @@ Arg.opt Arg.float 600.0
+  @@ Arg.info
+       ~doc:
+         "Number of second between obuilder health checks. Zero disables \
+          health checks."
+       ~docv:"SECONDS" [ "obuilder-healthcheck" ]
+
 let cmd =
   Term.(
-    const (fun docker_config name registration_path state_dir ->
-        run ~state_dir ~docker_config ~name ~registration_path)
+    const
+      (fun docker_config name registration_path state_dir healthcheck_period ->
+        run ~state_dir ~docker_config ~name ~registration_path
+          ~healthcheck_period)
     $ Docker.v
     $ worker_name
     $ registration_path
-    $ state_dir)
+    $ state_dir
+    $ healthcheck_period)
 
 let () = Stdlib.exit @@ Cmd.eval (Cmd.v (Cmd.info "cb worker") cmd)
