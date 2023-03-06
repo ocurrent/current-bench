@@ -104,7 +104,7 @@ let pipeline ~config ~ocluster ~conninfo ~repository env =
   in
   let src =
     let commit = Repository.commit repository in
-    if Repository.info repository <> "local/local"
+    if Repository.info repository |> String.starts_with ~prefix:"local/" |> not
     then commit
     else
       let open Current_git.Commit_id in
@@ -198,13 +198,15 @@ let filter_stale_repositories repos =
       | Some head when Github.Api.Commit.committed_date head > stale_timestamp
         ->
           Some repo
-      | None when Repository.info repo = "local/local" -> Some repo
+      | None when Repository.info repo |> String.starts_with ~prefix:"local/" ->
+          Some repo
       | _ -> None)
     repos
 
 let repositories = function
   | Source.Local path ->
       let local = Git.Local.v path in
+      let name = Fpath.basename path in
       let src = Git.Local.head_commit local in
       let+ head = Git.Local.head local and+ commit = src >>| Git.Commit.id in
       let branch =
@@ -218,10 +220,7 @@ let repositories = function
                     log "Could not extract branch name from: %s" git_ref);
                 None)
       in
-      [
-        Repository.v ?branch ~src ~commit ~name:"local" ~owner:"local"
-          ~labels:[] ();
-      ]
+      [ Repository.v ?branch ~src ~commit ~name ~owner:"local" ~labels:[] () ]
   | Github { repo; token; webhook_secret } ->
       let token = token |> Util.read_fpath |> String.trim in
       let api = Current_github.Api.of_oauth ~token ~webhook_secret in
