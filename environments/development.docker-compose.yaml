@@ -67,13 +67,13 @@ services:
     volumes:
       # Mount the source code of the test project to allow local testing.
       - current-bench-data:/app/current-bench-data
-      - "${OCAML_BENCH_LOCAL_REPO?required}:/app/local-test-repo"
+      - ../local-repos:/app/local-repo-dir
       - /var/run/docker.sock:/var/run/docker.sock
       - ../pipeline/db/migrations:/app/db/migrations
       - ../pipeline:/mnt/project
       - ../capnp-secrets:/app/capnp-secrets
     ports:
-      # Expose git server for local-test-repo to workers
+      # Expose git server for local-repos/ to workers
       - "54538:54538"
       - "${OCAML_BENCH_PIPELINE_PORT?required}:${OCAML_BENCH_PIPELINE_PORT?required}"
       - "4040:4040"
@@ -82,7 +82,7 @@ services:
       - "/mnt/project/reload.sh"
       - "/app/bin/current-bench-pipeline"
       - "--repositories=/mnt/environments/development.conf"
-      - "--local-repo=/app/local-test-repo"
+      - "--local-repo-dir=/app/local-repo-dir"
       - "--verbose"
       - "--port=${OCAML_BENCH_PIPELINE_PORT?required}"
       - "--conn-info=host=db user=docker port=5432 dbname=docker password=${OCAML_BENCH_DB_PASSWORD?required}"

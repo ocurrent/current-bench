@@ -33,15 +33,25 @@ module Source = struct
       $ github_token_path
       $ github_webhook_secret)
 
-  let local =
-    let doc = "Path to a Git repository on disk" in
+  let local_dir =
+    let doc =
+      "Path to directory containing multiple Git repositories on disk"
+    in
     let path =
-      Arg.(value & opt (some path) None & info [ "local-repo" ] ~doc)
+      Arg.(value & opt (some path) None & info [ "local-repo-dir" ] ~doc)
     in
     Term.(
       const (function
         | None -> []
-        | Some path -> [ Pipeline.Source.local path ])
+        | Some path ->
+            let path_str = Fpath.to_string path in
+            path_str
+            |> Sys.readdir
+            |> Array.map (fun p -> String.concat Fpath.dir_sep [ path_str; p ])
+            |> Array.to_list
+            |> List.filter Sys.is_directory
+            |> List.map Fpath.v
+            |> List.map Pipeline.Source.local)
       $ path)
 
   let current_github_app =
@@ -94,8 +104,8 @@ module Source = struct
 
   let sources =
     Term.(
-      const (fun local github github_app -> local @ github @ github_app)
-      $ local
+      const (fun local_dir github github_app -> local_dir @ github @ github_app)
+      $ local_dir
       $ github
       $ github_app)
 end

@@ -78,7 +78,6 @@ is_digit_or_range_csv() {
 
 validations () {
     echo "Validating ${1}..."
-    validate_var $1 OCAML_BENCH_LOCAL_REPO is_dir
     validate_var $1 OCAML_BENCH_FRONTEND_URL url_with_schema
     validate_var $1 OCAML_BENCH_PIPELINE_URL url_with_schema
     validate_var $1 OCAML_BENCH_GRAPHQL_URL is_graphql_url

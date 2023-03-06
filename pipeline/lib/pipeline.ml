@@ -108,7 +108,9 @@ let pipeline ~config ~ocluster ~conninfo ~repository env =
     then commit
     else
       let open Current_git.Commit_id in
-      v ~repo:"git://pipeline/" ~gref:(gref commit) ~hash:(hash commit)
+      let name = Repository.name repository in
+      let repo = "git://pipeline/" ^ name in
+      v ~repo ~gref:(gref commit) ~hash:(hash commit)
   in
   let ocluster_worker =
     Current_ocluster.build ~pool:worker ~src:(Current.return [ src ])
