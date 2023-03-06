@@ -159,14 +159,14 @@ $ docker exec -it current-bench_pipeline_1 omigrate create --verbose --dir=/app/
 
 Testing the OCaml Benchmarks project can be tricky because it operates as GitHub App in production. For local testing convenience the development environment includes a "shadow" git repository that can be used to trigger benchmark jobs.
 
-The repository content is located at `./local-test-repo` and it is initialized automatically when starting the development environment. Note that for the purposes of the parent repository `./local-test-repo` is not a git repository (or git submodule) because `./local-test-repo/.git` is in the `.gitignore`. This is intentional and allows to test the pipeline with an actual git repository during development.
+The repository content is located at `./local-repos/test` and it is initialized automatically when starting the development environment. Note that for the purposes of the parent repository, `./local-repos/test` repository is not a git repository (or git submodule) because `./local-repos/test/.git` is in the `.gitignore`. This is intentional and allows to test the pipeline with an actual git repository during development.
 
-You can make changes to the `Makefile` in `./local-test-repo`, add new test cases, etc. When new changes are committed, the running pipeline will automatically detect this and start a new build and run jobs.
+You can make changes to the `Makefile` in `./local-repos/test`, add new test cases, etc. When new changes are committed, the running pipeline will automatically detect this and start a new build and run jobs.
 
 > Make sure that the development environment is running before changing the test repo.
 
 ```
-$ cd `./local-test-repo`
+$ cd `./local-repos/test`
 $ $EDITOR Makefile
 $ git commit -am "Modified the benchmarks"
 ```
@@ -177,7 +177,7 @@ The `pipeline` logs should show something like:
 pipeline_1    |    current.git [INFO] Detected change in "master"
 pipeline_1    |        current [INFO] Created new log file at
 pipeline_1    |                       /app/var/job/2021-03-15/161926-docker-build-e82ec6.log
-pipeline_1    |        current [INFO] Exec: "cp" "-a" "--" "/app/local-test-repo/.git"
+pipeline_1    |        current [INFO] Exec: "cp" "-a" "--" "/app/local-repo-dir/test/.git"
 pipeline_1    |                             "/tmp/git-checkout3219a5b2"
 pipeline_1    |        current [INFO] Exec: "git" "-C" "/tmp/git-checkout3219a5b2" "reset"
 pipeline_1    |                             "--hard" "706782c82741a89b8d9c982860787ec10b1b95f7"

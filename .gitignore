@@ -1,4 +1,4 @@
-local-test-repo/.git
+local-repos/test/.git
 *.env
 _build
 _opam
