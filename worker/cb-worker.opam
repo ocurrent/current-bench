@@ -12,11 +12,11 @@ depends: [
   "capnp-rpc-unix"
   "cmdliner" {>= "1.1.0"}
   "dockerfile"
-  "prometheus-app"  {= "1.2"}
   "ocluster-worker" {>= "0.2.1"}
   "ocluster-api"    {>= "0.2.1"}
   "obuilder"        {>= "0.5.1"}
   "obuilder-spec"   {>= "0.5.1"}
+  "prometheus-app"  {>= "1.2"}
   "fpath"
   "logs"
   "ocaml" {>= "4.08"}
