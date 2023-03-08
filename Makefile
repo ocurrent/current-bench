@@ -22,8 +22,8 @@ validate-env:
 	./scripts/validate-env.sh
 
 # Make sure the fake testing repo is initialised.
-./local-test-repo/.git:
-	cd ./local-test-repo/ && git init && git add . && git commit -m "Initial commit."
+./local-repos/test/.git:
+	cd ./local-repos/test/ && git init && git add . && git commit -m "Initial commit."
 
 # Update current bench version
 .PHONY: update-version-info
@@ -33,32 +33,32 @@ update-version-info:
 # Clean the fake testing repo
 .PHONY: clean-local-test-repo
 clean-local-test-repo:
-	cd ./local-test-repo/ && rm -rf .git/
+	cd ./local-repos/test/ && rm -rf .git/
 
 .PHONY: start-development
-start-development: ./local-test-repo/.git update-version-info validate-env
+start-development: ./local-repos/test/.git update-version-info validate-env
 	./scripts/dev.sh up --remove-orphans --build
 
 .PHONY: stop-development
-stop-development: ./local-test-repo/.git
+stop-development: ./local-repos/test/.git
 	./scripts/dev.sh down
 
 .PHONY: update-graphql-schema
-update-graphql-schema: ./local-test-repo/.git
+update-graphql-schema: ./local-repos/test/.git
 	./scripts/dev.sh exec frontend /app/scripts/update-graphql-schema.sh
 
 
 .PHONY: rebuild-pipeline
-rebuild-pipeline: ./local-test-repo/.git
+rebuild-pipeline: ./local-repos/test/.git
 	./scripts/dev.sh up --detach --build pipeline
 
 .PHONY: rebuild-frontend
-rebuild-frontend: ./local-test-repo/.git
+rebuild-frontend: ./local-repos/test/.git
 	./scripts/dev.sh up --detach --build frontend
 
 .PHONY: bench
 bench:
-	@cd ./local-test-repo/ && make -s bench
+	@cd ./local-repos/test/ && make -s bench
 
 .PHONY: start-prometheus-alertmanager
 start-prometheus-alertmanager:
@@ -75,12 +75,12 @@ start-node-exporter:
 	./prometheus/scripts/start-node-exporter.sh --web.listen-address 0.0.0.0:10080
 
 .PHONY: runtest
-runtest: ./local-test-repo/.git
+runtest: ./local-repos/test/.git
 	./scripts/dev.sh \
 		exec pipeline bash -c 'cd /mnt/project; opam exec -- dune runtest'
 
 .PHONY: coverage
-coverage: ./local-test-repo/.git
+coverage: ./local-repos/test/.git
 	./scripts/dev.sh \
 		exec pipeline bash -c \
 		'cd /mnt/project; opam exec -- dune runtest --instrument-with bisect_ppx --force; \
@@ -88,8 +88,8 @@ coverage: ./local-test-repo/.git
 	&& echo "To view coverage html open file://${PWD}/pipeline/_coverage/index.html in your browser"
 
 .PHONY: local-make-bench
-local-make-bench: ./local-test-repo/.git
-	cd local-test-repo/; git add .; git commit --amend -m "New commit: $$(date)"; cd ..
+local-make-bench: ./local-repos/test/.git
+	cd local-repos/test/; git add .; git commit --amend -m "New commit: $$(date)"; cd ..
 
 .PHONY: migration
 migration:

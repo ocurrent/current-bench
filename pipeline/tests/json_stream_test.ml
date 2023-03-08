@@ -173,7 +173,7 @@ let exec_command cmd =
 
 let parse_local_test =
   Alcotest_lwt.test_case_sync "parse json: local test repo" `Quick @@ fun () ->
-  let str = exec_command "cd ../../../../local-test-repo; make bench" in
+  let str = exec_command "cd ../../../../local-repos/test; make bench" in
   let parsed = Json_stream.json_full str in
   let yojsoned =
     List.map (fun (str, _) -> Yojson.Safe.from_string str) parsed
