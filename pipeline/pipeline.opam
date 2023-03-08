@@ -8,7 +8,7 @@ homepage: "https://github.com/ocurrent/current-bench"
 bug-reports: "https://github.com/ocurrent/current-bench/issues"
 depends: [
   "ocaml" {>= "4.13.0"}
-  "dune" {>= "2.0" & <= "3.5"}
+  "dune" {>= "2.0"}
   "alcotest" {with-test}
   "alcotest-lwt" {with-test}
   "bisect_ppx" {with-test}
@@ -24,7 +24,8 @@ depends: [
   "current_web"    {>= "0.6.4"}
   "current_incr" {>= "0.5"}
   "current_ansi"
-  "current_ocluster" {= "dev"}
+  "current_ocluster" {>= "0.2.1"}
+  "ocluster" {>= "0.2.1"}
   "dockerfile"
   "duration"
   "fpath"
@@ -33,17 +34,8 @@ depends: [
   "ptime" {>= "0.8.1"}
   "rresult"
   "omigrate"
-  "ocluster" {= "dev"}
   "timere"
   "timere-parse"
-]
-pin-depends: [
-  [ "current_ocluster.dev" "git+https://github.com/art-w/ocluster.git#e32a5022b90c288a14947520a77bdc2ab7789a07"]
-  [ "ocluster.dev"         "git+https://github.com/art-w/ocluster.git#e32a5022b90c288a14947520a77bdc2ab7789a07"]
-  [ "ocluster-api.dev"     "git+https://github.com/art-w/ocluster.git#e32a5022b90c288a14947520a77bdc2ab7789a07"]
-  [ "ocluster-worker.dev"  "git+https://github.com/art-w/ocluster.git#e32a5022b90c288a14947520a77bdc2ab7789a07"]
-  [ "obuilder.dev"         "git+https://github.com/ocurrent/obuilder#dc987c12ccc6cd9729809359e9375bfe5443add9"]
-  [ "obuilder-spec.dev"    "git+https://github.com/ocurrent/obuilder#dc987c12ccc6cd9729809359e9375bfe5443add9"]
 ]
 build: [
   ["dune" "subst"] {pinned}
