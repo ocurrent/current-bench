@@ -1,10 +1,31 @@
 (test
  (name test)
- (libraries alcotest alcotest-lwt current current.fs current_docker
-   current_git current_github current_ocluster capnp-rpc-unix current_web
-   current_slack dockerfile fmt.tty logs logs.fmt prometheus ptime.clock.os
-   rresult uri timedesc.tzdb.full timedesc.tzlocal.unix timedesc timere-parse
-   yojson str)
+ (libraries
+  alcotest
+  alcotest-lwt
+  current
+  current.fs
+  current_docker
+  current_git
+  current_github
+  current_ocluster
+  capnp-rpc-unix
+  current_web
+  current_slack
+  dockerfile
+  fmt.tty
+  logs
+  logs.fmt
+  prometheus
+  ptime.clock.os
+  rresult
+  uri
+  timedesc.tzdb.full
+  timedesc.tzlocal.unix
+  timedesc
+  timere-parse
+  yojson
+  str)
  (preprocess
   (pps ppx_deriving_yojson))
  (instrumentation
