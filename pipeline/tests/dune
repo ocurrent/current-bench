@@ -3,15 +3,15 @@
  (libraries
   alcotest
   alcotest-lwt
+  capnp-rpc-unix
   current
   current.fs
   current_docker
   current_git
   current_github
   current_ocluster
-  capnp-rpc-unix
-  current_web
   current_slack
+  current_web
   dockerfile
   fmt.tty
   logs
@@ -19,13 +19,13 @@
   prometheus
   ptime.clock.os
   rresult
-  uri
+  str
+  timedesc
   timedesc.tzdb.full
   timedesc.tzlocal.unix
-  timedesc
   timere-parse
-  yojson
-  str)
+  uri
+  yojson)
  (preprocess
   (pps ppx_deriving_yojson))
  (instrumentation

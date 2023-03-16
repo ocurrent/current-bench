@@ -1,4 +1,3 @@
 (executable
  (name cb_worker)
- (modules cb_worker)
- (libraries digestif ocluster-worker fpath capnp-rpc-unix))
+ (libraries capnp-rpc-unix digestif fpath ocluster-worker))

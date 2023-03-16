@@ -2,11 +2,11 @@
  (name jwt)
  (libraries
   base64
-  yojson
   cstruct
-  mirage-crypto-rng.unix
   mirage-crypto-pk
+  mirage-crypto-rng.unix
+  unix
   x509
-  unix)
+  yojson)
  (preprocess
   (pps ppx_deriving_yojson)))
