@@ -1,5 +1,5 @@
 (library
- (public_name cobench)
+ (name cobench)
  (libraries
   bechamel
   cohttp-lwt-unix
