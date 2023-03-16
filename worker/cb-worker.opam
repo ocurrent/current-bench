@@ -13,6 +13,8 @@ authors: [
   "Craig Ferguson <craig@tarides.com>"
   "Gargi Sharma <gargi@tarides.com>"
 ]
+homepage: "https://github.com/ocurrent/current-bench"
+bug-reports: "https://github.com/ocurrent/current-bench/issues"
 depends: [
   "ocaml" {>= "4.08"}
   "dune" {>= "2.9"}
@@ -49,3 +51,4 @@ build: [
   ]
   ["dune" "install" "-p" name "--create-install-files" name]
 ]
+dev-repo: "git+https://github.com/ocurrent/current-bench.git"

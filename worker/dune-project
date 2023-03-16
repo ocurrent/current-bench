@@ -4,6 +4,9 @@
 
 (generate_opam_files true)
 
+(source
+ (github ocurrent/current-bench))
+
 (package
  (name cb-worker)
  (synopsis "OCurrent pipeline for index benchmarks")
