@@ -31,6 +31,7 @@ depends: [
   "duration"
   "fpath"
   "logs"
+  "mtime" {>= "2.0.0"}
   "obuilder" {>= "0.5.1"}
   "obuilder-spec" {>= "0.5.1"}
   "ocluster-api" {>= "0.2.1"}

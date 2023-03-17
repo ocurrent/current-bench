@@ -48,6 +48,8 @@
   duration
   fpath
   logs
+  (mtime
+   (>= 2.0.0))
   (obuilder
    (>= 0.5.1))
   (obuilder-spec
