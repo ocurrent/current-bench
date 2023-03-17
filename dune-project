@@ -70,4 +70,7 @@
   timere-parse
   yojson
   (alcotest :with-test)
-  (alcotest-lwt :with-test)))
+  (alcotest-lwt
+   (and
+    (>= 1.0.0)
+    :with-test))))
