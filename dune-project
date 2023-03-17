@@ -44,7 +44,8 @@
    (>= 0.6.4))
   (current_web
    (>= 0.6.4))
-  dockerfile
+  (dockerfile
+   (>= 6.3.0))
   duration
   fpath
   logs
