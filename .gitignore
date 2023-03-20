@@ -9,3 +9,4 @@ environments/production.conf
 capnp-secrets
 /prometheus/scripts/node_exporter*
 sqlite.db
+pipeline/var

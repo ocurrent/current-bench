@@ -7,12 +7,12 @@ services:
       - POSTGRES_USER=docker
       - POSTGRES_PASSWORD=${OCAML_BENCH_DB_PASSWORD?required}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U docker"]
+      test: [ "CMD-SHELL", "pg_isready -U docker" ]
       interval: 5s
       timeout: 5s
       retries: 3
     restart: always
-    expose: ["5432"]
+    expose: [ "5432" ]
     cpuset: "${OCAML_BENCH_PLATFORM_CPUSET}"
   graphql-engine:
     image: hasura/graphql-engine:v1.3.3.cli-migrations-v2
@@ -49,11 +49,8 @@ services:
       # also make changes like installing node_modules, etc. So, we use
       # consistent/default mode instead of cached or delegated modes.
       - ../frontend:/app/:consistent
-    command: ["./scripts/dev.sh"]
-    ports:
-      [
-        "8082:${OCAML_BENCH_FRONTEND_PORT?required}",
-      ]
+    command: [ "./scripts/dev.sh" ]
+    ports: [ "8082:${OCAML_BENCH_FRONTEND_PORT?required}" ]
     restart: always
     depends_on:
       - "graphql-engine"
@@ -111,7 +108,10 @@ services:
       - "--state-dir=/var/lib/ocluster-scheduler"
       - "--pools=${OCAML_BENCH_CLUSTER_POOLS}"
       - "--verbose"
-    ports: ["${OCAML_BENCH_CLUSTER_PORT?required}:${OCAML_BENCH_CLUSTER_PORT?required}"]
+    ports:
+      [
+        "${OCAML_BENCH_CLUSTER_PORT?required}:${OCAML_BENCH_CLUSTER_PORT?required}"
+      ]
     volumes:
       # Allow access to capnp secrets required by client and workers
       - ../capnp-secrets:/var/lib/ocluster-scheduler/capnp-secrets

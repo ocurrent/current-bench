@@ -1,0 +1,5 @@
+depexts: [
+  [ "jq" ] {}
+]
+
+available: [ os-distribution != "alpine" ]

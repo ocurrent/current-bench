@@ -3,31 +3,40 @@ opam-version: "2.0"
 synopsis: "OCurrent pipeline for index benchmarks"
 description:
   "This pipeline runs the index benchmarks and publishes them to slack."
-maintainer: ["Rizo Isrof <rizo@tarides.com>" "Gargi Sharma <gargi@tarides.com>"]
-authors: ["Rizo Isrof <rizo@tarides.com" "Craig Ferguson <craig@tarides.com>" "Gargi Sharma <gargi@tarides.com>"]
+maintainer: [
+  "Ambre Austen Suhamy <ambre@tarides.com>"
+  "Puneeth Chaganti <puneeth@tarides.com>"
+  "Shakthi Kannan"
+]
+authors: [
+  "Rizo Isrof <rizo@tarides.com"
+  "Craig Ferguson <craig@tarides.com>"
+  "Gargi Sharma <gargi@tarides.com>"
+]
 homepage: "https://github.com/ocurrent/current-bench"
 bug-reports: "https://github.com/ocurrent/current-bench/issues"
 depends: [
+  "ocaml" {>= "4.08"}
   "dune" {>= "2.9"}
   "capnp-rpc-unix"
   "cmdliner" {>= "1.1.0"}
   "dockerfile"
-  "ocluster-worker" {>= "0.2.1"}
-  "ocluster-api"    {>= "0.2.1"}
-  "obuilder"        {>= "0.5.1"}
-  "obuilder-spec"   {>= "0.5.1"}
-  "prometheus-app"  {>= "1.2"}
   "fpath"
   "logs"
-  "ocaml" {>= "4.08"}
+  "obuilder" {>= "0.5.1"}
+  "obuilder-spec" {>= "0.5.1"}
+  "ocluster-api" {>= "0.2.1"}
+  "ocluster-worker" {>= "0.2.1"}
+  "prometheus-app" {>= "1.2"}
   "rresult"
   "sha"
   "sqlite3"
   "tar-unix"
   "yojson"
+  "odoc" {with-doc}
 ]
 build: [
-  ["dune" "subst"] {pinned}
+  ["dune" "subst"] {dev}
   [
     "dune"
     "build"
@@ -35,9 +44,11 @@ build: [
     name
     "-j"
     jobs
+    "--promote-install-files=false"
     "@install"
     "@runtest" {with-test}
     "@doc" {with-doc}
   ]
+  ["dune" "install" "-p" name "--create-install-files" name]
 ]
 dev-repo: "git+https://github.com/ocurrent/current-bench.git"
