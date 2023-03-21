@@ -11,7 +11,7 @@ homepage: "https://github.com/ocurrent/current-bench"
 bug-reports: "https://github.com/ocurrent/current-bench/issues"
 depends: [
   "ocaml" {>= "4.13.0"}
-  "dune" {>= "2.9"}
+  "dune" {>= "3.7"}
   "bechamel"
   "bos"
   "capnp-rpc-unix"
@@ -57,12 +57,10 @@ build: [
     name
     "-j"
     jobs
-    "--promote-install-files=false"
     "@install"
     "@runtest" {with-test}
     "@doc" {with-doc}
   ]
-  ["dune" "install" "-p" name "--create-install-files" name]
 ]
 dev-repo: "git+https://github.com/ocurrent/current-bench.git"
 depexts: [

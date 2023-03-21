@@ -2,43 +2,52 @@ opam-version: "2.0"
 synopsis: "OCurrent pipeline for index benchmarks"
 description:
   "This pipeline runs the index benchmarks and publishes them to slack."
-maintainer: ["Rizo Isrof <rizo@tarides.com>" "Gargi Sharma <gargi@tarides.com>"]
-authors: ["Rizo Isrof <rizo@tarides.com" "Craig Ferguson <craig@tarides.com>" "Gargi Sharma <gargi@tarides.com>"]
+maintainer: [
+  "Ambre Austen Suhamy <ambre@tarides.com>"
+  "Puneeth Chaganti <puneeth@tarides.com>"
+  "Shakthi Kannan <shakthi@tarides.com>"
+]
+authors: [
+  "Rizo Isrof <rizo@tarides.com"
+  "Craig Ferguson <craig@tarides.com>"
+  "Gargi Sharma <gargi@tarides.com>"
+]
 homepage: "https://github.com/ocurrent/current-bench"
 bug-reports: "https://github.com/ocurrent/current-bench/issues"
 depends: [
   "ocaml" {>= "4.13.0"}
-  "dune" {>= "2.0"}
-  "alcotest" {with-test}
-  "alcotest-lwt" {with-test}
-  "bisect_ppx" {with-test}
+  "dune" {>= "3.7"}
   "bos"
   "capnp-rpc-unix"
   "cmdliner" {>= "1.1.0"}
-  "current"        {>= "0.6.4"}
-  "current_docker" {>= "0.6.4"}
-  "current_git"    {>= "0.6.4"}
-  "current_github" {>= "0.6.4"}
-  "current_rpc"    {>= "0.6.4"}
-  "current_slack"  {>= "0.6.4"}
-  "current_web"    {>= "0.6.4"}
-  "current_incr" {>= "0.5"}
+  "current" {>= "0.6.4"}
   "current_ansi"
+  "current_docker" {>= "0.6.4"}
+  "current_git" {>= "0.6.4"}
+  "current_github" {>= "0.6.4"}
+  "current_incr" {>= "0.5"}
   "current_ocluster" {>= "0.2.1"}
-  "ocluster" {>= "0.2.1"}
+  "current_rpc" {>= "0.6.4"}
+  "current_slack" {>= "0.6.4"}
+  "current_web" {>= "0.6.4"}
   "dockerfile" {>= "6.3.0"}
   "duration"
   "fpath"
   "logs"
+  "ocluster" {>= "0.2.1"}
+  "omigrate"
   "postgresql"
   "ptime" {>= "0.8.1"}
   "rresult"
-  "omigrate"
   "timere" {>= "0.5.0"}
   "timere-parse"
+  "alcotest" {with-test}
+  "alcotest-lwt" {with-test}
+  "bisect_ppx" {with-test}
+  "odoc" {with-doc}
 ]
 build: [
-  ["dune" "subst"] {pinned}
+  ["dune" "subst"] {dev}
   [
     "dune"
     "build"

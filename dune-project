@@ -1,4 +1,4 @@
-(lang dune 2.9)
+(lang dune 3.7)
 
 (name current-bench)
 
@@ -15,6 +15,7 @@
   "Ambre Austen Suhamy <ambre@tarides.com>"
   "Puneeth Chaganti <puneeth@tarides.com>"
   "Shakthi Kannan <shakthi@tarides.com>")
+ (allow_empty)
  (depends
   (ocaml
    (>= 4.13.0))
