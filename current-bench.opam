@@ -4,7 +4,7 @@ synopsis: "Run continuous benchmarks for repositories"
 maintainer: [
   "Ambre Austen Suhamy <ambre@tarides.com>"
   "Puneeth Chaganti <puneeth@tarides.com>"
-  "Shakthi Kannan"
+  "Shakthi Kannan <shakthi@tarides.com>"
 ]
 authors: ["Rizo I. <rizo@tarides.com>" "Gargi Sharma <gargi@tarides.com>"]
 homepage: "https://github.com/ocurrent/current-bench"

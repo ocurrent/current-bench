@@ -14,7 +14,7 @@
  (maintainers
   "Ambre Austen Suhamy <ambre@tarides.com>"
   "Puneeth Chaganti <puneeth@tarides.com>"
-  "Shakthi Kannan")
+  "Shakthi Kannan <shakthi@tarides.com>")
  (depends
   (ocaml
    (>= 4.13.0))
