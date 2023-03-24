@@ -140,7 +140,7 @@ let record_target_info ~serial_id ~results (db : Postgresql.connection) =
     metadata
     (* FIXME: Check if all the versions and names are the same? *)
     |> List.hd
-    |> fun { Current_bench_json.Latest.target_version; target_name; _ } ->
+    |> fun { Cb_schema.S.target_version; target_name; _ } ->
     ( Option.value target_version ~default:"",
       Option.value target_name ~default:"" )
   in
