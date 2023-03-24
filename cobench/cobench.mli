@@ -9,7 +9,7 @@ val metric :
   name:string ->
   ?description:string ->
   ?units:string ->
-  ?trend:string ->
+  ?trend:Cb_schema.S.trend ->
   value ->
   metric
 

@@ -11,13 +11,14 @@ ENV VITE_CURRENT_BENCH_VERSION=$VITE_CURRENT_BENCH_VERSION
 
 RUN apt-get update \
     && apt-get install --no-install-recommends --assume-yes \
-        screen \
+    screen \
     && rm -r /var/lib/apt/lists /var/cache/apt
 
 # set working directory
 WORKDIR /app
 
-COPY ./pipeline/lib/current_bench_json.ml /pipeline/lib/current_bench_json.ml
+COPY ./pipeline/cb-schema/schema.ml /pipeline/cb-schema/schema.ml
+COPY ./pipeline/cb-schema/json.ml /pipeline/cb-schema/json.ml
 
 # Build frontend code for production
 FROM dev AS builder

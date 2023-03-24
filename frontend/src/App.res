@@ -56,7 +56,7 @@ module Benchmark = {
 
   let decode = (result: BenchmarkMetrics.t) => {
     let metrics = yojson_of_result(result)
-    let metrics = Current_bench_json.Latest.of_json(metrics)
+    let metrics = Schema.of_json(metrics)
     let run_at = result.run_at->decodeRunAt->Belt.Option.getExn
     (result.commit, result.run_job_id, run_at, result.test_index, metrics)
   }
@@ -69,7 +69,7 @@ module Benchmark = {
     }
   }
 
-  let toLineGraph = (value: Current_bench_json.Latest.value) => {
+  let toLineGraph = (value: Schema.value) => {
     switch value {
     | Float(x) => LineGraph.DataRow.single(x)
     | Floats(xs) => LineGraph.DataRow.many(Array.of_list(xs))
@@ -84,8 +84,8 @@ module Benchmark = {
       acc,
       (commit, run_job_id, run_at, test_index, item),
     ) => {
-      List.fold_left((acc, result: Current_bench_json.Latest.result) => {
-        List.fold_left((acc, metric: Current_bench_json.Latest.metric) => {
+      List.fold_left((acc, result: Schema.result) => {
+        List.fold_left((acc, metric: Schema.metric) => {
           BenchmarkData.add(
             acc,
             ~testName=result.test_name,

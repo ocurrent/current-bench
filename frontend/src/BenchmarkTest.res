@@ -25,7 +25,7 @@ type metricRow = {
   delta: option<float>,
   last_value: option<float>,
   comparison_value: option<float>,
-  trend: string,
+  trend: Schema.trend,
 }
 
 let getRowData = (
@@ -33,7 +33,7 @@ let getRowData = (
   (timeseries, metadata: BenchmarkData.metadata),
 ) => {
   if Belt.Array.length(timeseries) == 0 {
-    let d = {delta: None, last_value: None, comparison_value: None, trend: ""}
+    let d = {delta: None, last_value: None, comparison_value: None, trend: Schema.Unspecified}
     d
   } else {
     let last_value = BeltHelpers.Array.lastExn(timeseries)->LineGraph.DataRow.toValue
@@ -62,14 +62,9 @@ let getRowData = (
 }
 
 let isFavourableDelta = row => {
-  let ascending =
-    row.trend == "higher-is-better"
-      ? Some(true)
-      : row.trend == "lower-is-better"
-      ? Some(false)
-      : None
-  switch (row.delta, ascending) {
-  | (Some(delta), Some(ascending)) => delta == 0. ? None : Some(delta > 0. == ascending)
+  switch (row.delta, row.trend) {
+  | (Some(delta), Schema.Higher_is_better) => delta == 0. ? None : Some(delta > 0.)
+  | (Some(delta), Schema.Lower_is_better) => delta == 0. ? None : Some(delta < 0.)
   | _ => None
   }
 }
@@ -234,7 +229,7 @@ let make = (
       let suffixes = isOverlayed
         ? names->Belt.Array.map(x => Js.String.split("/", x)[1])
         : [metricName]
-      // FIXME: Validate that units are same on all the overlays? (ideally, in the current_bench_json.ml)
+      // FIXME: Validate that units are same on all the overlays? (ideally, in pipeline/cb-schema)
       let seriesArrays =
         names->Belt.Array.map(x => getSeriesArrays(dataByMetricName, comparison, x))
       // FIXME: Filter out very small values (quick fix for demo, before we work on grouping stuff)

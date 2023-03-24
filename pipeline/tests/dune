@@ -4,6 +4,7 @@
   alcotest
   alcotest-lwt
   capnp-rpc-unix
+  cb-schema
   current
   current.fs
   current_docker

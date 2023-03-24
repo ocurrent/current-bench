@@ -18,8 +18,7 @@ let parse_benchmark_data ~data =
         | _commit, benchmark_name, test_name, metrics ->
             metrics
             |> List.fold_left
-                 (fun acc
-                      ({ name; value; _ } : Current_bench_json.Latest.metric) ->
+                 (fun acc ({ name; value; _ } : Cb_schema.S.metric) ->
                    let key = (benchmark_name, test_name, name) in
                    BenchmarksData.add key value acc)
                  acc)
@@ -40,7 +39,7 @@ let mean_float_list xs =
   let n = List.length xs in
   match n with 0 -> 0. | _ -> sum_float_list xs /. Float.of_int n
 
-let avg_of_value (v : Current_bench_json.Latest.value) =
+let avg_of_value (v : Cb_schema.S.value) =
   match v with
   | Float v -> v
   | Floats vs -> mean_float_list vs
@@ -64,8 +63,8 @@ type change = Change of float | New
 
 let find_changed_metrics ~metrics ~compare_metrics =
   BenchmarksData.merge
-    (fun _ (value : Current_bench_json.Latest.value option)
-         (compare_value : Current_bench_json.Latest.value option) ->
+    (fun _ (value : Cb_schema.S.value option)
+         (compare_value : Cb_schema.S.value option) ->
       match (value, compare_value) with
       | Some value, Some compare_value ->
           let delta =
