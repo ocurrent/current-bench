@@ -1,0 +1,9 @@
+(executable
+ (name main)
+ (package cb-check)
+ (public_name cb-check)
+ (libraries yojson))
+
+(copy_files ../pipeline/cb-schema/*.ml)
+
+(copy_files ../pipeline/lib/json_parsing.ml)

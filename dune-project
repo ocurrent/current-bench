@@ -74,3 +74,13 @@
    (and
     (>= 1.0.0)
     :with-test))))
+
+(package
+ (name cb-check)
+ (synopsis "Json schema checker for current-bench")
+ (authors "Ambre Austen Suhamy <ambre@tarides.com>")
+ (maintainers "Ambre Austen Suhamy <ambre@tarides.com>")
+ (depends
+  (ocaml
+   (>= 4.13.0))
+  yojson))
