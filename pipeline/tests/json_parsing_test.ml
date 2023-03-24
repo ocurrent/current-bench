@@ -2,11 +2,8 @@ let parsed_location =
   let module M = struct
     type t = string * (int * int)
 
-    let pp ppf s =
-      match s with
-      | s, (beg, end_) ->
-          Format.pp_print_string ppf
-            (Printf.sprintf "(%s, (%d, %d))" s beg end_)
+    let pp fmt (s, (start, finish)) =
+      Format.fprintf fmt "(%s, (%d, %d))" s start finish
 
     let equal x y = x = y
   end in
@@ -26,8 +23,8 @@ let parse_one =
         "...";
       ]
   in
-  let state = Json_stream.make_json_parser () in
-  let parsed, _state = Json_stream.json_steps ([], state) str in
+  let state = Json_parsing.make_parser () in
+  let parsed, _state = Json_parsing.steps ([], state) str in
   let expect =
     [ ({|{"ok": ["yes"]}|}, (8, 8)); ({|{"json": true}|}, (3, 3)) ]
   in
@@ -38,12 +35,12 @@ let parse_two =
   let str =
     String.concat "\n" [ {|{"json": true}|}; "ignore"; "this"; {|{"ok|} ]
   in
-  let state = Json_stream.make_json_parser () in
-  let parsed, state = Json_stream.json_steps ([], state) str in
+  let state = Json_parsing.make_parser () in
+  let parsed, state = Json_parsing.steps ([], state) str in
   let expect = [ ({|{"json": true}|}, (1, 1)) ] in
   Alcotest.(check (list parsed_location)) "jsons" expect parsed;
   let str = String.concat "\n" [ {|": {"more":|}; {| "is coming"}}|}; "{" ] in
-  let parsed, _state = Json_stream.json_steps ([], state) str in
+  let parsed, _state = Json_parsing.steps ([], state) str in
   let expect = [ ({|{"ok": {"more": "is coming"}}|}, (4, 5)) ] in
   Alcotest.(check (list parsed_location)) "jsons" expect parsed;
   ()
@@ -51,7 +48,7 @@ let parse_two =
 let parse_wrong =
   Alcotest_lwt.test_case_sync "parse json: invalid" `Quick @@ fun () ->
   let str = "{{{ this isn't json }}}" in
-  let parsed = Json_stream.json_full str in
+  let parsed = Json_parsing.full str in
   let expect = [] in
   Alcotest.(check (list parsed_location)) "jsons" expect parsed;
   ()
@@ -68,7 +65,7 @@ let parse_wrong_longer =
         end);
     }|}
   in
-  let parsed = Json_stream.json_full str in
+  let parsed = Json_parsing.full str in
   let expect = [] in
   Alcotest.(check (list parsed_location)) "jsons" expect parsed;
   ()
@@ -112,7 +109,7 @@ let parse_real_log =
     Job succeeded
     2022-05-03 10:02.42: Job succeeded|}
   in
-  let parsed = Json_stream.json_full str in
+  let parsed = Json_parsing.full str in
   let expect =
     [
       ( {|{"results": [{"name": "eqaf", "metrics": [{"name": "divmod", "value": 1}]}]}|},
@@ -128,7 +125,7 @@ let parse_exponents =
   Alcotest_lwt.test_case_sync "parse json: with exponent in numbers" `Quick
   @@ fun () ->
   let str = {|{"name": "foo", "value": 3.1415926535e-09}|} in
-  let parsed = Json_stream.json_full str in
+  let parsed = Json_parsing.full str in
   let expect = [ ({|{"name": "foo", "value": 3.1415926535e-09}|}, (1, 1)) ] in
   Alcotest.(check (list parsed_location)) "jsons" expect parsed;
   ()
@@ -140,7 +137,7 @@ let parse_non_last_num =
     "pi": 3.14,
 	  "phi": 1.618
   }|} in
-  let parsed = Json_stream.json_full str in
+  let parsed = Json_parsing.full str in
   let expect = [ ({|{    "pi": 3.14,	  "phi": 1.618  }|}, (2, 5)) ] in
   Alcotest.(check (list parsed_location)) "jsons" expect parsed;
   ()
@@ -152,7 +149,7 @@ let parse_wrong_then_right =
     "you're an all star", {"get your game on": "go play"}
     }|}
   in
-  let parsed = Json_stream.json_full str in
+  let parsed = Json_parsing.full str in
   let expect = [ ({|{"get your game on": "go play"}|}, (2, 2)) ] in
   Alcotest.(check (list parsed_location)) "jsons" expect parsed;
   ()
@@ -174,7 +171,7 @@ let exec_command cmd =
 let parse_local_test =
   Alcotest_lwt.test_case_sync "parse json: local test repo" `Quick @@ fun () ->
   let str = exec_command "cd ../../../../local-repos/test; make bench" in
-  let parsed = Json_stream.json_full str in
+  let parsed = Json_parsing.full str in
   let yojsoned =
     List.map (fun (str, _) -> Yojson.Safe.from_string str) parsed
   in

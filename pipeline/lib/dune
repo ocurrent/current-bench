@@ -1,7 +1,9 @@
 (library
  (name pipeline)
+ (public_name pipeline)
  (libraries
   capnp-rpc-unix
+  cb-schema
   current
   current.fs
   current_docker
