@@ -120,7 +120,7 @@ let addMissingComparisonMetrics = (comparisonBenchmarkDataByTestName, benchmarkD
               run_job_id: run_job_id,
               lines: []->Belt.List.fromArray,
               description: "",
-              trend: "",
+              trend: Schema.Unspecified,
               units: "",
             })
             (ts, md)

@@ -62,7 +62,7 @@ module DataRow = {
     runAt: Js.Date.t,
     units: units,
     description: string,
-    trend: string,
+    trend: Schema.trend,
     lines: list<(int, int)>,
     run_job_id: option<string>,
   }
