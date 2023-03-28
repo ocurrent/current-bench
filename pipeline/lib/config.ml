@@ -14,6 +14,7 @@ type repo = {
   build_args : string list; [@default []]
   notify_github : bool; [@default false]
   if_label : string option; [@default None]
+  branches : string list; [@default []]
   bench_repo : string option; [@default None]
 }
 [@@deriving yojson]
@@ -99,10 +100,16 @@ let default name =
     build_args = [];
     notify_github = false;
     if_label = None;
+    branches = [];
     bench_repo = None;
   }
 
-let must_benchmark repo conf =
+let must_benchmark_branch ~default_branch ~branch conf =
+  match conf.branches with
+  | [] -> branch = default_branch
+  | branches -> List.mem branch branches
+
+let must_benchmark_pull repo conf =
   match (conf.if_label, Repository.pull_number repo) with
   | Some tag, Some _ -> List.mem tag (Repository.labels repo)
   | _ -> true

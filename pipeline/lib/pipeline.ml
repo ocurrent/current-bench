@@ -181,19 +181,28 @@ let github_repositories ~config repo =
         repository ~commit ~github_head:head ~commit_message:message
       in
       match key with
-      (* Skip all branches other than the default branch, and check PRs *)
-      | `Ref branch when branch = default_branch ->
-          repository ~branch:default_branch_name ~labels:[] () :: lst
+      (* If the branch is the default branch or a branch explicitly configured
+         to be benchmarked, then we want to benchmark it. *)
+      | `Ref branch ->
+          let branch = Util.get_branch_name branch in
+          let repository = repository ~branch ~labels:[] () in
+          if List.exists
+               (Config.must_benchmark_branch ~default_branch:default_branch_name
+                  ~branch)
+               (Config.find config repository)
+          then repository :: lst
+          else lst
+      (* Benchmark PRs if they have the right label, or no label has been set in
+         the repo's configuration. *)
       | `PR pr ->
           let repository =
             repository ~title:pr.title ~pull_number:pr.id ~labels:pr.labels ()
           in
           if List.exists
-               (Config.must_benchmark repository)
+               (Config.must_benchmark_pull repository)
                (Config.find config repository)
           then repository :: lst
-          else lst
-      | _ -> lst)
+          else lst)
     ref_map []
 
 let filter_stale_repositories repos =
