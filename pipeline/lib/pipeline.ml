@@ -4,6 +4,7 @@ module Github = Current_github
 module Logging = Logging
 module Benchmark = Models.Benchmark
 module Config = Config
+module Frontend = Frontend
 
 let ( >>| ) x f = Current.map f x
 
@@ -294,7 +295,7 @@ let process_pipeline ~config ~ocluster ~conninfo ~sources () =
   in
   ()
 
-let v ~config ~server:mode ~sources conninfo () =
+let v ~config ~front ~server:mode ~sources conninfo () =
   Db_util.check_connection ~conninfo;
   let cap_path = "/app/submission.cap" in
   let vat = Capnp_rpc_unix.client_only_vat () in
@@ -329,4 +330,9 @@ let v ~config ~server:mode ~sources conninfo () =
     Current_web.Site.(v ~has_role:allow_all) ~name:"Benchmarks" routes
   in
   Logging.run
-    (Lwt.choose [ Current.Engine.thread engine; Current_web.run ~mode site ])
+  @@ Lwt.choose
+       [
+         Frontend.main ~front ~db:conninfo;
+         Current.Engine.thread engine;
+         Current_web.run ~mode site;
+       ]

@@ -196,3 +196,185 @@ let get_main_branch_metrics ~repository ~worker ~docker_image
 let get_main_branch_metrics ~conninfo ~repository ~worker ~docker_image =
   Db_util.with_db ~conninfo
     (get_main_branch_metrics ~repository ~worker ~docker_image)
+
+let get_projects (db : Postgresql.connection) =
+  let query = {|SELECT DISTINCT repo_id FROM benchmark_metadata|} in
+  let results = db#exec query in
+  let results = results#get_all in
+  Array.to_list results
+  |> List.map (function [| repo_id |] -> repo_id | _ -> failwith "?")
+
+let get_projects ~db = Db_util.with_db ~conninfo:db get_projects
+
+let get_repos ~owner (db : Postgresql.connection) =
+  let owner = Db_util.string (owner ^ "/%") in
+  let query =
+    Fmt.str
+      {|SELECT DISTINCT repo_id
+        FROM benchmark_metadata
+        WHERE repo_id LIKE %s
+      |}
+      owner
+  in
+  let results = db#exec query in
+  let results = results#get_all in
+  Array.to_list results
+  |> List.map (function [| repo_id |] -> repo_id | _ -> failwith "?")
+
+let get_repos ~db ~owner = Db_util.with_db ~conninfo:db (get_repos ~owner)
+
+let analyze_result ~success ~failed ~cancelled ~reason =
+  let default d s = if s = "" then d else s in
+  match (success, default "f" failed, cancelled, reason) with
+  | "t", _, _, "" -> "OK"
+  | _, "f", _, "" -> "OK"
+  | _, _, "t", _ -> "CANCELLED: " ^ reason
+  | _, "t", _, _ -> "ERROR: " ^ reason
+  | _ ->
+      Printf.sprintf "OK=%S CAN=%S ERR=%S REA=%S\n%!" success cancelled failed
+        reason
+
+let get_prs ~repo_id (db : Postgresql.connection) =
+  let repo_id = Db_util.string repo_id in
+  let query =
+    Fmt.str
+      {|SELECT b.pull_number, b.worker, b.docker_image, b.pr_title, b.run_at, b.success, b.cancelled, b.failed, b.reason, b.run_job_id
+        FROM (SELECT pull_number, worker, docker_image, MAX(run_at) AS run_at
+              FROM benchmark_metadata
+              WHERE pull_number IS NOT NULL
+                AND repo_id=%s
+                AND is_open_pr
+              GROUP BY pull_number, worker, docker_image) AS p
+        JOIN benchmark_metadata AS b
+        ON ((p.pull_number, p.worker, p.docker_image, p.run_at)
+            = (b.pull_number, b.worker, b.docker_image, b.run_at))
+        ORDER BY b.run_at DESC
+        LIMIT 50
+      |}
+      repo_id
+  in
+  let results = db#exec query in
+  let results = results#get_all in
+  Array.to_list results
+  |> List.map (function
+       | [|
+           pr;
+           worker;
+           docker_image;
+           title;
+           run_at;
+           success;
+           cancelled;
+           failed;
+           reason;
+           run_job_id;
+         |] ->
+           let status = analyze_result ~success ~cancelled ~failed ~reason in
+           ((pr, worker, docker_image), title, run_at, status, run_job_id)
+       | _ -> failwith "?")
+
+let get_prs ~db repo_id = Db_util.with_db ~conninfo:db (get_prs ~repo_id)
+
+let get_workers ~repo_id ~pr (db : Postgresql.connection) =
+  let repo_id = Db_util.string repo_id in
+  let pr =
+    match pr with
+    | `PR pr -> "pull_number = " ^ Db_util.int (int_of_string pr)
+    | `Branch -> "pull_number IS NULL"
+  in
+  let query =
+    Fmt.str
+      {|SELECT DISTINCT worker, docker_image
+        FROM benchmark_metadata
+        WHERE repo_id = %s
+          AND (%s)
+      |}
+      repo_id pr
+  in
+  let results = db#exec query in
+  let results = results#get_all in
+  Array.to_list results
+  |> List.map (function
+       | [| worker; docker_image |] -> (worker, docker_image)
+       | _ -> failwith "?")
+
+let get_workers ~db ~repo_id ~pr =
+  Db_util.with_db ~conninfo:db (get_workers ~repo_id ~pr)
+
+let get_benchmarks ~repo_id ~worker ~docker_image ~pr
+    (db : Postgresql.connection) =
+  let repo_id = Db_util.string repo_id in
+  let docker_image = Db_util.string docker_image in
+  let worker = Db_util.string worker in
+  let pr =
+    match pr with
+    | `PR pr ->
+        "pull_number IS NULL OR pull_number = " ^ Db_util.int (int_of_string pr)
+    | `Branch -> "pull_number IS NULL"
+  in
+  let query =
+    Fmt.str
+      {|SELECT benchmark_name, test_name, commit, pull_number IS NULL, metrics
+        FROM benchmarks
+        WHERE repo_id = %s
+          AND (%s)
+          AND worker = %s
+          AND docker_image = %s
+        ORDER BY (pull_number is NULL) ASC, run_at DESC
+        LIMIT 500
+      |}
+      repo_id pr worker docker_image
+  in
+  let results = db#exec query in
+  let results = results#get_all in
+  Array.to_list results
+  |> List.map (function
+       | [| benchmark_name; test_name; commit; is_pr; json |] ->
+           let not_pr = is_pr <> "t" in
+           (benchmark_name, test_name, commit, not_pr, json)
+       | _ -> failwith "?")
+  |> List.rev
+
+let get_benchmarks ~db ~repo_id ~pr ~worker ~docker_image =
+  Db_util.with_db ~conninfo:db
+    (get_benchmarks ~repo_id ~pr ~worker ~docker_image)
+
+let get_commits ~repo_id ~pr (db : Postgresql.connection) =
+  let repo_id = Db_util.string repo_id in
+  let pr =
+    match pr with
+    | `PR pr -> "pull_number = " ^ Db_util.int (int_of_string pr)
+    | `Branch -> "pull_number IS NULL"
+  in
+  let query =
+    Fmt.str
+      {|SELECT commit, commit_message, worker, docker_image, run_job_id, success, cancelled, failed, reason
+        FROM benchmark_metadata
+        WHERE repo_id = %s
+          AND (%s)
+        ORDER BY run_at DESC
+        LIMIT 10
+      |}
+      repo_id pr
+  in
+  let results = db#exec query in
+  let results = results#get_all in
+  Array.to_list results
+  |> List.map (function
+       | [|
+           hash;
+           message;
+           worker;
+           image;
+           job_id;
+           success;
+           cancelled;
+           failed;
+           reason;
+         |] ->
+           let status = analyze_result ~success ~cancelled ~failed ~reason in
+           (hash, message, worker, image, status, job_id)
+       | _ -> failwith "?")
+
+let get_commits ~db ~repo_id ~pr =
+  Db_util.with_db ~conninfo:db (get_commits ~repo_id ~pr)

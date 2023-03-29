@@ -14,6 +14,7 @@
   current_slack
   current_web
   dockerfile
+  dream
   fmt.tty
   logs
   logs.fmt
@@ -25,6 +26,7 @@
   timedesc.tzdb.full
   timedesc.tzlocal.unix
   timere-parse
+  tyxml
   uri
   yojson)
  (preprocess

@@ -31,6 +31,8 @@ depends: [
   "current_slack" {>= "0.6.4"}
   "current_web" {>= "0.6.4"}
   "dockerfile" {>= "6.3.0"}
+  "dream"        {dev}
+  "dream-httpaf" {dev}
   "duration"
   "fpath"
   "logs"
@@ -41,6 +43,7 @@ depends: [
   "rresult"
   "timere" {>= "0.5.0"}
   "timere-parse"
+  "tyxml"
   "alcotest" {with-test}
   "alcotest-lwt" {with-test}
   "bisect_ppx" {with-test}

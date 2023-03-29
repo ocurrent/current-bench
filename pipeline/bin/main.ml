@@ -122,6 +122,16 @@ let conninfo =
   @@ Arg.info ~doc:"Connection info for Postgres DB" ~docv:"PATH"
        [ "conn-info" ]
 
+let pipefront_url =
+  Arg.required
+  @@ Arg.opt Arg.(some string) None
+  @@ Arg.info ~doc:"URL of the new frontend" ~docv:"URL" [ "pipefront-url" ]
+
+let pipefront_port =
+  Arg.required
+  @@ Arg.opt Arg.(some int) None
+  @@ Arg.info ~doc:"PORT of the new frontend" ~docv:"PORT" [ "pipefront-port" ]
+
 let frontend_url =
   Arg.required
   @@ Arg.opt Arg.(some string) None
@@ -148,15 +158,20 @@ let config_file =
 
 let cmd : (unit, string) result Term.t =
   Term.(
-    const (fun config server conninfo () sources ->
-        match Pipeline.v ~config ~server ~sources conninfo () with
+    const (fun config server conninfo () sources pipefront_url pipefront_port ->
+        let front =
+          { Pipeline.Frontend.url = pipefront_url; port = pipefront_port }
+        in
+        match Pipeline.v ~config ~front ~server ~sources conninfo () with
         | Ok _ -> Result.Ok ()
         | Error (`Msg e) -> Result.Error e)
     $ config_file
     $ Current_web.cmdliner
     $ conninfo
     $ setup_log
-    $ Source.sources)
+    $ Source.sources
+    $ pipefront_url
+    $ pipefront_port)
 
 let () =
   Stdlib.exit

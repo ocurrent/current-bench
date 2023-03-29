@@ -47,6 +47,8 @@
    (>= 0.6.4))
   (dockerfile
    (>= 6.3.0))
+  (dream :dev)
+  (dream-httpaf :dev)
   duration
   fpath
   logs
@@ -69,6 +71,7 @@
   (timere
    (>= 0.5.0))
   timere-parse
+  tyxml
   yojson
   (alcotest :with-test)
   (alcotest-lwt
