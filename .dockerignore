@@ -3,3 +3,4 @@ frontend/node_modules
 current-bench-bechamel
 scripts
 capnp-secrets
+pipeline/_build
