@@ -27,7 +27,6 @@
   cohttp-lwt-unix
   (current
    (>= 0.6.4))
-  current_ansi
   (current_docker
    (>= 0.6.4))
   (current_git
@@ -38,8 +37,6 @@
    (>= 0.5))
   (current_ocluster
    (>= 0.2.1))
-  (current_rpc
-   (>= 0.6.4))
   (current_slack
    (>= 0.6.4))
   (current_web
@@ -51,10 +48,6 @@
   logs
   (mtime
    (>= 2.0.0))
-  (obuilder
-   (>= 0.5.1))
-  (obuilder-spec
-   (>= 0.5.1))
   (ocluster-api
    (>= 0.2.1))
   (ocluster-worker

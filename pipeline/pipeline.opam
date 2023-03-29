@@ -19,11 +19,9 @@ depends: [
   "current_docker" {>= "0.6.4"}
   "current_git"    {>= "0.6.4"}
   "current_github" {>= "0.6.4"}
-  "current_rpc"    {>= "0.6.4"}
   "current_slack"  {>= "0.6.4"}
   "current_web"    {>= "0.6.4"}
   "current_incr" {>= "0.5"}
-  "current_ansi"
   "current_ocluster" {>= "0.2.1"}
   "ocluster" {>= "0.2.1"}
   "dockerfile" {>= "6.3.0"}
