@@ -18,6 +18,9 @@ query ($repoId: String!) {
   benchmarksMenuData: benchmarks(distinct_on: [benchmark_name], where: {repo_id: {_eq: $repoId}}, order_by: [{benchmark_name: asc_nulls_first}]) {
     benchmark_name
   }
+  branchesMenuData: benchmark_metadata(distinct_on: [branch], where: {_and: [{repo_id: {_eq: $repoId}}, {branch: {_is_null: false}}]}, order_by: [{branch: asc_nulls_first}]) {
+    branch
+  }
 }
 `)
 
@@ -148,9 +151,81 @@ module BenchmarksMenu = {
   }
 }
 
+let defaultBranch = "main"
+let validDefaults = Belt.Set.String.fromArray(["main", "trunk", "master"])
+
+module BranchesMenu = {
+  @react.component
+  let make = (
+    ~repoId,
+    ~branchesMenuData: array<SidebarMenuData.t_branchesMenuData>,
+    ~selectedBranch=?,
+    ~selectedBenchmarkName=?,
+    ~selectedPull=?,
+    ~worker,
+  ) => {
+    let branchNames = branchesMenuData->Belt.Array.keepMap(obj => obj.branch)
+
+    React.useEffect3(() => {
+      if (
+        Belt.Option.isNone(selectedPull) &&
+        branchNames->Belt.Array.getBy(name => Some(name) == selectedBranch) == None
+      ) {
+        switch branchNames->Belt.Array.getBy(name => Belt.Set.String.has(validDefaults, name)) {
+        | Some(branch) =>
+          AppRouter.RepoBranch({
+            repoId,
+            branch,
+            benchmarkName: selectedBenchmarkName,
+            worker,
+          })->AppRouter.go
+        | _ => ()
+        }
+      }
+      None
+    }, (selectedBranch, branchesMenuData, selectedPull))
+
+    let branches =
+      branchesMenuData
+      ->Belt.Array.mapWithIndex((i, {branch}) => {
+        let branchRoute = switch branch {
+        | None =>
+          AppRouter.Repo({
+            repoId,
+            benchmarkName: selectedBenchmarkName,
+            worker,
+          })
+        | Some(branch) =>
+          AppRouter.RepoBranch({
+            repoId,
+            branch,
+            benchmarkName: selectedBenchmarkName,
+            worker,
+          })
+        }
+        <Link
+          sx=[Sx.pb.md, Sx.text.capital]
+          active={selectedBranch == branch}
+          key={string_of_int(i)}
+          href={branchRoute->AppRouter.path}
+          text={Belt.Option.getWithDefault(branch, defaultBranch)}
+        />
+      })
+      ->Rx.array(~empty="None"->Rx.string)
+    switch Belt.Array.length(branchesMenuData) {
+    | 0 | 1 => Rx.null
+    | _ =>
+      <Column>
+        <Text color=Sx.gray700 weight=#bold uppercase=true size=#sm> "Branches" </Text>
+        {branches}
+      </Column>
+    }
+  }
+}
+
 module SidebarMenu = {
   @react.component
-  let make = (~repoId, ~selectedPull=?, ~selectedBenchmarkName=?, ~worker) => {
+  let make = (~repoId, ~selectedBranch=?, ~selectedPull=?, ~selectedBenchmarkName=?, ~worker) => {
     let ({ReScriptUrql.Hooks.response: response}, _) = {
       ReScriptUrql.Hooks.useQuery(
         ~query=module(SidebarMenuData),
@@ -165,8 +240,9 @@ module SidebarMenu = {
     | Error({networkError: Some(_)}) => <div> {"Network Error"->Rx.text} </div>
     | Error({networkError: None}) => <div> {"Unknown Error"->Rx.text} </div>
     | Fetching => Rx.text("Loading...")
-    | Data({benchmarksMenuData, pullsMenuData})
-    | PartialData({benchmarksMenuData, pullsMenuData}, _) => <>
+    | Data({benchmarksMenuData, pullsMenuData, branchesMenuData})
+    | PartialData({benchmarksMenuData, pullsMenuData, branchesMenuData}, _) =>
+      <>
         {switch Belt.Array.some(benchmarksMenuData, bm => {
           bm.benchmark_name !== BenchmarkDataHelpers.defaultBenchmarkName
         }) {
@@ -177,6 +253,9 @@ module SidebarMenu = {
           </Column>
         | false => Rx.null
         }}
+        <BranchesMenu
+          repoId branchesMenuData ?selectedPull ?selectedBranch ?selectedBenchmarkName worker
+        />
         <PullsMenu repoId pullsMenuData ?selectedPull ?selectedBenchmarkName worker />
       </>
     }
@@ -265,6 +344,7 @@ let make = (
   ~repoIds,
   ~worker,
   ~setWorker,
+  ~selectedBranch=?,
   ~selectedRepoId=?,
   ~selectedPull=?,
   ~selectedBenchmarkName=?,
@@ -272,9 +352,10 @@ let make = (
 ): React.element => {
   let menu = switch selectedRepoId {
   | None => Rx.null
-  | Some(repoId) => <>
+  | Some(repoId) =>
+    <>
       <Workers worker setWorker repoId selectedPull />
-      <SidebarMenu repoId ?selectedPull ?selectedBenchmarkName worker />
+      <SidebarMenu repoId ?selectedBranch ?selectedPull ?selectedBenchmarkName worker />
     </>
   }
 

@@ -4,6 +4,7 @@ type route =
   | Main
   | Repo({repoId: string, benchmarkName: option<string>, worker: worker})
   | RepoPull({repoId: string, pullNumber: int, benchmarkName: option<string>, worker: worker})
+  | RepoBranch({repoId: string, branch: string, benchmarkName: option<string>, worker: worker})
 
 type error = {
   path: list<string>,
@@ -38,9 +39,31 @@ let route = (url: RescriptReactRouter.url) => {
              benchmarkName: None,
              worker}))
   | list{orgName, repoName, "benchmark", benchmarkName} =>
-    Ok(Repo({repoId: orgName ++ "/" ++ repoName,
-             benchmarkName: Some(benchmarkName),
-             worker}))
+    Ok(
+      Repo({
+        repoId: orgName ++ "/" ++ repoName,
+        benchmarkName: Some(benchmarkName),
+        worker,
+      }),
+    )
+  | list{orgName, repoName, "branch", branchName} =>
+    Ok(
+      RepoBranch({
+        repoId: orgName ++ "/" ++ repoName,
+        branch: branchName,
+        benchmarkName: None,
+        worker,
+      }),
+    )
+  | list{orgName, repoName, "branch", branchName, "benchmark", benchmarkName} =>
+    Ok(
+      RepoBranch({
+        repoId: orgName ++ "/" ++ repoName,
+        branch: branchName,
+        benchmarkName: Some(benchmarkName),
+        worker,
+      }),
+    )
   | list{orgName, repoName, "pull", pullNumberStr} =>
     switch Belt.Int.fromString(pullNumberStr) {
     | Some(pullNumber) =>
@@ -87,8 +110,17 @@ let path = route =>
   | RepoPull({repoId, pullNumber, benchmarkName: None, worker}) =>
     "/" ++ repoId ++ "/pull/" ++ Belt.Int.toString(pullNumber) ++ workerParams(worker)
   | RepoPull({repoId, pullNumber, benchmarkName: Some(benchmarkName), worker}) =>
-    "/" ++ repoId ++ "/pull/" ++ Belt.Int.toString(pullNumber) ++ "/benchmark/" ++ benchmarkName
-    ++ workerParams(worker)
+    "/" ++
+    repoId ++
+    "/pull/" ++
+    Belt.Int.toString(pullNumber) ++
+    "/benchmark/" ++
+    benchmarkName ++
+    workerParams(worker)
+  | RepoBranch({repoId, branch, benchmarkName: None, worker}) =>
+    "/" ++ repoId ++ "/branch/" ++ branch ++ workerParams(worker)
+  | RepoBranch({repoId, branch, benchmarkName: Some(benchmarkName), worker}) =>
+    "/" ++ repoId ++ "/branch/" ++ branch ++ "/benchmark/" ++ benchmarkName ++ workerParams(worker)
   }
 
 let useRoute = () => RescriptReactRouter.useUrl()->route
