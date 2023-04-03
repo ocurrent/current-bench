@@ -33,8 +33,11 @@ let empty =
   }
 
 let add commit subkey value ms =
-  let vs = try Submetrics.find subkey ms with Not_found -> Commits.empty in
-  let vs = Commits.add commit value vs in
+  let vs =
+    Submetrics.find_opt subkey ms
+    |> Option.value ~default:Commits.empty
+    |> Commits.add commit value
+  in
   let ms = Submetrics.add subkey vs ms in
   ms
 
@@ -85,12 +88,9 @@ let add (benchmark_name, test_name, commit, json) t =
         in
         let acc = Metrics.add name m acc in
         let colors =
-          try
-            ignore (Submetrics.find subkey colors);
-            colors
-          with Not_found ->
-            let color = Color.random () in
-            Submetrics.add subkey color colors
+          if Submetrics.mem subkey colors
+          then colors
+          else Submetrics.add subkey (Color.random ()) colors
         in
         (colors, acc))
       (t.colors, metrics) json
