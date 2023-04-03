@@ -95,8 +95,12 @@ let install_opam_dependencies ~files =
       @@ run "opam exec -- opam install -y --depext-only %s" targets
       @@ run "opam exec -- opam install -y --deps-only --with-test %s" targets
 
-let dockerfile ~base ~files =
+let dockerfile ~base ~files ~bench_repo =
   let open Dockerfile in
+  let extract_dir repo_url =
+    repo_url |> String.split_on_char '/' |> List.rev |> List.hd
+  in
+  let bench_dir = bench_repo |> Option.map extract_dir in
   from (Docker.Image.hash base)
   @@ run "sudo apt-get update"
   @@ run
@@ -109,8 +113,16 @@ let dockerfile ~base ~files =
   @@ workdir "bench-dir"
   @@ install_opam_dependencies ~files
   @@ copy ~chown:"opam:opam" ~src:[ "." ] ~dst:"." ()
+  @@ (match (bench_repo, bench_dir) with
+     | Some repo, Some dir -> run "git clone %s %s" repo dir
+     | _ -> comment "No bench repo to clone")
+  @@
+  match bench_dir with
+  | Some dir -> workdir "%s" dir
+  | _ -> comment "No extra bench repo"
 
-let dockerfile ~base ~files = Dockerfile.crunch (dockerfile ~base ~files)
+let dockerfile ~base ~files ~bench_repo =
+  Dockerfile.crunch (dockerfile ~base ~files ~bench_repo)
 
 let dockerfiles ~config ~repository =
   let default_file = "bench.Dockerfile" in
@@ -131,7 +143,7 @@ let dockerfiles ~config ~repository =
             let docker =
               `Contents
                 (let+ base = Config.find_image config image in
-                 dockerfile ~base ~files)
+                 dockerfile ~base ~files ~bench_repo:conf.bench_repo)
             in
             (image, docker)
       in

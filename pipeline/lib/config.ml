@@ -14,6 +14,7 @@ type repo = {
   build_args : string list; [@default []]
   notify_github : bool; [@default false]
   if_label : string option; [@default None]
+  bench_repo : string option; [@default None]
 }
 [@@deriving yojson]
 
@@ -98,6 +99,7 @@ let default name =
     build_args = [];
     notify_github = false;
     if_label = None;
+    bench_repo = None;
   }
 
 let must_benchmark repo conf =
