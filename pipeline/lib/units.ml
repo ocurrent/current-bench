@@ -1,4 +1,4 @@
-let factors = [ ("ns", 1.0); ("ms", 1000.0) ]
+let factors = [ ("ns", 1e-9); ("ms", 1e-3); ("s", 1.0) ]
 
 let convert ~from ~target value =
   if from = target
@@ -7,7 +7,7 @@ let convert ~from ~target value =
     try
       let from_factor = List.assoc from factors in
       let target_factor = List.assoc target factors in
-      value *. target_factor /. from_factor
+      value *. from_factor /. target_factor
     with Not_found -> value
 
 let convert_value ~from ~target = function
