@@ -111,7 +111,7 @@ let find t repo =
   let name = Repository.info repo in
   match List.filter (fun r -> r.name = name) t.repos with
   | [] -> [ default name ]
-  | configs -> List.filter (must_benchmark repo) configs
+  | configs -> configs
 
 let find_image t image_name = Images.find image_name t.images
 
