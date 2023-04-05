@@ -160,7 +160,7 @@ let pipeline ~config ~ocluster ~conninfo repository =
   let* () = p |> github_set_status ~repository in
   Current.ignore_value p
 
-let github_repositories repo =
+let github_repositories ~config repo =
   let* refs =
     Current.component "Get PRs"
     |> let> api, repo = repo in
@@ -184,9 +184,17 @@ let github_repositories repo =
       (* Skip all branches other than the default branch, and check PRs *)
       | `Ref branch when branch = default_branch ->
           repository ~branch:default_branch_name ~labels:[] () :: lst
-      | `PR pr ->
-          repository ~title:pr.title ~pull_number:pr.id ~labels:pr.labels ()
-          :: lst
+      | `PR pr -> (
+          let repository =
+            repository ~title:pr.title ~pull_number:pr.id ~labels:pr.labels ()
+          in
+          match
+            List.filter
+              (Config.must_benchmark repository)
+              (Config.find config repository)
+          with
+          | [] -> lst
+          | _ -> repository :: lst)
       | _ -> lst)
     ref_map []
 
@@ -205,7 +213,7 @@ let filter_stale_repositories repos =
       | _ -> None)
     repos
 
-let repositories = function
+let repositories ~config = function
   | Source.Local path ->
       let local = Git.Local.v path in
       let name = Fpath.basename path in
@@ -227,7 +235,7 @@ let repositories = function
       let token = token |> Util.read_fpath |> String.trim in
       let api = Current_github.Api.of_oauth ~token ~webhook_secret in
       let repo = Current.return (api, repo) in
-      github_repositories repo
+      github_repositories ~config repo
   | Github_app app ->
       let+ repos =
         Github.App.installations app
@@ -236,12 +244,12 @@ let repositories = function
            repos
            |> Current.list_map ~collapse_key:"repo"
                 (module Github.Api.Repo)
-                github_repositories
+                (github_repositories ~config)
       in
       List.concat (List.concat repos)
 
-let repositories sources =
-  let repos = Current.list_seq (List.map repositories sources) in
+let repositories ~config sources =
+  let repos = Current.list_seq (List.map (repositories ~config) sources) in
   Current.map List.concat repos
 
 let string_of_repositories repos =
@@ -258,7 +266,7 @@ let pull_requests_from_repositories repos =
     repos
 
 let process_pipeline ~config ~ocluster ~conninfo ~sources () =
-  let repos = repositories sources in
+  let repos = repositories ~config sources in
   let fresh_repos = Current.map filter_stale_repositories repos in
   let+ () =
     let+ open_pulls = Current.map pull_requests_from_repositories repos in
