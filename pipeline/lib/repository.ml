@@ -5,6 +5,7 @@ type t = {
   commit : Current_git.Commit_id.t;
   commit_message : string option;
   pull_number : int option;
+  pull_base : string option;
   branch : string option;
   github_head : Current_github.Api.Commit.t option;
   github_api : Current_github.Api.t option;
@@ -17,7 +18,7 @@ let default_src ?src commit =
   | None -> Current_git.fetch (Current.return commit)
   | Some src -> src
 
-let v ~owner ~name ?src ~commit ?commit_message ?pull_number ?branch
+let v ~owner ~name ?src ~commit ?commit_message ?pull_number ?pull_base ?branch
     ?github_head ?github_api ?title ~labels () =
   {
     owner;
@@ -25,6 +26,7 @@ let v ~owner ~name ?src ~commit ?commit_message ?pull_number ?branch
     commit;
     commit_message;
     pull_number;
+    pull_base;
     branch;
     github_head;
     github_api;
@@ -40,6 +42,7 @@ let commit t = t.commit
 let commit_message t = t.commit_message
 let commit_hash t = Current_git.Commit_id.hash t.commit
 let pull_number t = t.pull_number
+let pull_base t = t.pull_base
 let title t = t.title
 let labels t = t.labels
 let branch t = t.branch

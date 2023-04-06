@@ -196,7 +196,8 @@ let github_repositories ~config repo =
          the repo's configuration. *)
       | `PR pr ->
           let repository =
-            repository ~title:pr.title ~pull_number:pr.id ~labels:pr.labels ()
+            repository ~title:pr.title ~pull_number:pr.id ~pull_base:pr.base
+              ~labels:pr.labels ()
           in
           if List.exists
                (Config.must_benchmark_pull repository)

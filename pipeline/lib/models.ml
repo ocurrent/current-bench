@@ -7,6 +7,7 @@ module Benchmark = struct
     commit : string;
     branch : string option;
     pull_number : int option;
+    pull_base : string option;
     build_job_id : string option;
     run_job_id : string option;
     worker : string;
@@ -30,6 +31,7 @@ module Benchmark = struct
       commit = Repository.commit_hash repository;
       branch = Repository.branch repository;
       pull_number = Repository.pull_number repository;
+      pull_base = Repository.pull_base repository;
       build_job_id;
       run_job_id;
       worker;
@@ -47,6 +49,7 @@ module Benchmark = struct
   let commit self = self.commit
   let branch self = self.branch
   let pull_number self = self.pull_number
+  let pull_base self = self.pull_base
   let build_job_id self = self.build_job_id
   let run_job_id self = self.run_job_id
   let test_name self = self.test_name
@@ -67,6 +70,7 @@ module Benchmark = struct
         field "commit" commit Fmt.string;
         field "branch" branch Fmt.(option string);
         field "pull_number" pull_number Fmt.(option int);
+        field "pull_base" pull_base Fmt.(option string);
         field "build_job_id" build_job_id Fmt.(option string);
         field "run_job_id" run_job_id Fmt.(option string);
         field "worker" worker Fmt.string;
@@ -88,6 +92,7 @@ module Benchmark = struct
       let commit = Db_util.string self.commit in
       let branch = Db_util.(option string) self.branch in
       let pull_number = Db_util.(option int) self.pull_number in
+      let pull_base = Db_util.(option string) self.pull_base in
       let build_job_id = Db_util.(option string) self.build_job_id in
       let run_job_id = Db_util.(option string) self.run_job_id in
       let benchmark_name = Db_util.string self.benchmark_name in
@@ -97,12 +102,12 @@ module Benchmark = struct
       let worker = Db_util.string self.worker in
       let docker_image = Db_util.string self.docker_image in
       Fmt.str
-        {|INSERT INTO benchmarks(version, run_at, duration, repo_id, commit, branch, pull_number, build_job_id, run_job_id, worker, docker_image, benchmark_name, test_name,  test_index, metrics)
-          VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        {|INSERT INTO benchmarks(version, run_at, duration, repo_id, commit, branch, pull_number, pull_base, build_job_id, run_job_id, worker, docker_image, benchmark_name, test_name,  test_index, metrics)
+          VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
           ON CONFLICT (commit, benchmark_name, test_name, run_job_id)
           DO UPDATE SET metrics = EXCLUDED.metrics
         |}
-        version run_at duration repository commit branch pull_number
+        version run_at duration repository commit branch pull_number pull_base
         build_job_id run_job_id worker docker_image benchmark_name test_name
         test_index metrics
 
