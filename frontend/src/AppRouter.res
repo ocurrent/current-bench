@@ -3,7 +3,13 @@ type worker = option<(string, string)>
 type route =
   | Main
   | Repo({repoId: string, benchmarkName: option<string>, worker: worker})
-  | RepoPull({repoId: string, pullNumber: int, benchmarkName: option<string>, worker: worker})
+  | RepoPull({
+      repoId: string,
+      pullNumber: int,
+      pullBase: string,
+      benchmarkName: option<string>,
+      worker: worker,
+    })
   | RepoBranch({repoId: string, branch: string, benchmarkName: option<string>, worker: worker})
 
 type error = {
@@ -64,28 +70,30 @@ let route = (url: RescriptReactRouter.url) => {
         worker,
       }),
     )
-  | list{orgName, repoName, "pull", pullNumberStr} =>
+  | list{orgName, repoName, "pull", pullNumberStr, "base", pullBase} =>
     switch Belt.Int.fromString(pullNumberStr) {
     | Some(pullNumber) =>
       Ok(
         RepoPull({
           repoId: orgName ++ "/" ++ repoName,
-          pullNumber: pullNumber,
+          pullNumber,
+          pullBase,
           benchmarkName: None,
-          worker
+          worker,
         }),
       )
     | None => Error({path: url.path, reason: "Invalid pull number: " ++ pullNumberStr})
     }
-  | list{orgName, repoName, "pull", pullNumberStr, "benchmark", benchmarkName} =>
+  | list{orgName, repoName, "pull", pullNumberStr, "base", pullBase, "benchmark", benchmarkName} =>
     switch Belt.Int.fromString(pullNumberStr) {
     | Some(pullNumber) =>
       Ok(
         RepoPull({
           repoId: orgName ++ "/" ++ repoName,
-          pullNumber: pullNumber,
+          pullNumber,
+          pullBase,
           benchmarkName: Some(benchmarkName),
-          worker
+          worker,
         }),
       )
     | None => Error({path: url.path, reason: "Invalid pull number: " ++ pullNumberStr})
@@ -107,13 +115,21 @@ let path = route =>
   | Repo({repoId, benchmarkName: None, worker}) => "/" ++ repoId ++ workerParams(worker)
   | Repo({repoId, benchmarkName: Some(benchmarkName), worker}) =>
     "/" ++ repoId ++ "/benchmark/" ++ benchmarkName ++ workerParams(worker)
-  | RepoPull({repoId, pullNumber, benchmarkName: None, worker}) =>
-    "/" ++ repoId ++ "/pull/" ++ Belt.Int.toString(pullNumber) ++ workerParams(worker)
-  | RepoPull({repoId, pullNumber, benchmarkName: Some(benchmarkName), worker}) =>
+  | RepoPull({repoId, pullNumber, pullBase, benchmarkName: None, worker}) =>
     "/" ++
     repoId ++
     "/pull/" ++
     Belt.Int.toString(pullNumber) ++
+    "/base/" ++
+    pullBase ++
+    workerParams(worker)
+  | RepoPull({repoId, pullNumber, pullBase, benchmarkName: Some(benchmarkName), worker}) =>
+    "/" ++
+    repoId ++
+    "/pull/" ++
+    Belt.Int.toString(pullNumber) ++
+    "/base/" ++
+    pullBase ++
     "/benchmark/" ++
     benchmarkName ++
     workerParams(worker)

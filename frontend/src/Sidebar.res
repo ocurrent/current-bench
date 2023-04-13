@@ -11,6 +11,7 @@ module SidebarMenuData = %graphql(`
 query ($repoId: String!) {
   pullsMenuData: benchmark_metadata(distinct_on: [pull_number], where: {_and: [{repo_id: {_eq: $repoId}}, {pull_number: {_is_null: false}}]}, order_by: [{pull_number: desc}]) {
     pull_number
+    pull_base
     is_open_pr
     branch
     pr_title
@@ -29,7 +30,7 @@ module PullsList = {
   let make = (~repoId, ~pullNumberInfos, ~selectedPull=?, ~selectedBenchmarkName=?, ~worker) => {
     pullNumberInfos
     ->Belt.Array.mapWithIndex((i, pullNumberInfo) => {
-      let (pullNumber, prTitle) = pullNumberInfo
+      let (pullNumber, pullBase, prTitle) = pullNumberInfo
 
       <Row key={string_of_int(i)}>
         <a
@@ -51,6 +52,7 @@ module PullsList = {
           href={AppRouter.RepoPull({
             repoId: repoId,
             pullNumber: pullNumber,
+            pullBase: pullBase,
             benchmarkName: selectedBenchmarkName,
             worker: worker,
           })->AppRouter.path}
@@ -72,17 +74,17 @@ module PullsMenu = {
     ~worker,
   ) => {
     let openPullNumberInfos = pullsMenuData->Belt.Array.keepMap(obj =>
-      switch obj.pull_number {
-      | Some(pullNumber) if obj.is_open_pr =>
-        Some(pullNumber, Belt.Option.getWithDefault(obj.pr_title, ""))
+      switch (obj.pull_number, obj.pull_base) {
+      | (Some(pullNumber), Some(pullBase)) if obj.is_open_pr =>
+        Some(pullNumber, pullBase, Belt.Option.getWithDefault(obj.pr_title, ""))
       | _ => None
       }
     )
 
     let closedPullNumberInfos = pullsMenuData->Belt.Array.keepMap(obj =>
-      switch obj.pull_number {
-      | Some(pullNumber) if !obj.is_open_pr =>
-        Some(pullNumber, Belt.Option.getWithDefault(obj.pr_title, ""))
+      switch (obj.pull_number, obj.pull_base) {
+      | (Some(pullNumber), Some(pullBase)) if !obj.is_open_pr =>
+        Some(pullNumber, pullBase, Belt.Option.getWithDefault(obj.pr_title, ""))
       | _ => None
       }
     )
@@ -118,22 +120,24 @@ module BenchmarksMenu = {
     ~repoId,
     ~benchmarksMenuData: array<SidebarMenuData.t_benchmarksMenuData>,
     ~selectedPull=?,
+    ~selectedPullBase=?,
     ~selectedBenchmarkName=?,
     ~worker,
   ) => {
     benchmarksMenuData
     ->Belt.Array.mapWithIndex((i, {benchmark_name: benchmarkName}) => {
-      let benchmarkRoute = switch selectedPull {
-      | None =>
-        AppRouter.Repo({
-          repoId: repoId,
-          benchmarkName: Some(benchmarkName),
-          worker: worker,
-        })
-      | Some(pullNumber) =>
+      let benchmarkRoute = switch (selectedPull, selectedPullBase) {
+      | (Some(pullNumber), Some(pullBase)) =>
         AppRouter.RepoPull({
           repoId: repoId,
           pullNumber: pullNumber,
+          pullBase: pullBase,
+          benchmarkName: Some(benchmarkName),
+          worker: worker,
+        })
+      | _ =>
+        AppRouter.Repo({
+          repoId: repoId,
           benchmarkName: Some(benchmarkName),
           worker: worker,
         })
