@@ -3,6 +3,6 @@ set -eu
 
 cd /mnt/project
 
-./dev/github-app.sh
+./dev/github-app.sh &
 
 dune exec --watch bin/main.exe -- "$@"
