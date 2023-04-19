@@ -111,15 +111,11 @@ let dockerfile ~base ~files ~bench_repo =
   @@ run "opam update"
   @@ run "mkdir bench-dir && chown opam:opam bench-dir"
   @@ workdir "bench-dir"
-  @@ install_opam_dependencies ~files
   @@ copy ~chown:"opam:opam" ~src:[ "." ] ~dst:"." ()
-  @@ (match (bench_repo, bench_dir) with
-     | Some repo, Some dir -> run "git clone %s %s" repo dir
-     | _ -> comment "No bench repo to clone")
   @@
-  match bench_dir with
-  | Some dir -> workdir "%s" dir
-  | _ -> comment "No extra bench repo"
+  match (bench_repo, bench_dir) with
+  | Some repo, Some dir -> run "git clone %s %s" repo dir @@ workdir "%s" dir
+  | _ -> comment "No bench repo to clone" @@ install_opam_dependencies ~files
 
 let dockerfile ~base ~files ~bench_repo =
   Dockerfile.crunch (dockerfile ~base ~files ~bench_repo)
