@@ -4,6 +4,7 @@
  (libraries
   capnp-rpc-unix
   cb-schema
+  color
   current
   current.fs
   current_docker

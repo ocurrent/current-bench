@@ -20,7 +20,7 @@ type m = { units : string; values : values (* etc *) }
 
 type t = {
   timeline : (bool * commit) list;
-  colors : Color.t Submetrics.t;
+  colors : Color.gg Submetrics.t;
   benchmarks : m Metrics.t Tests.t Benchmarks.t;
       (* benchmark_name -> test_name -> metric_name -> ? *)
 }
@@ -134,6 +134,9 @@ let plot1_raw ~xs ~t ~subkey ys =
   let color = Submetrics.find subkey t.colors in
 
   let errors =
+    let color =
+      Gg.Color.with_a color 0.2 |> Color.Rgb.from_gg |> Color.Rgb.to_css
+    in
     let ys = ys_min @ List.rev ys_max in
     `Assoc
       [
@@ -144,7 +147,7 @@ let plot1_raw ~xs ~t ~subkey ys =
         ("line", `Assoc [ ("color", `String "transparent") ]);
         ("showlegend", `Bool false);
         ("fill", `String "tozeroy");
-        ("fillcolor", `String (Color.to_css { color with Color.a = 0.2 }));
+        ("fillcolor", `String color);
         ("hoverinfo", `String "none");
       ]
   in
@@ -156,7 +159,11 @@ let plot1_raw ~xs ~t ~subkey ys =
         ("y", `List ys_avg);
         ("name", `String subkey);
         ("type", `String "scatter");
-        ("line", `Assoc [ ("color", `String (Color.to_css color)) ]);
+        ( "line",
+          `Assoc
+            [
+              ("color", `String (color |> Color.Rgb.from_gg |> Color.Rgb.to_css));
+            ] );
       ] )
 
 let plot1 ~xs ~t ~subkey vs =
@@ -264,12 +271,16 @@ let plot ~db ~repo_id ~pr ~worker ~docker_image =
     let { colors; _ } = t in
     let nb_colors = Submetrics.cardinal colors in
     let counter = ref 0 in
+    let color i =
+      let hue = 360. *. float i /. float nb_colors in
+      Color.Oklch.v 1.0 0.5 hue |> Color.Oklch.to_gg
+    in
     let colors =
       Submetrics.map
         (fun _ ->
           let i = !counter in
           incr counter;
-          Color.v ~h:(float i /. float nb_colors) ())
+          color i)
         colors
     in
     assert (!counter = nb_colors);

@@ -20,6 +20,7 @@ depends: [
   "bos"
   "capnp-rpc-unix"
   "cmdliner" {>= "1.1.0"}
+  "color" {dev}
   "current" {>= "0.6.4"}
   "current_ansi"
   "current_docker" {>= "0.6.4"}
@@ -31,8 +32,7 @@ depends: [
   "current_slack" {>= "0.6.4"}
   "current_web" {>= "0.6.4"}
   "dockerfile" {>= "6.3.0"}
-  "dream"        {dev}
-  "dream-httpaf" {dev}
+  "dream"        {= "1.0.0~alpha5"}
   "duration"
   "fpath"
   "logs"
@@ -53,6 +53,8 @@ pin-depends: [
   # Using the changes in ocurrent/ocurrent/pull/421, remove the pin on next release (> 0.6.4)
   # When modifying this pin, don't forget to also modify ../current-bench.opam.template
   ["current_github.0.6.4" "git+https://github.com/ocurrent/ocurrent.git#32561e1f2b9cc387d098e0ee918cd6bd2ccd1d3b"]
+  # We use the latest features of color, remove the pin after the next release (> 0.2.0)
+  [ "color.dev"        "git+https://github.com/anuragsoni/color.git#03e53fe1abde934eb5126dce6578fa3fc63634db"  ]
 ]
 build: [
   ["dune" "subst"] {dev}
