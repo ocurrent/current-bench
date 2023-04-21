@@ -113,7 +113,10 @@ let list_repos ~db ~owner () =
       @@ ps;
     ]
 
-let find key lst = List.find_opt (fun (w, i, _, _, _, _) -> (w, i) = key) lst
+let find key lst =
+  List.find_opt
+    (fun { Storage.worker; docker_image; _ } -> (worker, docker_image) = key)
+    lst
 
 let pr_link ~repo_id ~worker ~docker_image ~pr ~title ~columns ~envs =
   H.td
@@ -129,13 +132,12 @@ let pr_link ~repo_id ~worker ~docker_image ~pr ~title ~columns ~envs =
            [
              (match find env columns with
              | None -> H.txt "---"
-             | Some (w, i, _, run_at, status, _) ->
+             | Some { Storage.worker; docker_image; run_at; status; _ } ->
                  H.a
                    ~a:
                      [
                        H.a_href
-                         (pr_url ~repo_id ~pr:(`PR pr) ~worker:w ~docker_image:i
-                            ());
+                         (pr_url ~repo_id ~pr:(`PR pr) ~worker ~docker_image ());
                      ]
                    [ H.txt status; H.txt " "; H.txt run_at ]);
            ])
@@ -146,19 +148,18 @@ let list_pr ~db ~repo_id ~worker ~docker_image () =
   let envs =
     unique
     @@ List.map
-         (fun ((_, worker, docker_image), _, _, _, _) -> (worker, docker_image))
+         (fun { Storage.worker; docker_image; _ } -> (worker, docker_image))
          ps
   in
   let ps =
-    Mstr.bindings
-    @@ group (fun ((pr, w, i), t, r, s, j) -> (pr, (w, i, t, r, s, j))) ps
+    Mstr.bindings @@ group (fun ({ Storage.pr; _ } as p) -> (pr, p)) ps
   in
   let ps =
     List.sort
       (fun a b ->
         match (a, b) with
-        | (_, (_, _, _, run_at, _, _) :: _), (_, (_, _, _, run_at', _, _) :: _)
-          ->
+        | ( (_, { Storage.run_at; _ } :: _),
+            (_, { Storage.run_at = run_at'; _ } :: _) ) ->
             -String.compare run_at run_at'
         | _ -> assert false)
       ps
@@ -174,7 +175,7 @@ let list_pr ~db ~repo_id ~worker ~docker_image () =
              (fun (pr, columns) ->
                let title =
                  match columns with
-                 | (_, _, title, _, _, _) :: _ -> title
+                 | { Storage.title; _ } :: _ -> title
                  | [] -> assert false
                in
                H.tr

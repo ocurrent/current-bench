@@ -234,7 +234,17 @@ let analyze_result ~success ~failed ~cancelled ~reason =
       Printf.sprintf "OK=%S CAN=%S ERR=%S REA=%S\n%!" success cancelled failed
         reason
 
-let get_prs ~repo_id (db : Postgresql.connection) =
+type pr_storage_info = {
+  pr : string;
+  worker : string;
+  docker_image : string;
+  title : string;
+  run_at : string;
+  status : string;
+  run_job_id : string;
+}
+
+let get_prs ~repo_id (db : Postgresql.connection) : pr_storage_info list =
   let repo_id = Db_util.string repo_id in
   let query =
     Fmt.str
@@ -270,7 +280,7 @@ let get_prs ~repo_id (db : Postgresql.connection) =
            run_job_id;
          |] ->
            let status = analyze_result ~success ~cancelled ~failed ~reason in
-           ((pr, worker, docker_image), title, run_at, status, run_job_id)
+           { pr; worker; docker_image; title; run_at; status; run_job_id }
        | _ -> failwith "?")
 
 let get_prs ~db repo_id = Db_util.with_db ~conninfo:db (get_prs ~repo_id)
