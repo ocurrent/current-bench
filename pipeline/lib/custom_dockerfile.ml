@@ -95,12 +95,34 @@ let install_opam_dependencies ~files =
       @@ run "opam exec -- opam install -y --depext-only %s" targets
       @@ run "opam exec -- opam install -y --deps-only --with-test %s" targets
 
+let contains_at s1 s2 =
+  let re = Str.regexp_string s2 in
+  try
+    let idx = Str.search_forward re s1 0 in
+    Some idx
+  with Not_found -> None
+
+let extract_repo_id_dir_branch repo_url =
+  let extract_repo_id_dir repo_url =
+    let split_url = repo_url |> String.split_on_char '/' |> List.rev in
+    let dir = split_url |> List.hd in
+    let owner = List.nth split_url 1 in
+    (owner ^ "/" ^ dir, dir)
+  in
+  match contains_at repo_url "/tree" with
+  | None ->
+      let repo_id, dir = extract_repo_id_dir repo_url in
+      (* Assume main as default branch *)
+      (repo_id, dir, "main")
+  | Some idx ->
+      let index = idx + 6 (* /tree/ *) in
+      let branch = String.sub repo_url index (String.length repo_url - index) in
+      let repo_url = String.sub repo_url 0 idx in
+      let repo_id, dir = extract_repo_id_dir repo_url in
+      (repo_id, dir, branch)
+
 let dockerfile ~base ~files ~bench_repo =
   let open Dockerfile in
-  let extract_dir repo_url =
-    repo_url |> String.split_on_char '/' |> List.rev |> List.hd
-  in
-  let bench_dir = bench_repo |> Option.map extract_dir in
   from (Docker.Image.hash base)
   @@ run "sudo apt-get update"
   @@ run
@@ -111,15 +133,22 @@ let dockerfile ~base ~files ~bench_repo =
   @@ run "opam update"
   @@ run "mkdir bench-dir && chown opam:opam bench-dir"
   @@ workdir "bench-dir"
-  @@ install_opam_dependencies ~files
   @@ copy ~chown:"opam:opam" ~src:[ "." ] ~dst:"." ()
-  @@ (match (bench_repo, bench_dir) with
-     | Some repo, Some dir -> run "git clone %s %s" repo dir
-     | _ -> comment "No bench repo to clone")
   @@
-  match bench_dir with
-  | Some dir -> workdir "%s" dir
-  | _ -> comment "No extra bench repo"
+  match bench_repo with
+  | Some repo ->
+      let repo_id, dir, branch = extract_repo_id_dir_branch repo in
+      (* FIXME: We assume GitHub repositories. *)
+      add
+        ~src:
+          [
+            Fmt.str "https://api.github.com/repos/%s/git/refs/heads/%s" repo_id
+              branch;
+          ]
+        ~dst:".bench-repo-gitinfo" ()
+      @@ run "git clone --branch %s https://github.com/%s %s" branch repo_id dir
+      @@ workdir "%s" dir
+  | _ -> comment "No bench repo to clone" @@ install_opam_dependencies ~files
 
 let dockerfile ~base ~files ~bench_repo =
   Dockerfile.crunch (dockerfile ~base ~files ~bench_repo)
