@@ -89,18 +89,22 @@ let rec add ts t =
 
 let merge ts0 ts1 = List.fold_left add ts0 ts1
 
-let value_of_json = function
+let value_of_json j =
+  let error () = Json.error "value" "int or float, with or without unit" j in
+  match j with
   | `Float x -> (x, "")
   | `Int x -> (float_of_int x, "")
-  | `Intlit s -> (float_of_string s, "")
-  | `String str ->
-      list_find_map
-        (fun f -> f ~str)
-        [
-          sscanf_opt "%fmin%fs" (fun min sec -> ((min *. 60.) +. sec, "s"));
-          sscanf_opt "%f%s" (fun x u -> (x, u));
-        ]
-  | j -> Json.error "value" "int or float, with or without unit" j
+  | `Intlit s -> ( try (float_of_string s, "") with Failure _ -> error ())
+  | `String str -> (
+      try
+        list_find_map
+          (fun f -> f ~str)
+          [
+            sscanf_opt "%fmin%fs" (fun min sec -> ((min *. 60.) +. sec, "s"));
+            sscanf_opt "%f%s" (fun x u -> (x, u));
+          ]
+      with Not_found -> error ())
+  | _ -> error ()
 
 let value_of_json = function
   | `List vs ->
