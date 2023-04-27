@@ -9,6 +9,7 @@ let setup_metadata ~repository ~worker ~docker_image
   in
   let branch = Db_util.(option string) (Repository.branch repository) in
   let pull_number = Db_util.(option int) (Repository.pull_number repository) in
+  let pull_base = Db_util.(option string) (Repository.pull_base repository) in
   let title = Db_util.(option string) (Repository.title repository) in
   let worker = Db_util.string worker in
   let docker_image = Db_util.string docker_image in
@@ -21,8 +22,8 @@ let setup_metadata ~repository ~worker ~docker_image
     *)
     Fmt.str
       {|INSERT INTO benchmark_metadata
-          (run_at, repo_id, commit, commit_message, branch, pull_number, pr_title, worker, docker_image)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+          (run_at, repo_id, commit, commit_message, branch, pull_number, pull_base, pr_title, worker, docker_image)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT(repo_id, commit, worker, docker_image)
         DO UPDATE
         SET build_job_id = NULL,
@@ -33,8 +34,8 @@ let setup_metadata ~repository ~worker ~docker_image
             reason = NULL
         RETURNING id;
       |}
-      run_at repo_id commit commit_message branch pull_number title worker
-      docker_image
+      run_at repo_id commit commit_message branch pull_number pull_base title
+      worker docker_image
   in
   let result = db#exec query in
   match result#get_all with

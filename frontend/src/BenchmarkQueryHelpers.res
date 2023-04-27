@@ -9,12 +9,15 @@ fragment BenchmarkMetrics on benchmarks {
   run_job_id
   worker
   docker_image
+  branch
 }
 `)
 
 module GetBenchmarks = %graphql(`
 query ($repoId: String!,
        $pullNumber: Int,
+       $pullBase: String,
+       $branch: String,
        $isMaster: Boolean!,
        $worker: String,
        $dockerImage: String,
@@ -25,6 +28,7 @@ query ($repoId: String!,
   benchmarks:
     benchmarks(where: {_and: [{pull_number: {_eq: $pullNumber}},
                               {pull_number: {_is_null: $isMaster}},
+                              {branch: {_eq: $branch}},
                               {repo_id: {_eq: $repoId}},
                               {worker: {_eq: $worker}},
                               {docker_image: {_eq: $dockerImage}},
@@ -36,6 +40,7 @@ query ($repoId: String!,
   }
   comparisonBenchmarks:
     benchmarks(where: {_and: [{pull_number: {_is_null: true}},
+                              {branch: {_eq: $pullBase}},
                               {repo_id: {_eq: $repoId}},
                               {worker: {_eq: $worker}},
                               {docker_image: {_eq: $dockerImage}},

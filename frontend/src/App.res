@@ -14,7 +14,9 @@ query {
 
 let makeGetBenchmarksVariables = (
   ~repoId,
+  ~branch=?,
   ~pullNumber=?,
+  ~pullBase=?,
   ~worker,
   ~benchmarkName=?,
   ~startDate,
@@ -28,15 +30,17 @@ let makeGetBenchmarksVariables = (
   }
   let comparisonLimit = isMaster ? 0 : 50
   {
-    repoId: repoId,
-    pullNumber: pullNumber,
-    isMaster: isMaster,
-    worker: worker,
-    dockerImage: dockerImage,
+    repoId,
+    branch,
+    pullNumber,
+    pullBase,
+    isMaster,
+    worker,
+    dockerImage,
     benchmarkName: Belt.Option.getWithDefault(benchmarkName, defaultBenchmarkName),
-    startDate: startDate,
-    endDate: endDate,
-    comparisonLimit: comparisonLimit,
+    startDate,
+    endDate,
+    comparisonLimit,
   }
 }
 
@@ -189,7 +193,7 @@ module Benchmark = {
 
 module BenchmarkView = {
   @react.component
-  let make = (~repoId, ~pullNumber=?, ~worker, ~benchmarkName=?, ~startDate, ~endDate) => {
+  let make = (~repoId, ~branch=?, ~pullNumber=?, ~pullBase=?, ~worker, ~benchmarkName=?, ~startDate, ~endDate) => {
     let ({ReScriptUrql.Hooks.response: response}, _) = {
       let startDate = Js.Date.toISOString(startDate)->Js.Json.string
       let endDate = Js.Date.toISOString(endDate)->Js.Json.string
@@ -197,7 +201,9 @@ module BenchmarkView = {
         ~query=module(GetBenchmarks),
         makeGetBenchmarksVariables(
           ~repoId,
+          ~branch?,
           ~pullNumber?,
+          ~pullBase?,
           ~worker,
           ~benchmarkName?,
           ~startDate,
@@ -216,7 +222,7 @@ module BenchmarkView = {
     | Data(data)
     | PartialData(data, _) =>
       <Block sx=[Sx.px.xl2, Sx.py.xl2, Sx.w.full, Sx.minW.zero]>
-        <CommitInfo repoId worker ?pullNumber benchmarks=data setLastCommit />
+        <CommitInfo repoId worker ?branch ?pullNumber benchmarks=data setLastCommit />
         <Benchmark repoId pullNumber data lastCommit />
       </Block>
     }
@@ -279,7 +285,7 @@ module ErrorView = {
 
 module RepoView = {
   @react.component
-  let make = (~repoId=?, ~pullNumber=?, ~benchmarkName=?, ~worker) => {
+  let make = (~repoId=?, ~branch=?, ~pullNumber=?, ~pullBase=?, ~benchmarkName=?, ~worker) => {
     let ({ReScriptUrql.Hooks.response: response}, _) = {
       ReScriptUrql.Hooks.useQuery(~query=module(GetAllRepos), ())
     }
@@ -288,16 +294,16 @@ module RepoView = {
     let onSelectDateRange = (startDate, endDate) => setDateRange(_ => (startDate, endDate))
 
     let setWorker = worker => {
-      switch (repoId, pullNumber) {
-      | (Some(repoId), None) =>
-        AppRouter.Repo({repoId: repoId, benchmarkName: benchmarkName, worker: worker})->AppRouter.go
-      | (Some(repoId), Some(pullNumber)) =>
+      switch (repoId, pullNumber, pullBase) {
+      | (Some(repoId), Some(pullNumber), Some(pullBase)) =>
         AppRouter.RepoPull({
           repoId: repoId,
           pullNumber: pullNumber,
+          pullBase: pullBase,
           benchmarkName: benchmarkName,
           worker: worker,
         })->AppRouter.go
+      | (Some(repoId), _, _) => AppRouter.Repo({repoId, benchmarkName, worker})->AppRouter.go
       | _ => ()
       }
     }
@@ -311,12 +317,12 @@ module RepoView = {
     | PartialData(data, _) =>
       let repoIds = data.allRepoIds->Belt.Array.map(obj => obj.repo_id)
       let onSelectRepoId = makeOnSelectRepoId(worker)
-
       let sidebar: React.element = {
         <Sidebar
           repoIds
           worker
           setWorker
+          selectedBranch=?branch
           selectedRepoId=?repoId
           selectedPull=?pullNumber
           selectedBenchmarkName=?benchmarkName
@@ -343,25 +349,28 @@ module RepoView = {
         | Some(repoId) if !(repoIds->BeltHelpers.Array.contains(repoId)) =>
           <ErrorView msg={"No such repository: " ++ repoId} repoIds onSelectRepoId />
         | Some(repoId) =>
+          let pullBase = Belt.Option.getWithDefault(pullBase, "")
           let breadcrumbs =
             <Row sx=[Sx.w.auto, Sx.text.noUnderline] alignY=#center>
-              <Text weight=#semibold> "/" </Text>
-              {
-                let href = AppRouter.Repo({
-                  repoId: repoId,
-                  benchmarkName: None,
-                  worker: worker,
-                })->AppRouter.path
-                <Link href text="main" />
-              }
               {pullNumber->Rx.onSome(pullNumber => {
                 let href = AppRouter.RepoPull({
                   repoId: repoId,
                   pullNumber: pullNumber,
+                  pullBase: pullBase,
                   benchmarkName: None,
                   worker: worker,
                 })->AppRouter.path
                 <>
+                <Text weight=#semibold> "/" </Text>
+                {
+                  let href = AppRouter.RepoBranch({
+                    repoId: repoId,
+                    branch: pullBase,
+                    benchmarkName: None,
+                    worker: worker,
+                  })->AppRouter.path
+                  <Link href text={pullBase} />
+                }
                   <Text weight=#semibold> "/" </Text>
                   <Link href icon=Icon.branch text={string_of_int(pullNumber)} />
                 </>
@@ -378,6 +387,7 @@ module RepoView = {
                   AppRouter.RepoPull({
                     repoId: repoId,
                     pullNumber: pullNumber,
+                    pullBase: pullBase,
                     benchmarkName: Some(benchmarkName),
                     worker: worker,
                   })
@@ -400,7 +410,7 @@ module RepoView = {
                 {githubLink}
                 <Litepicker startDate endDate sx=[Sx.w.xl5] onSelect={onSelectDateRange} />
               </Topbar>
-              <BenchmarkView repoId worker ?pullNumber ?benchmarkName startDate endDate />
+              <BenchmarkView repoId worker ?branch ?pullNumber pullBase ?benchmarkName startDate endDate />
             </Column>
           </>
         }}
@@ -417,7 +427,9 @@ let make = () => {
     <div className={Sx.make([Sx.container, Sx.d.flex])}> <ErrorView msg={reason} /> </div>
   | Ok(Main) => <RepoView worker={None} />
   | Ok(Repo({repoId, benchmarkName, worker})) => <RepoView repoId ?benchmarkName worker />
-  | Ok(RepoPull({repoId, pullNumber, benchmarkName, worker})) =>
-    <RepoView repoId pullNumber ?benchmarkName worker />
+  | Ok(RepoPull({repoId, pullNumber, pullBase, benchmarkName, worker})) =>
+    <RepoView repoId pullNumber pullBase ?benchmarkName worker />
+  | Ok(RepoBranch({repoId, branch, benchmarkName, worker})) =>
+    <RepoView repoId branch ?benchmarkName worker />
   }
 }

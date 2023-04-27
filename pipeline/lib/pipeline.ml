@@ -160,7 +160,7 @@ let pipeline ~config ~ocluster ~conninfo repository =
   let* () = p |> github_set_status ~repository in
   Current.ignore_value p
 
-let github_repositories repo =
+let github_repositories ~config repo =
   let* refs =
     Current.component "Get PRs"
     |> let> api, repo = repo in
@@ -181,13 +181,29 @@ let github_repositories repo =
         repository ~commit ~github_head:head ~commit_message:message
       in
       match key with
-      (* Skip all branches other than the default branch, and check PRs *)
-      | `Ref branch when branch = default_branch ->
-          repository ~branch:default_branch_name ~labels:[] () :: lst
+      (* If the branch is the default branch or a branch explicitly configured
+         to be benchmarked, then we want to benchmark it. *)
+      | `Ref branch ->
+          let branch = Util.get_branch_name branch in
+          let repository = repository ~branch ~labels:[] () in
+          if List.exists
+               (Config.must_benchmark_branch ~default_branch:default_branch_name
+                  ~branch)
+               (Config.find config repository)
+          then repository :: lst
+          else lst
+      (* Benchmark PRs if they have the right label, or no label has been set in
+         the repo's configuration. *)
       | `PR pr ->
-          repository ~title:pr.title ~pull_number:pr.id ~labels:pr.labels ()
-          :: lst
-      | _ -> lst)
+          let repository =
+            repository ~title:pr.title ~pull_number:pr.id ~pull_base:pr.base
+              ~labels:pr.labels ()
+          in
+          if List.exists
+               (Config.must_benchmark_pull repository)
+               (Config.find config repository)
+          then repository :: lst
+          else lst)
     ref_map []
 
 let filter_stale_repositories repos =
@@ -205,7 +221,7 @@ let filter_stale_repositories repos =
       | _ -> None)
     repos
 
-let repositories = function
+let repositories ~config = function
   | Source.Local path ->
       let local = Git.Local.v path in
       let name = Fpath.basename path in
@@ -227,7 +243,7 @@ let repositories = function
       let token = token |> Util.read_fpath |> String.trim in
       let api = Current_github.Api.of_oauth ~token ~webhook_secret in
       let repo = Current.return (api, repo) in
-      github_repositories repo
+      github_repositories ~config repo
   | Github_app app ->
       let+ repos =
         Github.App.installations app
@@ -236,12 +252,12 @@ let repositories = function
            repos
            |> Current.list_map ~collapse_key:"repo"
                 (module Github.Api.Repo)
-                github_repositories
+                (github_repositories ~config)
       in
       List.concat (List.concat repos)
 
-let repositories sources =
-  let repos = Current.list_seq (List.map repositories sources) in
+let repositories ~config sources =
+  let repos = Current.list_seq (List.map (repositories ~config) sources) in
   Current.map List.concat repos
 
 let string_of_repositories repos =
@@ -258,7 +274,7 @@ let pull_requests_from_repositories repos =
     repos
 
 let process_pipeline ~config ~ocluster ~conninfo ~sources () =
-  let repos = repositories sources in
+  let repos = repositories ~config sources in
   let fresh_repos = Current.map filter_stale_repositories repos in
   let+ () =
     let+ open_pulls = Current.map pull_requests_from_repositories repos in

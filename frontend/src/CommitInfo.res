@@ -4,6 +4,7 @@ open BenchmarkQueryHelpers
 
 module GetLastCommitInfo = %graphql(`
 query ($repoId: String!,
+       $branch: String,
        $pullNumber: Int,
        $isMaster: Boolean!,
        $worker: String,
@@ -12,6 +13,7 @@ query ($repoId: String!,
       limit: 1,
       where: {_and: [{pull_number: {_eq: $pullNumber}},
                      {pull_number: {_is_null: $isMaster}},
+                     {branch: {_eq: $branch}},
                      {worker: {_eq: $worker}},
                      {docker_image: {_eq: $dockerImage}},
                      {repo_id: {_eq: $repoId}}
@@ -38,6 +40,7 @@ query ($repoId: String!,
 
 let makeGetLastCommitInfoVariables = (
   ~repoId,
+  ~branch=?,
   ~pullNumber=?,
   ~worker,
   ~dockerImage,
@@ -45,11 +48,12 @@ let makeGetLastCommitInfoVariables = (
 ): GetLastCommitInfo.t_variables => {
   let isMaster = Belt.Option.isNone(pullNumber)
   {
-    repoId: repoId,
-    pullNumber: pullNumber,
-    isMaster: isMaster,
-    worker: worker,
-    dockerImage: dockerImage,
+    repoId,
+    branch,
+    pullNumber,
+    isMaster,
+    worker,
+    dockerImage,
   }
 }
 
@@ -98,7 +102,14 @@ let buildStatus = (lastCommitInfo: GetLastCommitInfo.t_lastCommitInfo) => {
 }
 
 @react.component
-let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setLastCommit) => {
+let make = (
+  ~repoId,
+  ~branch=?,
+  ~pullNumber=?,
+  ~benchmarks: GetBenchmarks.t,
+  ~worker,
+  ~setLastCommit,
+) => {
   let benchmarks = benchmarks.benchmarks
   let (worker, dockerImage) = switch worker {
   | None => (None, None)
@@ -107,7 +118,7 @@ let make = (~repoId, ~pullNumber=?, ~benchmarks: GetBenchmarks.t, ~worker, ~setL
   let ({ReScriptUrql.Hooks.response: response}, _) = {
     ReScriptUrql.Hooks.useQuery(
       ~query=module(GetLastCommitInfo),
-      makeGetLastCommitInfoVariables(~repoId, ~pullNumber?, ~worker, ~dockerImage, ()),
+      makeGetLastCommitInfoVariables(~repoId, ~branch?, ~pullNumber?, ~worker, ~dockerImage, ()),
     )
   }
 
