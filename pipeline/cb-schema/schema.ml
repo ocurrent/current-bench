@@ -1,13 +1,10 @@
-(* Added because it was introduced to stdlib in 4.10 *)
-let rec list_find_map f = function
-  | [] -> raise Not_found
-  | x :: xs -> ( match f x with Some y -> y | None -> list_find_map f xs)
-
 (* Added because it was introduced to stdlib in 5.0 *)
 let sscanf_opt fmt fn ~str = try Some (Scanf.sscanf str fmt fn) with _ -> None
 
 (* Added because it isn't available in reason for some reason *)
 let option_value default = function None -> default | Some x -> x
+let option_or o f = match o with Some x -> x | None -> f ()
+let ( >>? ) = option_or
 
 let longest_string s0 s1 =
   if String.length s0 > String.length s1 then s0 else s1
@@ -94,16 +91,10 @@ let value_of_json j =
   match j with
   | `Float x -> (x, "")
   | `Int x -> (float_of_int x, "")
-  | `Intlit s -> ( try (float_of_string s, "") with Failure _ -> error ())
-  | `String str -> (
-      try
-        list_find_map
-          (fun f -> f ~str)
-          [
-            sscanf_opt "%fmin%fs" (fun min sec -> ((min *. 60.) +. sec, "s"));
-            sscanf_opt "%f%s" (fun x u -> (x, u));
-          ]
-      with Not_found -> error ())
+  | `Intlit s -> (float_of_string_opt s >>? error, "")
+  | `String str ->
+      sscanf_opt "%fmin%fs" (fun min sec -> ((min *. 60.) +. sec, "s")) ~str
+      >>? fun () -> sscanf_opt "%f%s" (fun x u -> (x, u)) ~str >>? error
   | _ -> error ()
 
 let value_of_json = function
