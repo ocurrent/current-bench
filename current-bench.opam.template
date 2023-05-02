@@ -1,3 +1,9 @@
+pin-depends: [
+  # Using the changes in ocurrent/ocurrent/pull/421, remove the pin on next release (> 0.6.4)
+  # When modifying this pin, don't forget to also modify pipeline/pipeline.opam
+  ["current_github.0.6.4" "git+https://github.com/ocurrent/ocurrent.git#32561e1f2b9cc387d098e0ee918cd6bd2ccd1d3b"]
+]
+
 depexts: [
   [ "jq" ] {}
 ]
