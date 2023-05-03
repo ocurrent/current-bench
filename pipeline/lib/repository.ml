@@ -62,9 +62,9 @@ let to_string t =
 
 let to_path t =
   let pr =
-    match t.pull_number with
-    | None -> ""
-    | Some pr -> "/pull/" ^ string_of_int pr
+    match (t.pull_number, t.pull_base) with
+    | Some pr, Some base -> "/pull/" ^ string_of_int pr ^ "/base/" ^ base
+    | _ -> ""
   in
   info t ^ pr
 
