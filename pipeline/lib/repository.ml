@@ -62,21 +62,17 @@ let to_string t =
 
 let to_path t =
   let pr =
-    match t.pull_number with
-    | None -> ""
-    | Some pr -> "/pull/" ^ string_of_int pr
+    match (t.pull_number, t.pull_base) with
+    | Some pr, Some base -> "/pull/" ^ string_of_int pr ^ "/base/" ^ base
+    | _ -> ""
   in
   info t ^ pr
 
 let frontend_url () = Sys.getenv "OCAML_BENCH_FRONTEND_URL"
 
-(* $server/$repo_owner/$repo_name/pull/$pull_number *)
-let commit_status_url { owner; name; pull_number; _ } =
-  let uri_end =
-    match pull_number with
-    | None -> "/" ^ owner ^ "/" ^ name
-    | Some number -> "/" ^ owner ^ "/" ^ name ^ "/pull/" ^ string_of_int number
-  in
+(* $server/$repo_owner/$repo_name/pull/$pull_number/base/$pull_base *)
+let commit_status_url repo =
+  let uri_end = to_path repo in
   Uri.of_string (frontend_url () ^ uri_end)
 
 let compare a b =
