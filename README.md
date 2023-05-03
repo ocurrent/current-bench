@@ -31,8 +31,7 @@ To be able to run your benchmarks, current-bench assumes certain things about yo
   - opening a pull request
   - updating a remote branch which is the source of a pull request
   - merging a pull request
-
-⚠️ The benchmarks are run on a single core (for now), so either don't include parallel benchmarks, or don't take the results at face value.
+- ⚠️ The benchmarks are run on a single core, by default. If your benchmarks include parallel benchmarks, the repository needs to be explicitly configured to use a multicore worker. Please let the benchmarking team know about this.
 
 ### JSon format
 To be able to draw graphs from your results, they need to follow a specific format.
