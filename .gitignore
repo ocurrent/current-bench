@@ -10,3 +10,5 @@ capnp-secrets
 /prometheus/scripts/node_exporter*
 sqlite.db
 pipeline/var
+local-repos/*
+!local-repos/test
