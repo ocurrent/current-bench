@@ -6,7 +6,14 @@ let isSize = x => Js.Re.exec_(sizeRegex, x)->Belt.Option.isSome
 
 let getUnitsIndex = units => {
   let reMatch = Js.Re.exec_(sizeRegex, units)
-  let oldStr = reMatch->Belt.Option.getExn->Js.Re.captures->Belt.Array.getExn(1)->Js.String.make
+  let oldStr = switch reMatch {
+  | None => ""
+  | Some(match) =>
+    switch match->Js.Re.captures->Belt.Array.get(1) {
+    | Some(s) => s->Js.String.make
+    | None => ""
+    }
+  }
   Js.Array.findIndex(x => x == oldStr, sizeUnits)
 }
 
@@ -18,10 +25,12 @@ let getAdjustedSize = (value, units, unitIndex, unitChange) => {
     ->Belt.Float.fromString
     ->Belt.Option.getExn
   let newUnitIndex = unitIndex + unitChange
-  let oldStr = Belt.Array.getExn(sizeUnits, unitIndex)
-  let newStr = Belt.Array.getExn(sizeUnits, newUnitIndex)
-  let newUnit = Js.String.replace(oldStr, newStr, units)
-  (newValue, newUnit)
+  let oldStr = Belt.Array.get(sizeUnits, unitIndex)
+  let newStr = Belt.Array.get(sizeUnits, newUnitIndex)
+  switch (oldStr, newStr) {
+  | (Some(oldStr), Some(newStr)) => (newValue, Js.String.replace(oldStr, newStr, units))
+  | _ => (value, units)
+  }
 }
 
 let formatSize = (value, units) => {
