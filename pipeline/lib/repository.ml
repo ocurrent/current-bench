@@ -73,7 +73,7 @@ let frontend_url () = Sys.getenv "OCAML_BENCH_FRONTEND_URL"
 (* $server/$repo_owner/$repo_name/pull/$pull_number/base/$pull_base *)
 let commit_status_url repo =
   let uri_end = to_path repo in
-  Uri.of_string (frontend_url () ^ uri_end)
+  Uri.of_string (frontend_url () ^ "/" ^ uri_end)
 
 let compare a b =
   let cmp =
