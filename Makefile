@@ -91,6 +91,14 @@ coverage: ./local-repos/test/.git
 local-make-bench: ./local-repos/test/.git
 	cd local-repos/test/; git add .; git commit --amend -m "New commit: $$(date)"; cd ..
 
+.PHONY: dev-db-delete-repo
+dev-db-delete-repo:
+    ifndef REPO_ID
+	$(error REPO_ID is not defined)
+    endif
+	@echo "Deleting data for '$(REPO_ID)' from the dev DB"
+	@./scripts/dev.sh exec db psql -U docker -c "DELETE FROM benchmarks where repo_id='$(REPO_ID)'; DELETE FROM benchmark_metadata where repo_id='$(REPO_ID)';"
+
 .PHONY: migration
 migration:
 	./scripts/dev.sh \
