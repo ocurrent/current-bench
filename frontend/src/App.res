@@ -242,7 +242,7 @@ let getDefaultDateRange = {
 module Welcome = {
   @react.component
   let make = () => {
-    let version: string = %raw(`import.meta.env.VITE_CURRENT_BENCH_VERSION`)
+    let version: string = %raw(`process.env.VITE_CURRENT_BENCH_VERSION`)
     <Column alignX=#center sx=[Sx.mt.xl]>
       <Heading level=#h1 align=#center text=`hello world 👋` />
       <center>

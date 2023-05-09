@@ -5,7 +5,7 @@ let goToCommitLink = (~repoId, commit) => {
   openUrl(commitUrl(~repoId, commit))
 }
 
-let pipelineUrl: string = %raw(`import.meta.env.VITE_OCAML_BENCH_PIPELINE_URL`)
+let pipelineUrl: string = %raw(`process.env.VITE_OCAML_BENCH_PIPELINE_URL`)
 let jobUrl = (~lines=?, jobId) => {
   let href = pipelineUrl ++ "/job/" ++ jobId
   switch lines {
