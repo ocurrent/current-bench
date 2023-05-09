@@ -3,10 +3,16 @@
   "reason": {
     "react-jsx": 3
   },
-  "bsc-flags": ["-bs-super-errors"],
+  "bsc-flags": [
+    "-bs-super-errors"
+  ],
   "sources": [
     {
       "dir": "src"
+    },
+    {
+      "dir": "__tests__",
+      "type": "dev"
     }
   ],
   "package-specs": [
@@ -27,5 +33,10 @@
     "bs-fetch",
     "@glennsl/bs-json"
   ],
-  "ppx-flags": ["@reasonml-community/graphql-ppx/ppx"]
+  "bs-dev-dependencies": [
+    "@glennsl/bs-jest"
+  ],
+  "ppx-flags": [
+    "@reasonml-community/graphql-ppx/ppx"
+  ]
 }
