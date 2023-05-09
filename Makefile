@@ -103,3 +103,8 @@ dev-db-delete-repo:
 migration:
 	./scripts/dev.sh \
 		exec pipeline omigrate create --verbose --dir=/app/db/migrations $(NAME)
+
+.PHONY: test-frontend
+test-frontend:
+	./scripts/dev.sh \
+		exec frontend bash -c 'yarn build && yarn test'
