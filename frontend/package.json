@@ -26,7 +26,8 @@
     "dygraphs": "^2.1.0",
     "graphql": "^15.5.0",
     "litepicker": "^1.5.7",
-    "urql": "^2.0.1"
+    "urql": "^2.0.1",
+    "vite-plugin-env-compatible": "^1.1.1"
   },
   "resolutions": {
     "wonka": "5.0.0-rc.1"
