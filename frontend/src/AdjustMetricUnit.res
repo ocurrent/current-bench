@@ -1,7 +1,7 @@
 open MetricHierarchyHelpers
 
-let sizeUnits = ["bytes", "kb", "mb", "gb", "tb", "pb", "eb", "zb", "yb"]
-let sizeRegex = %re("/(yb|zb|eb|pb|tb|gb|mb|kb|bytes)\w*/i")
+let sizeUnits = ["kb", "mb", "gb", "tb", "pb", "eb", "zb", "yb"]
+let sizeRegex = %re("/(yb|zb|eb|pb|tb|gb|mb|kb)\w*/i")
 let isSize = x => Js.Re.exec_(sizeRegex, x)->Belt.Option.isSome
 
 let getUnitsIndex = units => {
