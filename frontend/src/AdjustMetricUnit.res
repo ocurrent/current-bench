@@ -4,17 +4,22 @@ let sizeUnits = ["kb", "mb", "gb", "tb", "pb", "eb", "zb", "yb"]
 let sizeRegex = %re("/(yb|zb|eb|pb|tb|gb|mb|kb)\w*/i")
 let isSize = x => Js.Re.exec_(sizeRegex, x)->Belt.Option.isSome
 
-let getUnitsIndex = units => {
-  let reMatch = Js.Re.exec_(sizeRegex, units)
-  let oldStr = switch reMatch {
-  | None => ""
+let getMatchStr = units => {
+  switch Js.Re.exec_(sizeRegex, units) {
+  | None => None
   | Some(match) =>
     switch match->Js.Re.captures->Belt.Array.get(1) {
-    | Some(s) => s->Js.String.make
-    | None => ""
+    | Some(s) => Some(s->Js.String.make)
+    | None => None
     }
   }
-  Js.Array.findIndex(x => x == oldStr, sizeUnits)
+}
+
+let getUnitsIndex = units => {
+  switch getMatchStr(units) {
+  | None => -1
+  | Some(s) => Js.Array.findIndex(x => x == s->Js.String.toLowerCase, sizeUnits)
+  }
 }
 
 let getAdjustedSize = (value, units, unitIndex, unitChange) => {
@@ -31,11 +36,20 @@ let getAdjustedSize = (value, units, unitIndex, unitChange) => {
   let logValue = log10(newValue)
   let digits = logValue >= -2. ? 2 : abs(floor(logValue)) + 1
   let newValue =
-    newValue->Js.Float.toFixedWithPrecision(~digits=digits)->Belt.Float.fromString->Belt.Option.getExn
-  let oldStr = Belt.Array.get(sizeUnits, unitIndex)
+    newValue->Js.Float.toFixedWithPrecision(~digits)->Belt.Float.fromString->Belt.Option.getExn
+  let oldStr = getMatchStr(units)
   let newStr = Belt.Array.get(sizeUnits, newUnitIndex)
   switch (oldStr, newStr) {
-  | (Some(oldStr), Some(newStr)) => (newValue, Js.String.replace(oldStr, newStr, units))
+  | (Some(oldStr), Some(newStr)) => {
+      let convertCase = (i, c) => {
+        switch oldStr->String.get(i) {
+        | x if x->Char.uppercase_ascii === x => c->Char.uppercase_ascii
+        | _ => c
+        }
+      }
+      let newStr = String.mapi(convertCase, newStr)
+      (newValue, Js.String.replace(oldStr, newStr, units))
+    }
   | _ => (value, units)
   }
 }
