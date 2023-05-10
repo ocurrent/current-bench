@@ -16,6 +16,8 @@ describe("Expect", () => {
 
   describe("Test formatSize when converting to lower units", () => {
     test("0.001 mb", () => expect(formatSize(0.001, "mbps")) |> toEqual((1., "kbps")))
+    test("0.001 mB", () => expect(formatSize(0.001, "mBps")) |> toEqual((1., "kBps")))
+    test("0.001 MB", () => expect(formatSize(0.001, "MBps")) |> toEqual((1., "KBps")))
     test("0.001 kb", () => expect(formatSize(0.001, "kbps")) |> toEqual((0.001, "kbps")))
     test("0.0013 kb", () => expect(formatSize(0.0013, "kbps")) |> toEqual((0.0013, "kbps")))
     test("0.00134 kb", () => expect(formatSize(0.00134, "kbps")) |> toEqual((0.0013, "kbps")))
@@ -26,6 +28,8 @@ describe("Expect", () => {
 
   describe("Test formatSize when converting to higher units", () => {
     test("1200 mb", () => expect(formatSize(1200., "mbps")) |> toEqual((1.2, "gbps")))
+    test("1200 Mb", () => expect(formatSize(1200., "Mbps")) |> toEqual((1.2, "Gbps")))
+    test("1200 MB", () => expect(formatSize(1200., "MBps")) |> toEqual((1.2, "GBps")))
     test("1200000 mb", () => expect(formatSize(1200000., "mbps")) |> toEqual((1.2, "tbps")))
     test("1200000.123 zb", () => expect(formatSize(1200000.123, "zbps")) |> toEqual((1200., "ybps")))
   })
