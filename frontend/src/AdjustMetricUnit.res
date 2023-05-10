@@ -27,8 +27,11 @@ let getAdjustedSize = (value, units, unitIndex, unitChange) => {
   | x => (x, unitChange)
   }
   let changeFactor = pow_float(~base=10.0, ~exp=(unitChange * 3)->Js.Int.toFloat)
+  let newValue = value /. changeFactor
+  let logValue = log10(newValue)
+  let digits = logValue >= -2. ? 2 : abs(floor(logValue)) + 1
   let newValue =
-    (value /. changeFactor)->Js.Float.toFixedWithPrecision(~digits=2)->Belt.Float.fromString->Belt.Option.getExn
+    newValue->Js.Float.toFixedWithPrecision(~digits=digits)->Belt.Float.fromString->Belt.Option.getExn
   let oldStr = Belt.Array.get(sizeUnits, unitIndex)
   let newStr = Belt.Array.get(sizeUnits, newUnitIndex)
   switch (oldStr, newStr) {
