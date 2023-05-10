@@ -18,13 +18,17 @@ let getUnitsIndex = units => {
 }
 
 let getAdjustedSize = (value, units, unitIndex, unitChange) => {
-  let changeFactor = Js.Math.pow_float(~base=10.0, ~exp=(unitChange * 3)->Js.Int.toFloat)
-  let newValue =
-    (value /. changeFactor)
-    ->Js.Float.toFixedWithPrecision(~digits=2)
-    ->Belt.Float.fromString
-    ->Belt.Option.getExn
+  open! Js.Math
   let newUnitIndex = unitIndex + unitChange
+  let n = Belt.Array.size(sizeUnits)
+  let (newUnitIndex, unitChange) = switch newUnitIndex {
+  | x if x < 0 => (0, 0 - unitIndex)
+  | x if x >= n - 1 => (n - 1, n - 1 - unitIndex)
+  | x => (x, unitChange)
+  }
+  let changeFactor = pow_float(~base=10.0, ~exp=(unitChange * 3)->Js.Int.toFloat)
+  let newValue =
+    (value /. changeFactor)->Js.Float.toFixedWithPrecision(~digits=2)->Belt.Float.fromString->Belt.Option.getExn
   let oldStr = Belt.Array.get(sizeUnits, unitIndex)
   let newStr = Belt.Array.get(sizeUnits, newUnitIndex)
   switch (oldStr, newStr) {
