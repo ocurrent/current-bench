@@ -33,7 +33,7 @@ let getAdjustedSize = (value, units, unitIndex, unitChange) => {
   }
   let changeFactor = pow_float(~base=10.0, ~exp=(unitChange * 3)->Js.Int.toFloat)
   let newValue = value /. changeFactor
-  let logValue = log10(newValue)
+  let logValue = abs_float(newValue) > 0. ? log10(abs_float(newValue)) : 0.
   let digits = logValue >= -2. ? 2 : abs(floor(logValue)) + 1
   let newValue =
     newValue->Js.Float.toFixedWithPrecision(~digits)->Belt.Float.fromString->Belt.Option.getExn

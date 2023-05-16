@@ -24,6 +24,7 @@ describe("Expect", () => {
     test("0.0000013 mb", () => expect(formatSize(0.0000013, "mbps")) |> toEqual((0.0013, "kbps")))
     test("0.000000013 mb", () => expect(formatSize(0.000000013, "mbps")) |> toEqual((0.000013, "kbps")))
     test("0.0000000134 mb", () => expect(formatSize(0.0000000134, "mbps")) |> toEqual((0.000013, "kbps")))
+    test("0 mb", () => expect(formatSize(0., "mbps")) |> toEqual((0., "kbps")))
   })
 
   describe("Test formatSize when converting to higher units", () => {
