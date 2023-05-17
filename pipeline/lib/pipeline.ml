@@ -227,7 +227,11 @@ let repositories ~config = function
       let local = Git.Local.v path in
       let name = Fpath.basename path in
       let src = Git.Local.head_commit local in
-      let+ head = Git.Local.head local and+ commit = src >>| Git.Commit.id in
+      let+ head = Git.Local.head local
+      and+ commit =
+        src >>| Git.Commit.id
+        (* FIXME: we don't get commit_message here *)
+      in
       let branch =
         match head with
         | `Commit _ -> None

@@ -4,7 +4,7 @@ module Submetrics = Map.Make (String)
 module Metrics = Map.Make (String)
 module Tests = Map.Make (String)
 module Benchmarks = Map.Make (String)
-module String_map = Map.Make (String)
+module String_set = Set.Make (String)
 
 module M = Map.Make (struct
   type t = string * string
@@ -12,14 +12,13 @@ module M = Map.Make (struct
   let compare = Stdlib.compare
 end)
 
-type commit = string
 type value = Cb_schema.S.value
 type values_by_commit = value Commits.t (* indexed by commits!! *)
 type values = values_by_commit Submetrics.t
 type m = { units : string; values : values (* etc *) }
 
 type t = {
-  timeline : (bool * commit) list;
+  timeline : (bool * string) list;
   colors : Color.gg Submetrics.t;
   benchmarks : m Metrics.t Tests.t Benchmarks.t;
       (* benchmark_name -> test_name -> metric_name -> ? *)
@@ -49,12 +48,11 @@ let valid_parens str =
   in
   not_closed = 0
 
-let add (benchmark_name, test_name, commit, json) t =
+let add t { Storage.bench_name; test_name; commit_hash; metrics; _ } =
   let tests =
-    try Benchmarks.find benchmark_name t.benchmarks
-    with Not_found -> Tests.empty
+    try Benchmarks.find bench_name t.benchmarks with Not_found -> Tests.empty
   in
-  let metrics =
+  let metrics_but_bad =
     try Tests.find test_name tests with Not_found -> Metrics.empty
   in
   let colors, metrics =
@@ -75,12 +73,12 @@ let add (benchmark_name, test_name, commit, json) t =
             in
             if not (metric.Cb_schema.S.units = m.units)
             then
-              Format.printf "mistmatch units: %S vs %S@."
+              Format.printf "mismatched units: %S vs %S@."
                 metric.Cb_schema.S.units m.units;
             (* TODO *)
-            { m with values = add commit subkey value m.values }
+            { m with values = add commit_hash subkey value m.values }
           with Not_found ->
-            let value = Commits.singleton commit metric.value in
+            let value = Commits.singleton commit_hash metric.value in
             {
               units = metric.Cb_schema.S.units;
               values = Submetrics.singleton subkey value;
@@ -93,14 +91,11 @@ let add (benchmark_name, test_name, commit, json) t =
           else Submetrics.add subkey (Color.random ()) colors
         in
         (colors, acc))
-      (t.colors, metrics) json
+      (t.colors, metrics_but_bad)
+      metrics
   in
   let tests = Tests.add test_name metrics tests in
-  {
-    t with
-    colors;
-    benchmarks = Benchmarks.add benchmark_name tests t.benchmarks;
-  }
+  { t with colors; benchmarks = Benchmarks.add bench_name tests t.benchmarks }
 
 let metric_value f m =
   let open Cb_schema.S in
@@ -248,25 +243,22 @@ let string_sub str len =
 
 let plot ~db ~repo_id ~pr ~worker ~docker_image =
   let ps = Storage.get_benchmarks ~db ~repo_id ~pr ~worker ~docker_image in
-  let timeline : (bool * string) list =
+  let interm =
     List.fold_left
-      (fun (acc, keep) (_, _, commit, is_pr, _) ->
-        if String_map.mem commit acc
+      (fun (acc, keep) { Storage.commit_hash; pull_number; _ } ->
+        if String_set.mem commit_hash acc
         then (acc, keep)
-        else (String_map.add commit () acc, (is_pr, commit) :: keep))
-      (String_map.empty, []) ps
+        else (String_set.add commit_hash acc, (pull_number, commit_hash) :: keep))
+      (String_set.empty, []) ps
+  in
+  let timeline : (bool * string) list =
+    interm
     |> snd
-    |> List.rev
+    |> List.rev_map (fun (pull_number, hash) ->
+           (* FIXME: is_some or is_none ??? *)
+           (Option.is_some pull_number, hash))
   in
-  let t =
-    List.fold_left
-      (fun acc (name, test, commit, _is_pr, json_str) ->
-        let jsons = Yojson.Safe.from_string json_str in
-        let metrics = Cb_schema.S.metrics_of_json [] jsons in
-        let entry = (name, test, commit, metrics) in
-        add entry acc)
-      { empty with timeline } ps
-  in
+  let t = List.fold_left add { empty with timeline } ps in
   let t =
     let { colors; _ } = t in
     let nb_colors = Submetrics.cardinal colors in
@@ -289,8 +281,8 @@ let plot ~db ~repo_id ~pr ~worker ~docker_image =
 
   let xs =
     List.map
-      (fun (_is_pr, commit) ->
-        let trunk = string_sub commit 10 in
+      (fun (_, commit_hash) ->
+        let trunk = string_sub commit_hash 10 in
         `String trunk)
       timeline
   in
@@ -304,13 +296,14 @@ let plot ~db ~repo_id ~pr ~worker ~docker_image =
                ~a:[ H.a_id "pr_commit" ]
                [
                  H.txt
-                   (match
-                      List.find_opt
-                        (fun (is_pr, _) -> not is_pr)
-                        (List.rev timeline)
-                    with
-                   | Some (_, c) -> string_sub c 10
-                   | None -> "");
+                   ((match
+                       List.find_opt
+                         (fun (is_pr, _) -> not is_pr)
+                         (List.rev timeline)
+                     with
+                    | Some (_, c) -> string_sub c 10
+                    | None -> "")
+                   ^ " is this a pr or not??");
                ];
              H.div
                ~a:[ H.a_class [ "benchmarks" ] ]

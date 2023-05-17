@@ -3,15 +3,15 @@ open Lwt.Syntax
 let unique lst =
   List.fold_left (fun acc x -> if List.mem x acc then acc else x :: acc) [] lst
 
-module Mstr = Map.Make (String)
+module String_map = Map.Make (String)
 
 let group fn lst =
   List.fold_left
-    (fun acc elt ->
+    (fun set elt ->
       let key, value = fn elt in
-      let values = try Mstr.find key acc with Not_found -> [] in
-      Mstr.add key (value :: values) acc)
-    Mstr.empty lst
+      let values = try String_map.find key set with Not_found -> [] in
+      String_map.add key (value :: values) set)
+    String_map.empty lst
 
 type config = { url : string; port : int }
 
@@ -29,7 +29,7 @@ let ocurrent_url =
   with Not_found ->
     failwith "missing environment variable OCAML_BENCH_PIPELINE_URL"
 
-let log_url ~job_id () = Printf.sprintf "%s/job/%s" ocurrent_url job_id
+let log_url ~run_job_id () = Printf.sprintf "%s/job/%s" ocurrent_url run_job_id
 let short_string s = try String.sub s 0 6 with _ -> s
 
 let pr_url ~repo_id ~pr ?worker ?docker_image () =
@@ -53,21 +53,31 @@ let th_env ~repo_id ~pr ~worker ~docker_image (w, i) =
         [ H.txt @@ Printf.sprintf "%s (%s)" i w ];
     ]
 
+let find_commit key lst =
+  List.find_opt
+    (fun (meta : Storage.commit_metadata) ->
+      (meta.worker, meta.docker_image) = key)
+    lst
+
+let find_pr key lst =
+  List.find_opt
+    (fun (meta : Storage.pr_metadata) -> (meta.worker, meta.docker_image) = key)
+    lst
+
 let list_commits ~db ~repo_id ~pr ~worker ~docker_image () =
   let commits = Storage.get_commits ~db ~repo_id ~pr in
   let envs =
     unique
     @@ List.map
-         (fun (_, _, worker, docker_image, _, _) -> (worker, docker_image))
+         (fun (meta : Storage.commit_metadata) ->
+           (meta.worker, meta.docker_image))
          commits
   in
   let commits =
     group
-      (fun (hash, commit, worker, image, status, job_id) ->
-        (hash, (commit, worker, image, status, job_id)))
+      (fun (meta : Storage.commit_metadata) -> (meta.commit_info.hash, meta))
       commits
   in
-  let find key lst = List.find_opt (fun (_, w, i, _, _) -> (w, i) = key) lst in
   H.table
     (H.tr
        (H.th ~a:[ H.a_class [ "hash" ] ] [ H.txt "#" ]
@@ -75,24 +85,24 @@ let list_commits ~db ~repo_id ~pr ~worker ~docker_image () =
        :: List.map (th_env ~repo_id ~pr ~worker ~docker_image) envs)
     :: List.map
          (fun (hash, results) ->
-           let msg, _, _, _, _ = List.hd results in
+           let { Storage.commit_info = { message; _ }; _ } = List.hd results in
            H.tr
              (H.td [ H.txt (short_string hash) ]
-             :: H.td [ H.txt msg ]
+             :: H.td [ H.txt (message ^ "commit msg here") ]
              :: List.map
                   (fun env ->
                     H.td
                       ~a:[ H.a_class (env_selected ~worker ~docker_image env) ]
                       [
-                        (match find env results with
+                        (match find_commit env results with
                         | None -> H.txt "---"
-                        | Some (_, _, _, status, job_id) ->
+                        | Some { Storage.status; run_job_id; _ } ->
                             H.a
-                              ~a:[ H.a_href (log_url ~job_id ()) ]
-                              [ H.txt status ]);
+                              ~a:[ H.a_href (log_url ~run_job_id ()) ]
+                              [ H.txt (Storage.string_of_status status) ]);
                       ])
                   envs))
-         (Mstr.bindings commits))
+         (String_map.bindings commits))
 
 let list_benchmarks ~db ~repo_id ~pr ~worker ~docker_image () =
   H.div
@@ -113,11 +123,6 @@ let list_repos ~db ~owner () =
       @@ ps;
     ]
 
-let find key lst =
-  List.find_opt
-    (fun { Storage.worker; docker_image; _ } -> (worker, docker_image) = key)
-    lst
-
 let pr_link ~repo_id ~worker ~docker_image ~pr ~title ~columns ~envs =
   H.td
     [
@@ -130,7 +135,7 @@ let pr_link ~repo_id ~worker ~docker_image ~pr ~title ~columns ~envs =
          H.td
            ~a:[ H.a_class (env_selected ~worker ~docker_image env) ]
            [
-             (match find env columns with
+             (match find_pr env columns with
              | None -> H.txt "---"
              | Some { Storage.worker; docker_image; run_at; status; _ } ->
                  H.a
@@ -139,7 +144,11 @@ let pr_link ~repo_id ~worker ~docker_image ~pr ~title ~columns ~envs =
                        H.a_href
                          (pr_url ~repo_id ~pr:(`PR pr) ~worker ~docker_image ());
                      ]
-                   [ H.txt status; H.txt " "; H.txt run_at ]);
+                   [
+                     H.txt (Storage.string_of_status status);
+                     H.txt " ";
+                     H.txt run_at;
+                   ]);
            ])
        envs
 
@@ -148,11 +157,20 @@ let list_pr ~db ~repo_id ~worker ~docker_image () =
   let envs =
     unique
     @@ List.map
-         (fun { Storage.worker; docker_image; _ } -> (worker, docker_image))
+         (fun (meta : Storage.pr_metadata) -> (meta.worker, meta.docker_image))
          ps
   in
   let ps =
-    Mstr.bindings @@ group (fun ({ Storage.pr; _ } as p) -> (pr, p)) ps
+    String_map.bindings
+    @@ group
+         (fun ({ Storage.pull_number; _ } as p) ->
+           let pr_str =
+             match pull_number with
+             | Some n -> string_of_int n
+             | None -> "FIXME: what text here?"
+           in
+           (pr_str, p))
+         ps
   in
   let ps =
     List.sort
