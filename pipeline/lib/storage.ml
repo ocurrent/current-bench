@@ -7,7 +7,13 @@ type bench_info = {
 }
 (** Type of data in the 'benchmarks' table *)
 
-type status = Success | Failed of string | Cancelled of string
+type status =
+  | Pending
+  | Success
+  | Failed of string
+  | Cancelled of string
+  | Unknown of string
+
 type commit_info = { hash : string; message : string }
 
 type commit_metadata = {
@@ -31,9 +37,11 @@ type pr_metadata = {
 (** Partial type of data in the 'benchmark_metadata' table, about PRs. *)
 
 let string_of_status = function
+  | Pending -> "Pending"
   | Success -> "Success"
   | Failed reason -> "Failure: " ^ reason
   | Cancelled reason -> "Cancelled: " ^ reason
+  | Unknown bug -> bug
 
 let setup_metadata ~repository ~worker ~docker_image
     (db : Postgresql.connection) =
@@ -270,13 +278,14 @@ let get_repos ~db ~owner = Db_util.with_db ~conninfo:db (get_repos ~owner)
 
 let parse_status ~success ~failed ~cancelled ~reason =
   match (success, failed, cancelled, reason) with
-  | "t", _, _, "" | _, "f", _, "" -> Success
+  | "t", _, _, "" -> Success
   | _, "t", _, _ -> Failed reason
   | _, _, "t", _ -> Cancelled reason
+  | "f", "f", "f", "" -> Pending
   | _ ->
-      failwith
-      @@ Printf.sprintf "Could not parse status: OK=%S CAN=%S ERR=%S REA=%S"
-           success cancelled failed reason
+      Unknown
+        (Printf.sprintf "Could not parse status: OK=%S ERR=%S CAN=%S REA=%S"
+           success failed cancelled reason)
 
 let get_prs ~repo_id (db : Postgresql.connection) =
   let repo_id = Db_util.string repo_id in

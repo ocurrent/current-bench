@@ -227,11 +227,10 @@ let repositories ~config = function
       let local = Git.Local.v path in
       let name = Fpath.basename path in
       let src = Git.Local.head_commit local in
-      let+ head = Git.Local.head local
-      and+ commit =
-        src >>| Git.Commit.id
-        (* FIXME: we don't get commit_message here *)
-      in
+      let+ head = Git.Local.head local and+ commit = src >>| Git.Commit.id in
+      (* If and when https://github.com/ocurrent/ocurrent/issues/425 is solved,
+         use real commit_message here. *)
+      let commit_message = "Local commit, could not get commit message." in
       let branch =
         match head with
         | `Commit _ -> None
@@ -243,7 +242,10 @@ let repositories ~config = function
                     log "Could not extract branch name from: %s" git_ref);
                 None)
       in
-      [ Repository.v ?branch ~src ~commit ~name ~owner:"local" ~labels:[] () ]
+      [
+        Repository.v ?branch ~src ~commit ~commit_message ~name ~owner:"local"
+          ~labels:[] ();
+      ]
   | Github { repo; token; webhook_secret } ->
       let token = token |> Util.read_fpath |> String.trim in
       let api = Current_github.Api.of_oauth ~token ~webhook_secret in
