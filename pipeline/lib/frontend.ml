@@ -18,11 +18,11 @@ type config = { url : string; port : int }
 module H = Tyxml.Html
 
 let list_projects ~db () =
-  let ps = Storage.get_projects ~db in
-  H.ul
-  @@ List.map (fun p -> H.li [ H.a ~a:[ H.a_href ("/" ^ p) ] [ H.txt p ] ])
-  @@ List.sort String.compare
-  @@ ps
+  Storage.get_projects ~db
+  |> List.sort String.compare
+  |> List.map (fun p ->
+         H.li [ H.a ~a:[ H.a_href ("/" ^ p) ] [ H.h2 [ H.txt p ] ] ])
+  |> H.ul
 
 let ocurrent_url =
   try Sys.getenv "OCAML_BENCH_PIPELINE_URL"
@@ -64,7 +64,7 @@ let find_pr key lst =
     (fun (meta : Storage.pr_metadata) -> (meta.worker, meta.docker_image) = key)
     lst
 
-let list_commits ~db ~repo_id ~pr ~worker ~docker_image () =
+let list_commits ?owner ?repo ~db ~repo_id ~pr ~worker ~docker_image () =
   let commits = Storage.get_commits ~db ~repo_id ~pr in
   let envs =
     unique
@@ -87,8 +87,22 @@ let list_commits ~db ~repo_id ~pr ~worker ~docker_image () =
          (fun (hash, results) ->
            let { Storage.commit_info = { message; _ }; _ } = List.hd results in
            H.tr
-             (H.td [ H.txt (short_string hash) ]
-             :: H.td [ H.txt (message ^ "commit msg here") ]
+             (H.td
+                [
+                  H.a
+                    ~a:
+                      (match (owner, repo) with
+                      | Some owner, Some repo ->
+                          [
+                            H.a_href
+                              (* FIXME: we assume github here *)
+                              (Printf.sprintf "https://github.com/%s/%s/%s"
+                                 owner repo hash);
+                          ]
+                      | _ -> [])
+                    [ H.txt (short_string hash) ];
+                ]
+             :: H.td [ H.txt message ]
              :: List.map
                   (fun env ->
                     H.td
@@ -104,11 +118,11 @@ let list_commits ~db ~repo_id ~pr ~worker ~docker_image () =
                   envs))
          (String_map.bindings commits))
 
-let list_benchmarks ~db ~repo_id ~pr ~worker ~docker_image () =
+let list_benchmarks ?owner ?repo ~db ~repo_id ~pr ~worker ~docker_image () =
   H.div
     [
       H.h2 [ H.txt "Commits:" ];
-      list_commits ~db ~repo_id ~pr ~worker ~docker_image ();
+      list_commits ?owner ?repo ~db ~repo_id ~pr ~worker ~docker_image ();
       Plot.plot ~db ~repo_id ~pr ~worker ~docker_image;
     ]
 
@@ -152,7 +166,7 @@ let pr_link ~repo_id ~worker ~docker_image ~pr ~title ~columns ~envs =
            ])
        envs
 
-let list_pr ~db ~repo_id ~worker ~docker_image () =
+let list_pr ?owner ?repo ~db ~repo_id ~worker ~docker_image () =
   let ps = Storage.get_prs ~db repo_id in
   let envs =
     unique
@@ -200,24 +214,25 @@ let list_pr ~db ~repo_id ~worker ~docker_image () =
                  (pr_link ~repo_id ~worker ~docker_image ~pr ~title ~columns
                     ~envs))
              ps);
-      list_benchmarks ~db ~repo_id ~pr:`Branch ~worker ~docker_image ();
+      list_benchmarks ?owner ?repo ~db ~repo_id ~pr:`Branch ~worker
+        ~docker_image ();
     ]
 
-let header ~request =
-  H.div
-    ~a:[ H.a_id "header" ]
-    [
-      H.a ~a:[ H.a_href "/" ] [ H.txt "current-bench" ];
-      (match Dream.param request "owner" with
-      | owner -> H.a ~a:[ H.a_href ("/" ^ owner) ] [ H.txt owner ]
-      | exception _ -> H.txt "");
-      (match (Dream.param request "owner", Dream.param request "repo") with
-      | owner, repo ->
-          H.a ~a:[ H.a_href ("/" ^ owner ^ "/" ^ repo) ] [ H.txt repo ]
-      | exception _ -> H.txt "");
-    ]
-
-let template ~request body =
+let template ?owner ?repo body =
+  let header =
+    H.div
+      ~a:[ H.a_id "header" ]
+      [
+        H.a ~a:[ H.a_href "/" ] [ H.txt "current-bench" ];
+        (match owner with
+        | Some owner -> H.a ~a:[ H.a_href ("/" ^ owner) ] [ H.txt owner ]
+        | None -> H.txt "");
+        (match (owner, repo) with
+        | Some owner, Some repo ->
+            H.a ~a:[ H.a_href ("/" ^ owner ^ "/" ^ repo) ] [ H.txt repo ]
+        | _ -> H.txt "");
+      ]
+  in
   H.html
     ~a:[ H.a_lang "en" ]
     (H.head
@@ -241,11 +256,11 @@ let template ~request body =
          H.script ~a:[ H.a_defer (); H.a_src "/_static/plot.js" ] (H.txt "");
          H.link ~rel:[ `Stylesheet ] ~href:"/_static/style.css" ();
        ])
-  @@ H.body [ header ~request; H.div ~a:[] [ body ] ]
+  @@ H.body [ header; H.div ~a:[] [ body ] ]
 
 let string_of_tyxml html = Format.asprintf "%a" (Tyxml.Html.pp ()) html
 
-let get_worker ~db ~repo_id ~pr request =
+let get_worker ~db ~repo_id ~pr ~request =
   let worker = Dream.query request "worker" in
   let docker_image = Dream.query request "docker_image" in
   let candidates = Storage.get_workers ~db ~repo_id ~pr in
@@ -254,8 +269,8 @@ let get_worker ~db ~repo_id ~pr request =
   | _, _, [] -> (Config.default_worker, Config.default_docker)
   | _, _, wi :: _ -> wi
 
-let html ~request body =
-  Dream.html (string_of_tyxml (template ~request (body ())))
+let html ?owner ?repo body =
+  Dream.html (string_of_tyxml (template ?owner ?repo (body ())))
 
 let main ~front ~db =
   Dream.serve ~port:front.port ~interface:"0.0.0.0"
@@ -263,28 +278,28 @@ let main ~front ~db =
   @@ Dream.router
        [
          Dream.get "/_static/**" (Dream.static "/mnt/project/static");
-         Dream.get "/" (fun request -> html ~request (list_projects ~db));
+         Dream.get "/" (fun _ -> html (list_projects ~db));
          Dream.get "/:owner" (fun request ->
              let owner = Dream.param request "owner" in
-             html ~request (list_repos ~db ~owner));
+             html ~owner (list_repos ~db ~owner));
          Dream.get "/:owner/:repo" (fun request ->
              let owner = Dream.param request "owner" in
              let repo = Dream.param request "repo" in
              let repo_id = owner ^ "/" ^ repo in
              let worker, docker_image =
-               get_worker ~db ~repo_id ~pr:`Branch request
+               get_worker ~db ~repo_id ~pr:`Branch ~request
              in
-             Printf.printf "\n\nworker = %S, image = %S\n\n\n%!" worker
-               docker_image;
-             html ~request (list_pr ~db ~repo_id ~worker ~docker_image));
+             html ~owner ~repo
+               (list_pr ~owner ~repo ~db ~repo_id ~worker ~docker_image));
          Dream.get "/:owner/:repo/pull/:pr" (fun request ->
              let owner = Dream.param request "owner" in
              let repo = Dream.param request "repo" in
              let repo_id = owner ^ "/" ^ repo in
              let pr = `PR (Dream.param request "pr") in
-             let worker, docker_image = get_worker ~db ~repo_id ~pr request in
-             html ~request
-               (list_benchmarks ~db ~repo_id ~pr ~worker ~docker_image));
+             let worker, docker_image = get_worker ~db ~repo_id ~pr ~request in
+             html
+               (list_benchmarks ~owner ~repo ~db ~repo_id ~pr ~worker
+                  ~docker_image));
        ]
 
 let main ~front ~db =
