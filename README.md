@@ -33,7 +33,7 @@ To be able to run your benchmarks, current-bench assumes certain things about yo
   - merging a pull request
 - ⚠️ The benchmarks are run on a single core, by default. If your benchmarks include parallel benchmarks, the repository needs to be explicitly configured to use a multicore worker. Please let the benchmarking team know about this.
 
-### JSon format
+### JSON format
 To be able to draw graphs from your results, they need to follow a specific format.
 You can automatically check that your output conforms to that format by calling `cb-check`:
 
