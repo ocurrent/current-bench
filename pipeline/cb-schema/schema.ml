@@ -1,8 +1,12 @@
 (* Added because it was introduced to stdlib in 5.0 *)
-let sscanf_opt fmt fn ~str = try Some (Scanf.sscanf str fmt fn) with _ -> None
+let sscanf_opt fmt fn ~str =
+  try Some (Scanf.sscanf str fmt fn)
+  with Scanf.Scan_failure _ | Failure _ | End_of_file -> None
 
 (* Added because it isn't available in reason for some reason *)
 let option_value default = function None -> default | Some x -> x
+
+(* Added for convenience *)
 let option_or o f = match o with Some x -> x | None -> f ()
 let ( >>? ) = option_or
 
