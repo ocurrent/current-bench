@@ -7,6 +7,8 @@
 (source
  (github ocurrent/current-bench))
 
+(license "Apache-2.0")
+
 (package
  (name current-bench)
  (synopsis "Run continuous benchmarks for repositories")
