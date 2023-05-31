@@ -7,6 +7,7 @@ maintainer: [
   "Shakthi Kannan <shakthi@tarides.com>"
 ]
 authors: ["Rizo I. <rizo@tarides.com>" "Gargi Sharma <gargi@tarides.com>"]
+license: "Apache-2.0"
 homepage: "https://github.com/ocurrent/current-bench"
 bug-reports: "https://github.com/ocurrent/current-bench/issues"
 depends: [
