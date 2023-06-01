@@ -4,6 +4,7 @@ module Github = Current_github
 module Logging = Logging
 module Benchmark = Models.Benchmark
 module Config = Config
+module Frontend = Frontend
 
 let ( >>| ) x f = Current.map f x
 
@@ -227,6 +228,9 @@ let repositories ~config = function
       let name = Fpath.basename path in
       let src = Git.Local.head_commit local in
       let+ head = Git.Local.head local and+ commit = src >>| Git.Commit.id in
+      (* If and when https://github.com/ocurrent/ocurrent/issues/425 is solved,
+         use real commit_message here. *)
+      let commit_message = "Local commit, could not get commit message." in
       let branch =
         match head with
         | `Commit _ -> None
@@ -238,7 +242,10 @@ let repositories ~config = function
                     log "Could not extract branch name from: %s" git_ref);
                 None)
       in
-      [ Repository.v ?branch ~src ~commit ~name ~owner:"local" ~labels:[] () ]
+      [
+        Repository.v ?branch ~src ~commit ~commit_message ~name ~owner:"local"
+          ~labels:[] ();
+      ]
   | Github { repo; token; webhook_secret } ->
       let token = token |> Util.read_fpath |> String.trim in
       let api = Current_github.Api.of_oauth ~token ~webhook_secret in
@@ -294,7 +301,7 @@ let process_pipeline ~config ~ocluster ~conninfo ~sources () =
   in
   ()
 
-let v ~config ~server:mode ~sources conninfo () =
+let v ~config ~front ~server:mode ~sources conninfo () =
   Db_util.check_connection ~conninfo;
   let cap_path = "/app/submission.cap" in
   let vat = Capnp_rpc_unix.client_only_vat () in
@@ -329,4 +336,9 @@ let v ~config ~server:mode ~sources conninfo () =
     Current_web.Site.(v ~has_role:allow_all) ~name:"Benchmarks" routes
   in
   Logging.run
-    (Lwt.choose [ Current.Engine.thread engine; Current_web.run ~mode site ])
+  @@ Lwt.choose
+       [
+         Frontend.main ~front ~db:conninfo;
+         Current.Engine.thread engine;
+         Current_web.run ~mode site;
+       ]

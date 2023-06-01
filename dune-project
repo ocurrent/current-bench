@@ -28,6 +28,7 @@
   (cmdliner
    (>= 1.1.0))
   cohttp-lwt-unix
+  (color :dev)
   (current
    (>= 0.6.4))
   current_ansi
@@ -49,6 +50,8 @@
    (>= 0.6.4))
   (dockerfile
    (>= 6.3.0))
+  (dream
+   (= 1.0.0~alpha5))
   duration
   fpath
   logs
@@ -71,6 +74,7 @@
   (timere
    (>= 0.5.0))
   timere-parse
+  tyxml
   yojson
   (alcotest :with-test)
   (alcotest-lwt

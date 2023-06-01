@@ -1,5 +1,6 @@
 module Logging = Logging
 module Github = Current_github
+module Frontend = Frontend
 
 module Config : sig
   type t
@@ -19,6 +20,7 @@ end
 
 val v :
   config:Config.t ->
+  front:Frontend.config ->
   server:Conduit_lwt_unix.server ->
   sources:Source.t list ->
   string ->

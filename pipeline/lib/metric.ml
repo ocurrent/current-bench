@@ -13,23 +13,17 @@ let change_threshold = 0.01
 let parse_benchmark_data ~data =
   let metrics =
     Array.fold_left
-      (fun acc datum ->
-        match datum with
-        | _commit, benchmark_name, test_name, metrics ->
-            metrics
-            |> List.fold_left
-                 (fun acc ({ name; value; _ } : Cb_schema.S.metric) ->
-                   let key = (benchmark_name, test_name, name) in
-                   BenchmarksData.add key value acc)
-                 acc)
+      (fun acc { Storage.bench_name; test_name; metrics; _ } ->
+        metrics
+        |> List.fold_left
+             (fun acc ({ name; value; _ } : Cb_schema.S.metric) ->
+               let key = (bench_name, test_name, name) in
+               BenchmarksData.add key value acc)
+             acc)
       BenchmarksData.empty data
   in
   let commit =
-    if Array.length data > 0
-    then
-      let commit, _, _, _ = data.(0) in
-      Some commit
-    else None
+    if Array.length data > 0 then Some data.(0).Storage.commit_hash else None
   in
   (metrics, commit)
 
@@ -231,27 +225,23 @@ module NotifyGithub = struct
     let open Lwt.Infix in
     Current.Job.start job ~level:Current.Level.Above_average >>= fun () ->
     Logs.info (fun log -> log "Looking for significantly changed metrics...");
-    match
+    let result_main, result =
       Storage.get_main_branch_metrics ~conninfo ~repository ~worker
         ~docker_image
-    with
-    | Some result_main, Some result -> (
-        let compare_metrics, main_commit =
-          parse_benchmark_data ~data:result_main
+    in
+    let compare_metrics, main_commit = parse_benchmark_data ~data:result_main in
+    let metrics, _ = parse_benchmark_data ~data:result in
+    let changes = find_changed_metrics ~metrics ~compare_metrics in
+    match github_api with
+    | Some api when not (BenchmarksData.is_empty changes) ->
+        let text =
+          format_changes_message ~changes ~repository ~worker ~docker_image
+            ~main_commit
         in
-        let metrics, _ = parse_benchmark_data ~data:result in
-        let changes = find_changed_metrics ~metrics ~compare_metrics in
-        match github_api with
-        | Some api when not (BenchmarksData.is_empty changes) ->
-            let text =
-              format_changes_message ~changes ~repository ~worker ~docker_image
-                ~main_commit
-            in
-            let () = post_github_comment ~api ~repository ~pull_number ~text in
-            Lwt.return (Ok text)
-        | Some _ -> Lwt.return (Ok "No changes found in metric comparison")
-        | _ -> Lwt.return (Ok "No Github API configuration found"))
-    | _ -> Lwt.return (Ok "No results found for comparison")
+        let () = post_github_comment ~api ~repository ~pull_number ~text in
+        Lwt.return (Ok text)
+    | Some _ -> Lwt.return (Ok "No changes found in metric comparison")
+    | _ -> Lwt.return (Ok "No Github API configuration found")
 end
 
 module NGC = Current_cache.Output (NotifyGithub)

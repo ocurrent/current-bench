@@ -1,0 +1,118 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: monospace;
+}
+
+#header {
+  position: sticky;
+  top: 0;
+  z-index: 9999;
+  width: 100%;
+  background-color: black;
+  color: white;
+  font-weight: bold;
+}
+
+#header a, #header a:visited {
+  color: white;
+  display: inline-block;
+  padding: 0.5rem;
+  text-decoration: none;
+}
+
+h1 {
+  margin: 0;
+  padding: 1rem;
+}
+
+h1, h2, h3 {
+  background: #ccc;
+  color: black;
+  font-size: 1.5em;
+  padding: 1rem;
+  border: 2px solid white;
+  border-bottom: none;
+  margin: 0;
+}
+
+h3 {
+  margin-bottom: 1rem;
+}
+
+.benchmarks {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  width: 100%;
+}
+
+.benchmark {
+  flex: 1;
+  flex-basis: 33%;
+  min-width: 400px;
+}
+
+.plot {
+  position: relative;
+  height: 200px;
+}
+
+.plot:nth-child(even) {
+  border-top: 1px solid #aaa;
+  border-bottom: 1px solid #aaa;
+  background: #f5f5f5;
+}
+
+h4 {
+  display: inline-block;
+  position: absolute;
+  background: black;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  top: -1rem;
+  left: 0;
+  z-index: 99;
+}
+
+.metrics h3 {
+  position: absolute;
+  z-index: 1;
+  margin: 0;
+  padding: 0.25rem;
+  padding-left: 1rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 75%);
+}
+
+table {
+  margin: 0;
+  padding: 0;
+  width: 98%;
+  margin: 1%;
+  border-collapse: collapse;
+}
+
+td {
+  border: 1px solid black;
+}
+
+th, td {
+  padding: 1em;
+  text-align: left;
+}
+
+th.hash { width: 3em }
+th.env { width: 15em }
+
+th.selected, th.selected a {
+  border: 1px solid black;
+  background: black;
+  color: white;
+}
+td.selected {
+  background: #eee;
+}
+
+#pr_commit, .current-bench_plot { display: none }
+
