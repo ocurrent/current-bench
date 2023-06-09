@@ -5,7 +5,6 @@
 Prototype for running predictable, IO-bound benchmarks in an ocurrent pipeline. This is *work in progress*. If you want to be on the allowlist for running benchmarks for your repository, please contact @ElectreAAS, @shakthimaan, or @punchagan, or [open an issue](https://github.com/ocurrent/current-bench/issues/new).
 
 If you're here just to enroll your repo to see nice graphs, you're in the right place, you can jump to the next section.
-If you want to run this project locally on a tuned machine, see [TUNING.md](TUNING.md).
 If you're here to contribute to improving current-bench, see [HACKING.md](HACKING.md)
 
 ## The github application
