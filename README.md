@@ -37,6 +37,21 @@ Now, `current-bench` should start running benchmarks for your repository, and
 you should be able to see your repo in the dropdown menu at
 https://autumn.ocamllabs.io
 
+### Configuring when and how to run the benchmarks
+
+`current-bench` allows for some customization (per repository) for specifying
+when and how to run the customization. If you need any of the customizations
+listed below, or other customization, please reach out to the maintainers.
+
+- Run sequential benchmarks only or parallel benchmarks too. ⚠️ Our default worker can only run sequential benchmarks. If you have parallel (multicore) benchmarks, do let us know! We can configure to run them on a specific worker (`worker`).
+- Use a specific Docker image (`image`) or a custom Dockerfile (`dockerfile`) to run the benchmarks.
+- Run benchmarks from a repository different from the code repository  (`bench_repo`)
+- Run the benchmarks on a schedule - nightly, weekly, etc. (`schedule`)
+- Run the benchmarks only on PRs with a specific label (`if_label`)
+- Specify build-args when building the docker image (`build_args`)
+- Run benchmarks on more than one long-running branches (`branches`)
+- Post GitHub comments with the build results when there's a significant change in the results (`notify_github`)
+
 ## Ensuring we can run your benchmarks
 To be able to run your benchmarks, current-bench assumes certain things about your repo:
 - You have a `.opam` file at the root of your project specifying your dependencies and all the usual metadata.
