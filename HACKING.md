@@ -311,6 +311,9 @@ You can repeat the same "author/repo" multiple times with different configuratio
 
 ### Adding new workers to the cluster
 
+See [TUNING.md](TUNING.md) for information on how to tune a machine to add it
+as a worker to the cluster.
+
 The `environments/production.env` should list the known workers with a comma separated list:
 
 ```
