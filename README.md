@@ -4,20 +4,38 @@
 
 Prototype for running predictable, IO-bound benchmarks in an ocurrent pipeline. This is *work in progress*. If you want to be on the allowlist for running benchmarks for your repository, please contact @ElectreAAS, @shakthimaan, or @punchagan, or [open an issue](https://github.com/ocurrent/current-bench/issues/new).
 
-If you're here just to enroll your repo to see nice graphs, you're in the right place, you can jump to the next section.
-If you're here to contribute to improving current-bench, see [HACKING.md](HACKING.md)
+If you're here just to enroll your repo to see nice graphs, you're in the right
+place, you can jump to the [Enroll your Repository](#enroll-your-repository)
+section.
 
-## The github application
-- First, you'll need to make sure you have admin access to the organization that hosts your repo. If it's a private repo that just means your own account.
-- Then go to the app's page on the [Github Marketplace](https://github.com/marketplace/ocaml-benchmarks), scroll down and click on "Install it for free". 
-- Choose "only select repositories" and select the repo you want benchmarked. If this is a personal project, you might have to deal with 2FA there.
+If you want to run this project locally or want to contribute to improving
+current-bench, see [HACKING.md](HACKING.md)
 
-Done!
+## Enroll your repository
 
-## Tell us about it
-Since current-bench is in an experimental stage, users have to be approved manually. Ask us to approve you or your org. Someone on our team will notify you when it's been taken care of.
+`current-bench` uses a [GitHub
+Application](https://github.com/marketplace/ocaml-benchmarks) to track all the
+repositories enrolled for running benchmarks. To enroll your repository, you'll
+need to:
 
-Now, you should be able to see your repo in the dropdown menu at https://autumn.ocamllabs.io
+- First, you'll need to make sure you have admin access to the organization
+  that hosts your repo. If it's a private repo that just means your own
+  account.
+
+- Then, go to the app's page on the [Github
+  Marketplace](https://github.com/marketplace/ocaml-benchmarks), scroll down
+  and click on "Install it for free".
+
+- Choose "only select repositories" and select the repo you want
+  benchmarked. If this is a personal project, you might have to enable 2FA.
+
+- Finally, since `current-bench` is still in an experimental stage, users have
+  to be approved manually. Ask us to approve you or your org. Someone on our
+  team will notify you when it's been taken care of.
+
+Now, `current-bench` should start running benchmarks for your repository, and
+you should be able to see your repo in the dropdown menu at
+https://autumn.ocamllabs.io
 
 ## Ensuring we can run your benchmarks
 To be able to run your benchmarks, current-bench assumes certain things about your repo:
