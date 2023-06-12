@@ -194,7 +194,7 @@ pipeline_1    |                             "--" "/tmp/git-checkout3219a5b2"
 
 In order to test locally the behaviour of the GitHub App, you will need to create your own private application on GitHub. It will behave just like production, with webhooks, graphql and PR status updates:
 
-1. [**Create a private Current-Bench GitHub App**](https://github.com/settings/apps/new?name=CB%20dev%20test&url=https:%2F%2Fidonothaveaurl.com&public=false&webhook_active=true&webhook_url=https:%2F%2Fwillbesetuplater.com&pull_requests=write&statuses=write&repository_hooks=write&events=pull_request) (<- this link will pre-configure the required settings)
+1. [**Create a private Current-Bench GitHub App**](https://github.com/settings/apps/new?name=CB%20dev%20test&url=https:%2F%2Fidonothaveaurl.com&public=false&webhook_active=true&webhook_url=https:%2F%2Fwillbesetuplater.com&contents=read&pull_requests=write&statuses=write&repository_hooks=write&events[]=push&events[]=pull_request) (<- this link will pre-configure the required settings)
 2. After creation, note the **App ID: 1562..** number on the top of the page
 3. Then scroll to the bottom and ask github to **generate a private key**: save the file in `environments/cb-dev-test.pem`
 4. Create a **webhook secret** on your computer : `echo -n mysecret > environments/github.secret` (it should not contain a carriage return `\n` hence the `echo -n`)
