@@ -4,7 +4,7 @@ set -eu
 
 ngrok authtoken "$OCAML_BENCH_NGROK_AUTH"
 
-ngrok http 8081 --log=stdout > /tmp/ngrok.log &
+ngrok http 8081 --log=stdout | tee /tmp/ngrok.log &
 
 URL=$(tail -F /tmp/ngrok.log | grep -m 1 -o -E 'https://[^ ]*.ngrok.*$')
 
@@ -12,7 +12,6 @@ WEBHOOK="${URL}/webhooks/github"
 
 SECRET=$(cat "/mnt/environments/$OCAML_BENCH_GITHUB_WEBHOOK_SECRET_FILE")
 
-JWT=$(dune exec --root=. --display=quiet dev/jwt.exe "$OCAML_BENCH_GITHUB_APP_ID" "/mnt/environments/$OCAML_BENCH_GITHUB_PRIVATE_KEY_FILE")
 
 curl \
   -X PATCH \
