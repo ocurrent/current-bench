@@ -6,7 +6,7 @@ ngrok authtoken "$OCAML_BENCH_NGROK_AUTH"
 
 ngrok http 8081 --log=stdout > /tmp/ngrok.log &
 
-URL=$(tail -F /tmp/ngrok.log | grep -m 1 -o -E 'https://[^ ]*.ngrok.io$')
+URL=$(tail -F /tmp/ngrok.log | grep -m 1 -o -E 'https://[^ ]*.ngrok.*$')
 
 WEBHOOK="${URL}/webhooks/github"
 
