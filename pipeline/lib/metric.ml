@@ -1,4 +1,5 @@
 module Github = Current_github
+module Env = Custom_dockerfile.Env
 
 module MetricKey = struct
   type t = string * string * string
@@ -265,30 +266,19 @@ let notify ~conninfo ~repository ~worker ~docker_image ~pull_number job_id =
        { conninfo; repository; github_api; worker; docker_image; pull_number }
        job_id ()
 
-let notify_metric_changes ~conninfo ~repository ~worker ~docker_image ~config
+let notify_metric_changes ~conninfo ~repository ~worker ~docker_image ~env
     output =
   let repo_id = Repository.info repository in
   let commit_hash = Repository.commit_hash repository in
-  let repo_configs = Config.find config repository in
-  let should_notify =
-    List.find_map
-      (fun (repo_config : Config.repo) ->
-        match repo_config.notify_github with
-        | true
-          when worker = repo_config.worker && docker_image = repo_config.image
-          ->
-            Some repo_config
-        | _ -> None)
-      repo_configs
-  in
+  let notify_github = env.Env.config.notify_github in
   let pull_number = Repository.pull_number repository in
   (* Use repo_info:commit_hash:worker:docker_image as job_id to prevent
      spamming PRs with metric change notifications *)
   let job_id_ = Fmt.str "%s:%s:%s:%s" repo_id commit_hash worker docker_image in
-  match (pull_number, should_notify) with
-  | Some pull_number, Some _ ->
+  match (pull_number, notify_github) with
+  | Some pull_number, true ->
       let job_id = Current.map (fun _ -> job_id_) output in
       notify ~conninfo ~repository ~worker ~docker_image ~pull_number job_id
   | None, _ -> Current.return "Not a pull request"
-  | _, None ->
+  | _, false ->
       Current.return @@ Fmt.str "GitHub notifications turned off for %s" job_id_
