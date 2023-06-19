@@ -1,4 +1,4 @@
-FROM ocaml/opam:debian-ocaml-4.14 AS build
+FROM ocaml/opam:debian-ocaml-4.14@sha256:3d6a873d179f6a9899ab69180e8367f45b2bce275cc2915da32cdbfae3420e0f AS build
 RUN sudo apt-get update && sudo apt-get install libc6-dev libev-dev capnproto m4 pkg-config libsqlite3-dev libgmp-dev libffi-dev -y --no-install-recommends
 RUN opam remote add origin 'https://opam.ocaml.org' --all-switches && opam remote remove default && opam update
 RUN sudo ln -f /usr/bin/opam-2.1 /usr/bin/opam
@@ -11,7 +11,7 @@ RUN opam exec -- dune build \
   ./_build/install/default/bin/ocluster-scheduler \
   ./_build/install/default/bin/ocluster-admin
 
-FROM debian:stable-slim
+FROM debian:bookworm-20230612-slim@sha256:d8f9d38c21495b04d1cca99805fbb383856e19794265684019bf193c3b7d67f9
 RUN apt-get update && apt-get install libev4 libsqlite3-0 -y --no-install-recommends
 RUN apt-get install ca-certificates -y  # https://github.com/mirage/ocaml-conduit/issues/388
 WORKDIR /var/lib/ocluster-scheduler

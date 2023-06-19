@@ -1,5 +1,5 @@
 # pull official base image
-FROM node:lts AS dev
+FROM node:lts-bookworm@sha256:4a55308cc855cba1a925d19ae4e45838741dad2fd7bb8949a93b2a0f2ae339e3 AS dev
 
 ARG VITE_OCAML_BENCH_GRAPHQL_URL
 ARG VITE_OCAML_BENCH_PIPELINE_URL
@@ -37,7 +37,7 @@ RUN yarn build
 RUN yarn bundle
 
 # build nginx image with static files built previously
-FROM nginx:stable-alpine
+FROM nginx:stable-alpine3.17@sha256:5e1ccef1e821253829e415ac1e3eafe46920aab0bf67e0fe8a104c57dbfffdf7
 
 COPY ./frontend/nginx.conf /etc/nginx/nginx.conf
 
