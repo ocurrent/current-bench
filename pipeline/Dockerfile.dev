@@ -1,4 +1,4 @@
-FROM ocaml/opam:debian-11-ocaml-4.14 AS build
+FROM ocaml/opam:debian-11-ocaml-4.14@sha256:3d6a873d179f6a9899ab69180e8367f45b2bce275cc2915da32cdbfae3420e0f AS build
 
 RUN sudo apt-get update && \
     sudo apt-get install -qq -yy \
@@ -32,7 +32,7 @@ RUN apt-get update \
     ca-certificates \
     apt-transport-https \
     curl \
-    netcat \
+    ncat \
     postgresql-client \
     gnupg \
     lsb-release \

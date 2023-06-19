@@ -1,4 +1,4 @@
-FROM ocaml/opam:debian-11-ocaml-4.14 AS build
+FROM ocaml/opam:debian-11-ocaml-4.14@sha256:3d6a873d179f6a9899ab69180e8367f45b2bce275cc2915da32cdbfae3420e0f AS build
 
 RUN sudo apt-get update && \
     sudo apt-get install -qq -yy \
@@ -27,7 +27,7 @@ RUN sudo chown opam .
 # Build the project.
 RUN opam exec -- dune build --profile=release ./cb_worker.exe
 
-FROM debian:stable-slim
+FROM debian:bookworm-20230612-slim@sha256:d8f9d38c21495b04d1cca99805fbb383856e19794265684019bf193c3b7d67f9
 
 ARG TARGET_ARCH=amd64
 
@@ -37,7 +37,7 @@ RUN apt-get update \
     ca-certificates \
     apt-transport-https \
     curl \
-    netcat \
+    ncat \
     gnupg \
     lsb-release \
     git \
