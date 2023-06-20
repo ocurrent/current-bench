@@ -14,7 +14,7 @@ RUN sudo apt-get update && \
     graphviz \
     capnproto
 
-RUN opam remote add origin 'https://opam.ocaml.org' --all-switches && opam remote remove default && opam update
+RUN cd ~/opam-repository && git fetch -q origin master && git reset --hard 14481bdb624a183382442546bcc0525ba8b1b523 && opam update
 
 WORKDIR /mnt/project
 
