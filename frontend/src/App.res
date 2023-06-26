@@ -37,7 +37,7 @@ let makeGetBenchmarksVariables = (
     isMaster,
     worker,
     dockerImage,
-    benchmarkName: Belt.Option.getWithDefault(benchmarkName, defaultBenchmarkName),
+    benchmarkName: Js.Global.decodeURIComponent(Belt.Option.getWithDefault(benchmarkName, defaultBenchmarkName)),
     startDate,
     endDate,
     comparisonLimit,
