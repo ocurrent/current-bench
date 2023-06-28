@@ -71,7 +71,7 @@ You can automatically check that your output conforms to that format by calling 
 
 <!-- remove the pin when cb-check hits opam -->
 ```bash
-opam pin -n cb-check git@github.com:ocurrent/current-bench.git
+opam pin -n cb-check git+https://github.com/ocurrent/current-bench.git
 opam install cb-check
 your_executable | cb-check
 # OR, if your_executable writes in some_file.json
