@@ -33,16 +33,17 @@ let github_status_of_state url = function
   | Error (`Active _) -> Github.Api.Status.v ~url `Pending
   | Error (`Msg m) -> Github.Api.Status.v ~url `Failure ~description:m
 
-let github_set_status ~repository ~worker ~docker_image result =
+let github_set_status ~repository ~config ~worker ~docker_image result =
   match Repository.github_head repository with
   | None -> Current.ignore_value result
   | Some head ->
-      let status_url = Repository.commit_status_url repository in
+      let status_url = Config.repo_url ~config repository worker docker_image in
       let name =
         Printf.sprintf "ocaml-benchmarks (%s;%s)" docker_image worker
       in
       Github.Api.Commit.set_status (Current.return head) name
-        (Current.state ~hidden:true result >>| github_status_of_state status_url)
+        (Current.state ~hidden:true result
+        >>| github_status_of_state (Uri.of_string status_url))
 
 let setup_on_cancel_hook ~job_id ~serial_id ~conninfo =
   let jobs = Current.Job.jobs () in
@@ -128,7 +129,8 @@ let pipeline ~config ~ocluster ~conninfo ~repository env =
     Config.slack_log ~config ~key:(key ^ " worker_job_id")
     @@ record_pipeline_stage ~serial_id ~conninfo ocluster_worker worker_job_id
   and+ _ =
-    ocluster_worker |> github_set_status ~repository ~worker ~docker_image
+    ocluster_worker
+    |> github_set_status ~repository ~config ~worker ~docker_image
   and+ () =
     Config.slack_log ~config ~key:(key ^ " record_stage_failure")
     @@ Current.map (function
