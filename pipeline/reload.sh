@@ -12,6 +12,8 @@ if [[ -n "${OCAML_BENCH_GITHUB_APP_ID}" && -n "${OCAML_BENCH_GITHUB_PRIVATE_KEY_
     JWT=$(dune exec --root=. --display=quiet dev/jwt.exe "$OCAML_BENCH_GITHUB_APP_ID" "/mnt/environments/$OCAML_BENCH_GITHUB_PRIVATE_KEY_FILE")
     export JWT
     ./dev/github-app.sh &
+else
+    echo "NOTE: Not starting the development GitHub App since configuration is missing!"
 fi
 
 dune exec --watch bin/main.exe -- "$@"
