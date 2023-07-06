@@ -11,6 +11,8 @@ section.
 If you want to run this project locally or want to contribute to improving
 current-bench, see [HACKING.md](HACKING.md)
 
+Please report any issues with the [benchmarking service](https://bench.ci.dev) at [ocaml/infrastructure](https://github.com/ocaml/infrastructure).
+
 ## Enroll your repository
 
 `current-bench` uses a [GitHub
