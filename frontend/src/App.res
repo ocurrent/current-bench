@@ -254,6 +254,12 @@ module Welcome = {
         </a>
         {Rx.text(".")}
         <br />
+        {Rx.text("Report issues at ")}
+        <a target="_blank" href="https://github.com/ocaml/infrastructure">
+          {Rx.text("https://github.com/ocaml/infrastructure")}
+        </a>
+        {Rx.text(".")}
+        <br />
         <Text sx=[Sx.text.xs]> {`Version: ${version}`} </Text>
       </center>
     </Column>
