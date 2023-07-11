@@ -9,8 +9,6 @@ end
 
 module BenchmarksData = Map.Make (MetricKey)
 
-let change_threshold = 0.01
-
 let parse_benchmark_data ~data =
   let metrics =
     Array.fold_left
@@ -60,21 +58,28 @@ let calc_diff v cv =
   then (v -. cv) /. v *. 100.
   else 0.
 
-type change = Change of float | New
-
-let find_changed_metrics ~metrics ~compare_metrics =
+let find_metrics_changes ~metrics ~compare_metrics =
   BenchmarksData.merge
-    (fun _ (value : Cb_schema.S.value option)
+    (fun (_, _, metric_name) (value : Cb_schema.S.value option)
          (compare_value : Cb_schema.S.value option) ->
       match (value, compare_value) with
       | Some value, Some compare_value ->
-          let delta =
-            calc_diff (avg_of_value value) (avg_of_value compare_value)
-          in
-          if Float.abs delta > change_threshold
-          then Some (Change delta)
-          else None
-      | Some _, None -> Some New
+          let avg_value = avg_of_value value in
+          let avg_compare_value = avg_of_value compare_value in
+          let delta = calc_diff avg_value avg_compare_value in
+          Some
+            (Fmt.str "| %s | %f | %f | %.1f%% |" metric_name avg_value
+               avg_compare_value delta)
+      | Some value, None ->
+          let avg_value = avg_of_value value in
+          Some
+            (Fmt.str "| %s | %f | %s | %s |" metric_name avg_value "-"
+               "New metric")
+      | None, Some compare_value ->
+          let avg_compare_value = avg_of_value compare_value in
+          Some
+            (Fmt.str "| %s | %s | %f | %s |" metric_name "-" avg_compare_value
+               "Deleted metric")
       | _ -> None)
     metrics compare_metrics
 
@@ -83,7 +88,7 @@ module SeenBenchmarks = Set.Make (MetricKey)
 let format_changes ~changes =
   let text_list, _ =
     BenchmarksData.fold
-      (fun (bench_name, test_name, metric_name) change (acc, seen) ->
+      (fun (bench_name, test_name, _) change (acc, seen) ->
         let bench_key = (bench_name, "", "") in
         let test_key = (bench_name, test_name, "") in
         let bench_seen = SeenBenchmarks.mem bench_key seen in
@@ -98,14 +103,14 @@ let format_changes ~changes =
         let entry, seen =
           match test_seen with
           | false ->
-              ( Fmt.str "%s\n### Test: %s\n" entry test_name,
+              let headline = Fmt.str "%s\n### Test: %s\n\n" entry test_name in
+              let table_header =
+                "| metric_name | Last PR value | Last main value | Delta |\n\
+                 |----|----|----|----|"
+              in
+              ( Fmt.str "%s%s\n" headline table_header,
                 SeenBenchmarks.add test_key seen )
           | true -> (entry, seen)
-        in
-        let change =
-          match change with
-          | New -> Fmt.str "- %s is a new metric" metric_name
-          | Change change -> Fmt.str "- %s changed by %.1f%%" metric_name change
         in
         let entry = Fmt.str "%s%s" entry change in
         (entry :: acc, seen))
@@ -241,7 +246,7 @@ module NotifyGithub = struct
           parse_benchmark_data ~data:result_main
         in
         let metrics, _ = parse_benchmark_data ~data:result in
-        let changes = find_changed_metrics ~metrics ~compare_metrics in
+        let changes = find_metrics_changes ~metrics ~compare_metrics in
         match github_api with
         | Some api when not (BenchmarksData.is_empty changes) ->
             let text =
