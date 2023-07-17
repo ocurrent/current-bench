@@ -127,17 +127,18 @@ let get_clock t repo =
   | None -> Current.return (Clock.now_rfc3339 ())
   | Some schedule -> Map_string.find schedule t.clocks
 
-let repo_url ~config repo worker docker_image =
-  Printf.sprintf "%s/%s?worker=%s&image=%s" config.frontend_url
+let repo_url repo worker docker_image =
+  Printf.sprintf "%s/%s?worker=%s&image=%s"
+    (Repository.frontend_url ())
     (Repository.to_path repo) (Uri.pct_encode worker)
     (Uri.pct_encode docker_image)
 
 let job_url ~config job_id start stop =
   Printf.sprintf "%s/job/%s#L%i-L%i" config.pipeline_url job_id start stop
 
-let key_of_repo ~config repository worker docker_image =
+let key_of_repo repository worker docker_image =
   Printf.sprintf "<%s|*%s* _%s_ %s>"
-    (repo_url ~config repository worker docker_image)
+    (repo_url repository worker docker_image)
     (Repository.to_string repository)
     worker docker_image
 
