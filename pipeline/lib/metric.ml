@@ -128,17 +128,13 @@ let pull_url ~repo_id ~pull_number =
   let pull = Fmt.str "#%d" pull_number in
   Fmt.str "[%s](%s)" pull url
 
-let benchmarks_url ~repo_id ~worker ~docker_image =
-  let base_url = Repository.frontend_url () in
-  Fmt.str "%s/%s?worker=%s&image=%s" base_url repo_id worker docker_image
-
 let format_changes_message ~changes ~repository ~worker ~docker_image
     ~main_commit =
   let pull_number = Repository.pull_number repository |> Option.get in
   let commit = Repository.commit_hash repository in
   let repo_id = Repository.info repository in
   let main_commit = Option.value ~default:"Unknown hash" main_commit in
-  let metrics_url = benchmarks_url ~repo_id ~worker ~docker_image in
+  let metrics_url = Config.repo_url repository worker docker_image in
   let header =
     Fmt.str
       "%s (%s) changes the [metrics](%s) as follows in comparison to `main` \
