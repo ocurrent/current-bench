@@ -50,7 +50,12 @@ listed below, or other customization, please reach out to the maintainers.
 - Run the benchmarks only on PRs with a specific label (`if_label`)
 - Specify build-args when building the docker image (`build_args`)
 - Run benchmarks on more than one long-running branches (`branches`)
-- Post GitHub comments with the build results when there's a significant change in the results (`notify_github`)
+- Post GitHub comments with the build results when there's a significant change
+  in the results (`notify_github`).  The config value can also specify a label,
+  which ensures that only those PRs with this label get notified with the
+  benchmark results.  NOTE: The PR label cannot be added while the benchmark
+  run has started.  To trigger a run, where the results are posted to the PR,
+  you'll have to trigger a new run by (force) pushing to the branch.
 
 ## Ensuring we can run your benchmarks
 To be able to run your benchmarks, current-bench assumes certain things about your repo:

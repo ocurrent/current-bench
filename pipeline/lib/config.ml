@@ -5,6 +5,20 @@ module Images = Map.Make (String)
 let default_worker = "autumn"
 let default_docker = "ocaml/opam:debian-ocaml-5.0"
 
+type notify_option = Bool of bool | Label of string
+
+let default_notify_option = Bool false
+
+let notify_option_of_yojson json =
+  match json with
+  | `Bool b -> Ok (Bool b)
+  | `String label -> Ok (Label label)
+  | _ -> Error "Invalid JSON format for notify_option"
+
+let notify_option_to_yojson = function
+  | Bool b -> `Bool b
+  | Label label -> `String label
+
 type repo = {
   name : string;
   worker : string; [@default default_worker]
@@ -12,7 +26,7 @@ type repo = {
   dockerfile : string option; [@default None]
   schedule : string option; [@default None]
   build_args : string list; [@default []]
-  notify_github : bool; [@default false]
+  notify_github : notify_option; [@default default_notify_option]
   if_label : string option; [@default None]
   branches : string list; [@default []]
   bench_repo : string option; [@default None]
@@ -98,7 +112,7 @@ let default name =
     dockerfile = None;
     schedule = None;
     build_args = [];
-    notify_github = false;
+    notify_github = default_notify_option;
     if_label = None;
     branches = [];
     bench_repo = None;

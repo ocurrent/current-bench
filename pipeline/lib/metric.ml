@@ -276,10 +276,15 @@ let notify_metric_changes ~conninfo ~repository ~worker ~docker_image ~env
   (* Use repo_info:commit_hash:worker:docker_image as job_id to prevent
      spamming PRs with metric change notifications *)
   let job_id_ = Fmt.str "%s:%s:%s:%s" repo_id commit_hash worker docker_image in
+  let notify_pull pull_number =
+    let job_id = Current.map (fun _ -> job_id_) output in
+    notify ~conninfo ~repository ~worker ~docker_image ~pull_number job_id
+  in
   match (pull_number, notify_github) with
-  | Some pull_number, true ->
-      let job_id = Current.map (fun _ -> job_id_) output in
-      notify ~conninfo ~repository ~worker ~docker_image ~pull_number job_id
+  | Some pull_number, Bool true -> notify_pull pull_number
+  | Some pull_number, Label tag when List.mem tag (Repository.labels repository)
+    ->
+      notify_pull pull_number
   | None, _ -> Current.return "Not a pull request"
-  | _, false ->
+  | _, _ ->
       Current.return @@ Fmt.str "GitHub notifications turned off for %s" job_id_
