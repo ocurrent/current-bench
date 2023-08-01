@@ -73,7 +73,9 @@ To be able to run your benchmarks, current-bench assumes certain things about yo
 - ⚠️ The benchmarks are run on a single core, by default. If your benchmarks include parallel benchmarks, the repository needs to be explicitly configured to use a multicore worker. Please let the benchmarking team know about this.
 
 ### JSON format
+
 To be able to draw graphs from your results, they need to follow a specific format.
+
 You can automatically check that your output conforms to that format by calling `cb-check`:
 
 <!-- remove the pin when cb-check hits opam -->
@@ -108,9 +110,11 @@ A description of that format is also specified below for convenience:
 ```
 Note that the only valid `"trend"`s are `"higher-is-better"` and `"lower-is-better"`.
 
-[Here's](https://gist.github.com/gs0510/9ef5d47582b7fbf8dda6df0af08537e4) an example from [index](https://github.com/mirage/index) with regards to what the format looks like.
+[Here's](https://gist.github.com/punchagan/0637f32127e6cd8338fc7a2ae33d2f18) an example from the ocaml/ocaml benchmarks.  You can see the graph for these metrics, [here](https://autumn.ocamllabs.io/ocaml/ocaml/branch/trunk?worker=autumn&image=ocaml%2Fopam%3Adebian-11-ocaml-4.14).
 
-The metadata about `repo`, `branch` and `commit` is added by current-bench.
+To plot multiple values in the same graph, you can use common prefix with a
+slash. For instance, in the example linked above the time taken for `typing`,
+`parsing`, etc., are shown in the same graph because of the `ocaml/` prefix.
 
 
 ### Multiple benchmarks per project
