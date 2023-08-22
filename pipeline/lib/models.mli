@@ -37,5 +37,8 @@ module Benchmark : sig
 
     val exists :
       conninfo:Db_util.t -> env:Custom_dockerfile.Env.t -> Repository.t -> bool
+
+    val commit_exists :
+      conninfo:Db_util.t -> repo_id:string -> hash:string -> bool
   end
 end
