@@ -13,17 +13,11 @@ module Get_commits = struct
   end
 
   module Value = struct
-    type v = {
-      commit : Current_git.Commit_id.t;
-      commit_message : string option;
-    }
-
+    type v = { commit : Current_git.Commit_id.t; commit_message : string }
     type t = v list
 
     let string_of_v { commit; commit_message } =
-      Fmt.str "%S: %s\n"
-        (Option.value commit_message ~default:"None")
-        (Current_git.Commit_id.digest commit)
+      Fmt.str "%S: %s\n" commit_message (Current_git.Commit_id.digest commit)
 
     let marshal t = String.concat "\n" (List.map string_of_v t)
 
@@ -31,13 +25,11 @@ module Get_commits = struct
       let lines = String.split_on_char '\n' str in
       List.map
         (fun line ->
-          Scanf.sscanf line "%s: %s %s %s" (fun commit_message repo gref hash ->
+          Scanf.sscanf line "\"%s\": %s %s %s"
+            (fun commit_message repo gref hash ->
               {
                 commit = Current_git.Commit_id.v ~repo ~gref ~hash;
-                commit_message =
-                  (if commit_message = {|"None"|}
-                  then None
-                  else Some commit_message);
+                commit_message;
               }))
         lines
 
@@ -45,17 +37,24 @@ module Get_commits = struct
   end
 
   open Lwt.Syntax
-  open Lwt.Infix
 
   let hash_to_parent dir t =
     let cmd =
-      [| "git"; "-C"; dir; "rev-parse"; "--revs-only"; Fmt.str "%s^" t |]
+      [|
+        "git";
+        "-C";
+        dir;
+        "rev-list";
+        "--format=oneline";
+        "-1";
+        Fmt.str "\"%s^\"" t;
+      |]
     in
-    (* FIXME: add commit_message *)
-    Lwt_process.pread ("", cmd) >|= String.trim
+    let+ line = Lwt_process.pread ("", cmd) in
+    Scanf.sscanf line "%s %s@\n" (fun hash msg -> (hash, msg))
 
   let build conninfo job { Key.commit; repo_id } =
-    Current.Job.start job ~level:Current.Level.Average >>= fun () ->
+    let* () = Current.Job.start job ~level:Current.Level.Average in
     Current_git.with_checkout ~job commit @@ fun dir ->
     let dir = Fpath.to_string dir in
     let rec loop hash acc =
@@ -64,14 +63,9 @@ module Get_commits = struct
         Value.pp acc;
         Lwt.return (Ok acc))
       else
-        let* hash = hash_to_parent dir hash in
+        let* hash, msg = hash_to_parent dir hash in
         let parent = Current_git.Commit_id.v ~repo:dir ~hash ~gref:hash in
-        loop hash
-          ({
-             Value.commit = parent;
-             commit_message = (* FIXME: add commit message here *) None;
-           }
-          :: acc)
+        loop hash ({ Value.commit = parent; commit_message = msg } :: acc)
     in
     loop (Current_git.Commit.hash commit) []
 
@@ -94,5 +88,5 @@ let get_history conninfo repo =
   in
   Current.map
     (List.map (fun { Get_commits.Value.commit; commit_message } ->
-         { repo with commit; commit_message }))
+         { repo with commit; commit_message = Some commit_message }))
     commits
