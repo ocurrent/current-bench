@@ -192,5 +192,30 @@ module Benchmark = struct
 
     let commit_exists ~conninfo ~repo_id ~hash =
       Db_util.with_db ~conninfo (commit_exists ~repo_id ~hash)
+
+    let repo_query repo_id =
+      let repo_id = Db_util.string repo_id in
+      Fmt.str "SELECT COUNT(*) FROM benchmarks WHERE repo_id=%s" repo_id
+
+    let repo_exists repo_id (db : Postgresql.connection) =
+      let query = repo_query repo_id in
+      let result = db#exec query in
+      match result#get_all with
+      | [| [| count_str |] |] ->
+          let count = int_of_string count_str in
+          count >= 1
+      | result ->
+          Logs.err (fun log ->
+              log "Unexpected result for Db.repo_exists %s:\n%a" repo_id
+                (Fmt.array (Fmt.array Fmt.string))
+                result);
+          true
+      | exception exn ->
+          Logs.err (fun log ->
+              log "Error for Db.repo_exists %s:\n%a" repo_id Fmt.exn exn);
+          true
+
+    let repo_exists ~conninfo ~repo_id =
+      Db_util.with_db ~conninfo (repo_exists repo_id)
   end
 end

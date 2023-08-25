@@ -40,5 +40,7 @@ module Benchmark : sig
 
     val commit_exists :
       conninfo:Db_util.t -> repo_id:string -> hash:string -> bool
+
+    val repo_exists : conninfo:Db_util.t -> repo_id:string -> bool
   end
 end
