@@ -156,7 +156,7 @@ let docker_build ~switch ~log ~src ~options ~dockerpath ~iid_file =
   let args =
     List.concat_map (fun x -> [ "--build-arg"; x ]) build_args
     @ (if squash then [ "--squash" ] else [])
-    @ [ "--pull"; "--iidfile"; iid_file; "-f"; dockerpath; src ]
+    @ [ "--pull"; "--force-rm"; "--iidfile"; iid_file; "-f"; dockerpath; src ]
   in
   Process.check_call ~label:"docker-build" ~switch ~log
     ("docker" :: "build" :: args)
