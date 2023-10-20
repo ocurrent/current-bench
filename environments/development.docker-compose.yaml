@@ -107,9 +107,11 @@ services:
       - "--state-dir=/var/lib/ocluster-scheduler"
       - "--pools=${OCAML_BENCH_CLUSTER_POOLS}"
       - "--verbose"
+      - "--listen-prometheus=${OCAML_BENCH_CLUSTER_METRICS_PORT?required}"
     ports:
       [
-        "${OCAML_BENCH_CLUSTER_PORT?required}:${OCAML_BENCH_CLUSTER_PORT?required}"
+        "${OCAML_BENCH_CLUSTER_PORT?required}:${OCAML_BENCH_CLUSTER_PORT?required}",
+        "${OCAML_BENCH_CLUSTER_METRICS_PORT?required}:${OCAML_BENCH_CLUSTER_METRICS_PORT?required}"
       ]
     volumes:
       # Allow access to capnp secrets required by client and workers
