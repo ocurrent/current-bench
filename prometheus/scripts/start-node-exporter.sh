@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-NODE_EXPORTER_VERSION=1.3.1
+NODE_EXPORTER_VERSION=1.6.1
 NODE_EXPORTER_EXE="node_exporter-${NODE_EXPORTER_VERSION}.linux-amd64/node_exporter"
 
 download_and_extract () {
