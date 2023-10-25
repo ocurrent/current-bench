@@ -72,7 +72,7 @@ stop-prometheus-alertmanager:
 
 .PHONY: start-node-exporter
 start-node-exporter:
-	./prometheus/scripts/start-node-exporter.sh --web.listen-address 0.0.0.0:10080
+	./prometheus/scripts/start-node-exporter.sh
 
 .PHONY: runtest
 runtest: ./local-repos/test/.git
