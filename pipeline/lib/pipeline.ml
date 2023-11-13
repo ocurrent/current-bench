@@ -210,7 +210,7 @@ let github_repositories ~config ~conninfo repo =
           then repository :: lst
           else lst)
     ref_map []
-  |> List.map (Commits.get_history conninfo)
+  |> List.map (Commits.get_history ~conninfo)
   |> Current.list_seq
   |> Current.map List.concat
 
@@ -234,7 +234,7 @@ let repositories ~config ~conninfo = function
       let local = Git.Local.v path in
       let name = Fpath.basename path in
       let src = Git.Local.head_commit local in
-      let+ head = Git.Local.head local and+ commit = src >>| Git.Commit.id in
+      let* head = Git.Local.head local and* commit = src >>| Git.Commit.id in
       let branch =
         match head with
         | `Commit _ -> None
@@ -246,7 +246,10 @@ let repositories ~config ~conninfo = function
                     log "Could not extract branch name from: %s" git_ref);
                 None)
       in
-      [ Repository.v ?branch ~src ~commit ~name ~owner:"local" ~labels:[] () ]
+      let head_repo =
+        Repository.v ?branch ~src ~commit ~name ~owner:"local" ~labels:[] ()
+      in
+      Commits.get_history ~conninfo head_repo
   | Github { repo; token; webhook_secret } ->
       let token = token |> Util.read_fpath |> String.trim in
       let api = Current_github.Api.of_oauth ~token ~webhook_secret in
