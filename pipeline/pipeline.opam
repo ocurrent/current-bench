@@ -47,10 +47,13 @@ depends: [
   "odoc" {with-doc}
 ]
 pin-depends: [
+  # When modifying the pins in this file, don't forget to also modify pipeline/pipeline.opam
   # Using the changes in ocurrent/ocurrent/pull/421, remove the pin on next release (> 0.6.4)
-  # When modifying this pin, don't forget to also modify ../current-bench.opam.template
   ["current_github.0.6.4" "git+https://github.com/ocurrent/ocurrent.git#32561e1f2b9cc387d098e0ee918cd6bd2ccd1d3b"]
+  # Using the changes in ocurrent/ocurrent/pull/442, remove the pin on next release (> 0.6.4)
+  ["current_git.0.6.4"    "git+https://github.com/ElectreAAS/ocurrent.git#21e7007e2897d44535e2729b42c80dc1280c6fb1"]
 ]
+
 build: [
   ["dune" "subst"] {dev}
   [
