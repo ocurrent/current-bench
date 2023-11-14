@@ -20,7 +20,7 @@ let rec sleep_until date =
   else Lwt_unix.sleep (date -. now +. 1.) >>= fun () -> sleep_until date
 
 let wait_next clock_descr = sleep_until (next clock_descr)
-let to_rfc3339 t = Option.get @@ Timedesc.to_rfc3339 t
+let to_rfc3339 t = Timedesc.to_rfc3339 t
 let now_rfc3339 () = to_rfc3339 @@ Timedesc.now ()
 
 let beginning_of_time =

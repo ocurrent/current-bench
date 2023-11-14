@@ -68,9 +68,8 @@
    (>= 1.2))
   ptime
   rresult
-  (timere
-   (>= 0.5.0))
-  timere-parse
+  (timere :dev)
+  (timere-parse :dev)
   yojson
   (alcotest :with-test)
   (alcotest-lwt

@@ -42,8 +42,8 @@ depends: [
   "prometheus-app" {>= "1.2"}
   "ptime"
   "rresult"
-  "timere" {>= "0.5.0"}
-  "timere-parse"
+  "timere" {dev}
+  "timere-parse" {dev}
   "yojson"
   "alcotest" {with-test}
   "alcotest-lwt" {>= "1.0.0" & with-test}
@@ -68,6 +68,9 @@ pin-depends: [
   # Using the changes in ocurrent/ocurrent/pull/421, remove the pin on next release (> 0.6.4)
   # When modifying this pin, don't forget to also modify pipeline/pipeline.opam
   ["current_github.0.6.4" "git+https://github.com/ocurrent/ocurrent.git#32561e1f2b9cc387d098e0ee918cd6bd2ccd1d3b"]
+  # Published versions of timere and timere-parse are incompatible with ocaml 5.0.0 & fail on latest version of oseq
+  ["timere.dev"       "git+https://github.com/ElectreAAS/timere.git#a53baa5c0e6d845009e78f3af01cad7e689ac586"]
+  ["timere-parse.dev" "git+https://github.com/ElectreAAS/timere.git#a53baa5c0e6d845009e78f3af01cad7e689ac586"]
 ]
 
 depexts: [
