@@ -71,7 +71,10 @@
   (timere
    (>= 0.5.0))
   timere-parse
-  yojson
+  ; yojson.2.1.1 is bugged in a minor way.
+  ; change into a lower bound when there is a new release
+  (yojson
+   (<> 2.1.1))
   (alcotest :with-test)
   (alcotest-lwt
    (and
