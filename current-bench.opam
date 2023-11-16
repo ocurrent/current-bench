@@ -74,4 +74,6 @@ depexts: [
   [ "jq" ] {}
 ]
 
-available: [ os-distribution != "alpine" ]
+# System dependencies fail to install on these platforms
+# (postgresql usually)
+available: [ os-distribution != "alpine" & os-distribution != "freebsd" ]

@@ -27,3 +27,6 @@ build: [
   ]
 ]
 dev-repo: "git+https://github.com/ocurrent/current-bench.git"
+# Current-bench has failing system dependencies on these platforms,
+# and `dune build -p cb-check @runtest` will try to build pipeline tests for some reason.
+available: [ (os-distribution != "alpine" & os-distribution != "freebsd") | ! with-test ]
