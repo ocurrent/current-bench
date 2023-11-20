@@ -79,7 +79,8 @@
   (alcotest-lwt
    (and
     (>= 1.0.0)
-    :with-test))))
+    :with-test))
+  (conf-jq :with-test)))
 
 (package
  (name cb-check)

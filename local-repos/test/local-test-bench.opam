@@ -6,10 +6,9 @@ homepage: "https://github.com/ocurrent/current-bench"
 bug-reports: "https://github.com/ocurrent/current-bench/issues"
 depends: [
   "ocaml" {>= "4.08"}
-  "bheap" {= "1.0.0"}
+  "conf-jq"
 ]
 build: [
   ["dune" "subst"] {pinned}
 ]
-depexts: [ [ "jq" ] { } ]
 dev-repo: "git+https://github.com/ocurrent/current-bench.git"
