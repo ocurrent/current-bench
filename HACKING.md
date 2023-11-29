@@ -64,7 +64,7 @@ This will start multiple services:
 * `db` - a PostgreSQL database for storing benchmark results.
 * `db-migrate` - sets up the database and runs all schema migrations.
 * `graphql-engine` - the GraphQL engine powered by [Hasura](https://hasura.io/docs/latest/graphql/core/index.html) that serves the benchmark results from the `db`.
-* `frontend` - the frontend application for showing the benchmark results. Currently deployed at: <https://autumn.ocamllabs.io>.
+* `frontend` - the frontend application for showing the benchmark results. Currently deployed at: <https://bench.ci.dev>.
 
 > The `db-migrate` service is unique to the development environment. In production the database migrations MUST be applied manually.
 

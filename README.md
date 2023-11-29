@@ -37,7 +37,7 @@ need to:
 
 Now, `current-bench` should start running benchmarks for your repository, and
 you should be able to see your repo in the dropdown menu at
-https://autumn.ocamllabs.io
+https://bench.ci.dev
 
 ### Configuring when and how to run the benchmarks
 
@@ -110,7 +110,7 @@ A description of that format is also specified below for convenience:
 ```
 Note that the only valid `"trend"`s are `"higher-is-better"` and `"lower-is-better"`.
 
-[Here's](https://gist.github.com/punchagan/0637f32127e6cd8338fc7a2ae33d2f18) an example from the ocaml/ocaml benchmarks.  You can see the graph for these metrics, [here](https://autumn.ocamllabs.io/ocaml/ocaml/branch/trunk?worker=autumn&image=ocaml%2Fopam%3Adebian-11-ocaml-4.14).
+[Here's](https://gist.github.com/punchagan/0637f32127e6cd8338fc7a2ae33d2f18) an example from the ocaml/ocaml benchmarks.  You can see the graph for these metrics, [here](https://bench.ci.dev/ocaml/ocaml/branch/trunk?worker=autumn&image=ocaml%2Fopam%3Adebian-11-ocaml-4.14).
 
 To plot multiple values in the same graph, you can use common prefix with a
 slash. For instance, in the example linked above the time taken for `typing`,
@@ -130,7 +130,7 @@ Benchmarks data could also be added directly to the DB without having
 For that you'll need a valid HTTP `token`, ask us and we'll provide one for you.
 
 ```sh
-curl -X POST -H 'Authorization: Bearer <token>' https://autumn.ocamllabs.io/benchmarks/metrics --data-raw '
+curl -X POST -H 'Authorization: Bearer <token>' https://bench.ci.dev/benchmarks/metrics --data-raw '
 {
   "repo_owner": "ocurrent",
   "repo_name": "current-bench",
