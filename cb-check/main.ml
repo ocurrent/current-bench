@@ -34,10 +34,11 @@ let validate l =
       Format.printf "No schema-valid results were parsed.@.";
       exit 1
   | validated ->
-      Format.printf "Correctly parsed some benchmarks:@.";
+      Format.printf "Correctly parsed following benchmarks:@.";
       Cb_schema.S.merge [] validated
-      |> List.map Cb_schema.S.to_json
-      |> List.iter (fun j -> Format.printf "%a@." pp j)
+      |> List.iter (fun { Schema.benchmark_name; _ } ->
+             Option.value ~default:"unnamed" benchmark_name
+             |> Format.printf "%s@.")
 
 let () =
   let ic = if Array.length Sys.argv >= 2 then open_in Sys.argv.(1) else stdin in
