@@ -6,6 +6,12 @@ let string_of_error e = e
 
 type expect = Tuples_ok | Command_ok
 
+let expect_to_string = function
+  | Tuples_ok -> "Tuples OK"
+  | Command_ok -> "Command OK"
+
+let expect_testable = Alcotest.of_pp (Fmt.of_to_string expect_to_string)
+
 type mock =
   | Expect_finish
   | Expect of (?expect:expect list -> string -> string array array)
@@ -57,9 +63,8 @@ module Mock = struct
             match H.find mocks conninfo with
             | [] -> Lwt.return result
             | remaining ->
-                Alcotest.fail
-                  (Printf.sprintf "Postgreql.Mock.with_mock: expected %i more"
-                     (List.length remaining))))
+                Alcotest.failf "Postgreql.Mock.with_mock: expected %i more"
+                  (List.length remaining)))
 end
 
 let str_trim = Str.regexp "[\n ]+"
@@ -82,9 +87,7 @@ class connection ~conninfo () =
           object
             method get_all = all
           end
-      | _ ->
-          Alcotest.fail
-            (Printf.sprintf "Postgreql.exec: unexpected exec %S" query)
+      | _ -> Alcotest.failf "Postgreql.exec: unexpected exec %S" query
 
     method finish =
       Mock.catch ~conninfo @@ fun ~conninfo ->

@@ -5,6 +5,13 @@ let example_conf =
     { Config.repo = "other/snd"; token = "token-should-be-unique" };
   ]
 
+let api_token_testable =
+  Alcotest.of_pp @@ fun fmt { Config.repo; token } ->
+  Fmt.pf fmt "{repo=%S; token=%S}" repo token
+
+let http_code_testable =
+  Alcotest.of_pp (Fmt.of_to_string Cohttp.Code.string_of_status)
+
 (* TODO: Cohttp should not be required for testing auth *)
 let cohttp_request ~bearer =
   let uri = Uri.of_string "http://localhost/" in
@@ -18,52 +25,45 @@ let cohttp_unauth_request =
 let server_not_configured =
   Alcotest_lwt.test_case_sync "server not configured" `Quick @@ fun () ->
   let req = cohttp_request ~bearer:"Bearer 123" in
-  try
-    let _ = Api.authenticate_token req [] in
-    Alcotest.fail "expected failure"
-  with Api.Server_config_error -> ()
+  Alcotest.check_raises "Server not configured should get a config error"
+    Api.Server_config_error (fun () -> ignore (Api.authenticate_token req []))
 
 let missing_bearer =
   Alcotest_lwt.test_case_sync "missing bearer" `Quick @@ fun () ->
   let req = cohttp_unauth_request in
-  try
-    let _ = Api.authenticate_token req example_conf in
-    Alcotest.fail "expected failure"
-  with Api.Missing_token -> ()
+  Alcotest.check_raises "Missing bearer should get appropriate error"
+    Api.Missing_token (fun () ->
+      ignore (Api.authenticate_token req example_conf))
 
 let invalid_bearer =
   Alcotest_lwt.test_case_sync "invalid bearer" `Quick @@ fun () ->
   let req = cohttp_request ~bearer:"Missing Bearer Prefix" in
-  try
-    let _ = Api.authenticate_token req example_conf in
-    Alcotest.fail "expected failure"
-  with Api.Invalid_token -> ()
+  Alcotest.check_raises "Missing bearer prefix should get appropriate error"
+    Api.Invalid_token (fun () ->
+      ignore (Api.authenticate_token req example_conf))
 
 let wrong_token =
   Alcotest_lwt.test_case_sync "wrong token" `Quick @@ fun () ->
   let req = cohttp_request ~bearer:"Bearer wrong-token" in
-  match Api.authenticate_token req example_conf with
-  | None -> ()
-  | Some repo ->
-      Alcotest.fail
-        (Printf.sprintf "did not expect repository %S to be found"
-           repo.Config.repo)
+  Alcotest.(check (option api_token_testable))
+    "No repository should be found" None
+    (Api.authenticate_token req example_conf)
 
 let find_repository =
   Alcotest_lwt.test_case_sync "find repository" `Quick @@ fun () ->
   let req = cohttp_request ~bearer:"Bearer p455word!" in
-  match Api.authenticate_token req example_conf with
-  | None -> Alcotest.fail "expected a repository to be found"
-  | Some repo ->
-      Alcotest.(check string) "token" repo.Config.token "p455word!";
-      Alcotest.(check string) "repo" repo.Config.repo "myowner/myrepo"
+  Alcotest.(check (option api_token_testable))
+    "Expected the correct repository to be found"
+    (Some { Config.repo = "myowner/myrepo"; token = "p455word!" })
+    (Api.authenticate_token req example_conf)
 
 let find_other_repository =
   Alcotest_lwt.test_case_sync "find other repository" `Quick @@ fun () ->
   let req = cohttp_request ~bearer:"Bearer token-should-be-unique" in
-  match Api.authenticate_token req example_conf with
-  | None -> Alcotest.fail "expected a repository to be found"
-  | Some repo -> Alcotest.(check string) "repo" repo.Config.repo "other/fst"
+  Alcotest.(check (option api_token_testable))
+    "Expected the correct repository to be found"
+    (Some { Config.repo = "other/fst"; token = "token-should-be-unique" })
+    (Api.authenticate_token req example_conf)
 
 open Lwt.Syntax
 
@@ -78,9 +78,12 @@ let invalid_json =
   let* resp, body = handler#post_raw ocurrent_site req body in
   let* body = Cohttp_lwt.Body.to_string body in
   Alcotest.(check string)
-    "body" body
-    {|{"success":false,"error":"Line 1, bytes 0-16:\nInvalid token 'this is not json'"}|};
-  assert (Cohttp.Response.status resp = `Bad_request);
+    "body"
+    {|{"success":false,"error":"Line 1, bytes 0-16:\nInvalid token 'this is not json'"}|}
+    body;
+  Alcotest.(check http_code_testable)
+    "response code" `Bad_request
+    (Cohttp.Response.status resp);
   Lwt.return_unit
 
 let empty_benchmarks =
@@ -100,7 +103,8 @@ let empty_benchmarks =
              RETURNING id;"
           in
           Alcotest.(check string) "setup metadata" expected query;
-          assert (expect = None);
+          Alcotest.(check (option (list Postgresql.expect_testable)))
+            "'expect' parameter of psql" None expect;
           [| [| "421" |] |]);
       Postgresql.Expect_finish;
       Postgresql.Expect
@@ -110,7 +114,8 @@ let empty_benchmarks =
              cancelled = false, reason = NULL WHERE id = 421"
           in
           Alcotest.(check string) "success" expected query;
-          assert (expect = Some [ Postgresql.Command_ok ]);
+          Alcotest.(check (option (list Postgresql.expect_testable)))
+            "'expect' parameter of psql" (Some [ Postgresql.Command_ok ]) expect;
           [||]);
       Postgresql.Expect_finish;
     ]
@@ -134,7 +139,9 @@ let empty_benchmarks =
   let* resp, body = handler#post_raw ocurrent_site req body in
   let* body = Cohttp_lwt.Body.to_string body in
   Alcotest.(check string) "body" body {|{"success":true}|};
-  assert (Cohttp.Response.status resp = `OK);
+  Alcotest.(check http_code_testable)
+    "response code" `OK
+    (Cohttp.Response.status resp);
   Lwt.return_unit
 
 let tests =
