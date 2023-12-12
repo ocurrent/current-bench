@@ -266,14 +266,15 @@ module Welcome = {
   }
 }
 
-let makeOnSelectRepoId = (worker, repoId) =>
-  AppRouter.Repo({repoId: repoId, benchmarkName: None, worker: worker})->AppRouter.go
+let makeOnSelectRepoId = (worker, repoId) => {
+  AppRouter.Repo({repoId, benchmarkName: None, worker, dateRange: None})->AppRouter.go
+}
 
 module ErrorView = {
   @react.component
   let make = (~msg, ~repoIds=[], ~onSelectRepoId=makeOnSelectRepoId(None)) => {
     <>
-      <Sidebar repoIds onSelectRepoId worker=None setWorker={_ => ()} />
+      <Sidebar repoIds onSelectRepoId worker=None dateRange=None setWorker={_ => ()} />
       <Column alignX=#center sx=[Sx.mt.xl]>
         <Heading level=#h1 align=#center text=`Application error ⚠` />
         <Row alignX=#center sx=[Sx.text.color(Sx.gray900)]> {Rx.text(msg)} </Row>
@@ -291,25 +292,68 @@ module ErrorView = {
 
 module RepoView = {
   @react.component
-  let make = (~repoId=?, ~branch=?, ~pullNumber=?, ~pullBase=?, ~benchmarkName=?, ~worker) => {
+  let make = (
+    ~repoId=?,
+    ~branch=?,
+    ~pullNumber=?,
+    ~pullBase=?,
+    ~benchmarkName=?,
+    ~worker,
+    ~dateRange=?,
+  ) => {
     let ({ReScriptUrql.Hooks.response: response}, _) = {
       ReScriptUrql.Hooks.useQuery(~query=module(GetAllRepos), ())
     }
 
-    let ((startDate, endDate), setDateRange) = React.useState(getDefaultDateRange)
-    let onSelectDateRange = (startDate, endDate) => setDateRange(_ => (startDate, endDate))
+    let convertDates = range => {
+      switch range {
+      | Some((start, end)) =>
+        Some((Js.Date.fromString(start ++ "T00:00:00"), Js.Date.fromString(end ++ "T23:59:59")))
+      | _ => None
+      }
+    }
+    let ((startDate, endDate), setDateRange) = React.useState(() =>
+      convertDates(dateRange)->Belt.Option.getWithDefault(getDefaultDateRange())
+    )
+    let onSelectDateRange = (startDate, endDate) => {
+      let makeUtcISOString = d => {
+        let tzOffset = Js.Date.getTimezoneOffset(d)
+        // Convert offset to milliseconds and subtract from local time
+        let utcTimeMs = Js.Date.getTime(d) -. tzOffset *. 60.0 *. 1000.0
+        let utcDate = Js.Date.fromFloat(utcTimeMs)
+        Js.String2.split(Js.Date.toISOString(utcDate), "T")[0]
+      }
+      let dateRange = Some(makeUtcISOString(startDate), makeUtcISOString(endDate))
+      setDateRange(_ => (startDate, endDate))
+      switch (repoId, pullNumber, pullBase) {
+      | (Some(repoId), Some(pullNumber), Some(pullBase)) =>
+        AppRouter.RepoPull({
+          repoId,
+          pullNumber,
+          pullBase,
+          benchmarkName,
+          worker,
+          dateRange,
+        })->AppRouter.go
+      | (Some(repoId), _, _) =>
+        AppRouter.Repo({repoId, benchmarkName, worker, dateRange})->AppRouter.go
+      | _ => ()
+      }
+    }
 
     let setWorker = worker => {
       switch (repoId, pullNumber, pullBase) {
       | (Some(repoId), Some(pullNumber), Some(pullBase)) =>
         AppRouter.RepoPull({
-          repoId: repoId,
-          pullNumber: pullNumber,
-          pullBase: pullBase,
-          benchmarkName: benchmarkName,
-          worker: worker,
+          repoId,
+          pullNumber,
+          pullBase,
+          benchmarkName,
+          worker,
+          dateRange,
         })->AppRouter.go
-      | (Some(repoId), _, _) => AppRouter.Repo({repoId, benchmarkName, worker})->AppRouter.go
+      | (Some(repoId), _, _) =>
+        AppRouter.Repo({repoId, benchmarkName, worker, dateRange})->AppRouter.go
       | _ => ()
       }
     }
@@ -327,6 +371,7 @@ module RepoView = {
         <Sidebar
           repoIds
           worker
+          dateRange
           setWorker
           selectedBranch=?branch
           selectedRepoId=?repoId
@@ -360,23 +405,25 @@ module RepoView = {
             <Row sx=[Sx.w.auto, Sx.text.noUnderline] alignY=#center>
               {pullNumber->Rx.onSome(pullNumber => {
                 let href = AppRouter.RepoPull({
-                  repoId: repoId,
-                  pullNumber: pullNumber,
-                  pullBase: pullBase,
+                  repoId,
+                  pullNumber,
+                  pullBase,
                   benchmarkName: None,
-                  worker: worker,
+                  worker,
+                  dateRange,
                 })->AppRouter.path
                 <>
-                <Text weight=#semibold> "/" </Text>
-                {
-                  let href = AppRouter.RepoBranch({
-                    repoId: repoId,
-                    branch: pullBase,
-                    benchmarkName: None,
-                    worker: worker,
-                  })->AppRouter.path
-                  <Link href text={pullBase} />
-                }
+                  <Text weight=#semibold> "/" </Text>
+                  {
+                    let href = AppRouter.RepoBranch({
+                      repoId,
+                      branch: pullBase,
+                      benchmarkName: None,
+                      worker,
+                      dateRange,
+                    })->AppRouter.path
+                    <Link href text={pullBase} />
+                  }
                   <Text weight=#semibold> "/" </Text>
                   <Link href icon=Icon.branch text={string_of_int(pullNumber)} />
                 </>
@@ -385,20 +432,25 @@ module RepoView = {
                 let href = switch pullNumber {
                 | None =>
                   AppRouter.Repo({
-                    repoId: repoId,
+                    repoId,
                     benchmarkName: Some(benchmarkName),
-                    worker: worker,
+                    worker,
+                    dateRange,
                   })
                 | Some(pullNumber) =>
                   AppRouter.RepoPull({
-                    repoId: repoId,
-                    pullNumber: pullNumber,
-                    pullBase: pullBase,
+                    repoId,
+                    pullNumber,
+                    pullBase,
                     benchmarkName: Some(benchmarkName),
-                    worker: worker,
+                    worker,
+                    dateRange,
                   })
                 }->AppRouter.path
-                <> <Text weight=#semibold> "/" </Text> <Link href text={benchmarkName} /> </>
+                <>
+                  <Text weight=#semibold> "/" </Text>
+                  <Link href text={benchmarkName} />
+                </>
               })}
             </Row>
           let githubLink =
@@ -416,7 +468,9 @@ module RepoView = {
                 {githubLink}
                 <Litepicker startDate endDate sx=[Sx.w.xl5] onSelect={onSelectDateRange} />
               </Topbar>
-              <BenchmarkView repoId worker ?branch ?pullNumber pullBase ?benchmarkName startDate endDate />
+              <BenchmarkView
+                repoId worker ?branch ?pullNumber pullBase ?benchmarkName startDate endDate
+              />
             </Column>
           </>
         }}
@@ -430,12 +484,15 @@ let make = () => {
 
   switch route {
   | Error({reason}) =>
-    <div className={Sx.make([Sx.container, Sx.d.flex])}> <ErrorView msg={reason} /> </div>
+    <div className={Sx.make([Sx.container, Sx.d.flex])}>
+      <ErrorView msg={reason} />
+    </div>
   | Ok(Main) => <RepoView worker={None} />
-  | Ok(Repo({repoId, benchmarkName, worker})) => <RepoView repoId ?benchmarkName worker />
-  | Ok(RepoPull({repoId, pullNumber, pullBase, benchmarkName, worker})) =>
-    <RepoView repoId pullNumber pullBase ?benchmarkName worker />
-  | Ok(RepoBranch({repoId, branch, benchmarkName, worker})) =>
-    <RepoView repoId branch ?benchmarkName worker />
+  | Ok(Repo({repoId, benchmarkName, worker, dateRange})) =>
+    <RepoView repoId ?benchmarkName worker ?dateRange />
+  | Ok(RepoPull({repoId, pullNumber, pullBase, benchmarkName, worker, dateRange})) =>
+    <RepoView repoId pullNumber pullBase ?benchmarkName worker ?dateRange />
+  | Ok(RepoBranch({repoId, branch, benchmarkName, worker, dateRange})) =>
+    <RepoView repoId branch ?benchmarkName worker ?dateRange />
   }
 }

@@ -55,6 +55,7 @@ module PullsList = {
             pullBase: pullBase,
             benchmarkName: selectedBenchmarkName,
             worker: worker,
+            dateRange: None,
           })->AppRouter.path}
           text={pullToString((pullNumber, prTitle, None))}
         />
@@ -134,12 +135,14 @@ module BenchmarksMenu = {
           pullBase: pullBase,
           benchmarkName: Some(benchmarkName),
           worker: worker,
+          dateRange: None,
         })
       | _ =>
         AppRouter.Repo({
           repoId: repoId,
           benchmarkName: Some(benchmarkName),
           worker: worker,
+          dateRange: None,
         })
       }
 
@@ -167,6 +170,7 @@ module BranchesMenu = {
     ~selectedBenchmarkName=?,
     ~selectedPull=?,
     ~worker,
+    ~dateRange,
   ) => {
     let branchNames = branchesMenuData->Belt.Array.keepMap(obj => obj.branch)
 
@@ -182,6 +186,7 @@ module BranchesMenu = {
             branch,
             benchmarkName: selectedBenchmarkName,
             worker,
+            dateRange,
           })->AppRouter.go
         | _ => ()
         }
@@ -198,6 +203,7 @@ module BranchesMenu = {
             repoId,
             benchmarkName: selectedBenchmarkName,
             worker,
+            dateRange: None,
           })
         | Some(branch) =>
           AppRouter.RepoBranch({
@@ -205,6 +211,7 @@ module BranchesMenu = {
             branch,
             benchmarkName: selectedBenchmarkName,
             worker,
+            dateRange: None,
           })
         }
         <Link
@@ -229,7 +236,7 @@ module BranchesMenu = {
 
 module SidebarMenu = {
   @react.component
-  let make = (~repoId, ~selectedBranch=?, ~selectedPull=?, ~selectedBenchmarkName=?, ~worker) => {
+  let make = (~repoId, ~selectedBranch=?, ~selectedPull=?, ~selectedBenchmarkName=?, ~worker, ~dateRange) => {
     let ({ReScriptUrql.Hooks.response: response}, _) = {
       ReScriptUrql.Hooks.useQuery(
         ~query=module(SidebarMenuData),
@@ -258,7 +265,7 @@ module SidebarMenu = {
         | false => Rx.null
         }}
         <BranchesMenu
-          repoId branchesMenuData ?selectedPull ?selectedBranch ?selectedBenchmarkName worker
+          repoId branchesMenuData ?selectedPull ?selectedBranch ?selectedBenchmarkName worker dateRange
         />
         <PullsMenu repoId pullsMenuData ?selectedPull ?selectedBenchmarkName worker />
       </>
@@ -347,6 +354,7 @@ module Workers = {
 let make = (
   ~repoIds,
   ~worker,
+  ~dateRange,
   ~setWorker,
   ~selectedBranch=?,
   ~selectedRepoId=?,
@@ -359,7 +367,7 @@ let make = (
   | Some(repoId) =>
     <>
       <Workers worker setWorker repoId selectedPull />
-      <SidebarMenu repoId ?selectedBranch ?selectedPull ?selectedBenchmarkName worker />
+      <SidebarMenu repoId ?selectedBranch ?selectedPull ?selectedBenchmarkName worker dateRange/>
     </>
   }
 
