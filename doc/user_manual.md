@@ -97,6 +97,8 @@ Tailoring the execution of benchmarks in `current-bench` to fit the specific nee
 
 Access the benchmarking dashboard for your project by visiting the URL provided by current-bench, typically in the format `https://bench.ci.dev/<your-org>/<your-repo>`.
 
+![home page](./screenshots/side-bar.png)
+
 If the benchmarks are run on multiple different environments, you can use the dropdown in the left sidebar to select the environment for which you want to view the benchmark results for.
 
 ### Interpreting Results
@@ -105,6 +107,9 @@ If the benchmarks are run on multiple different environments, you can use the dr
 
 When you access the dashboard, you'll see the results for the main branch displayed by default, which serves as a benchmark for all subsequent changes. You can select a PR from the list to view specific results associated with that change.
 
+![repo main page](./screenshots/main.png)
+
+
 #### Comparing PR Branch and Main Branch Results
 
 The UI displays the last commit hash of the PR's commit for which the comparison is being performed. It's a good idea to verify that this is the commit you want to compare.
@@ -112,6 +117,9 @@ The UI displays the last commit hash of the PR's commit for which the comparison
 A table of comparison is displayed on the PR branch dashboard, which gives a comparison of the value of each metric on the last commit of the PR, vs the main branch value. There's also a %age delta of the values that would help you notice any significant changes to drill further into.
 
 There's also a graph comparing the value of the metrics that could make it easier to notice sharp changes in the metrics to further investigate and understand what causes them.
+
+![pr page](./screenshots/pr.png)
+
 
 ## Advanced Use Cases
 
