@@ -165,7 +165,7 @@ let pipeline ~config ~ocluster ~conninfo repository =
   let p = pipeline ~config ~ocluster ~conninfo ~repository in
   Current.ignore_value p
 
-let github_repositories ~config repo =
+let github_repositories ~config ~conninfo repo =
   let* refs =
     Current.component "Get PRs"
     |> let> api, repo = repo in
@@ -174,7 +174,7 @@ let github_repositories ~config repo =
   let default_branch = Github.Api.default_ref refs in
   let default_branch_name = Util.get_branch_name default_branch in
   let ref_map = Github.Api.all_refs refs in
-  let+ api, repo = repo in
+  let* api, repo = repo in
   let repository =
     Repository.v ~name:repo.name ~owner:repo.owner ~github_api:api
   in
@@ -210,6 +210,9 @@ let github_repositories ~config repo =
           then repository :: lst
           else lst)
     ref_map []
+  |> List.map (Commits.get_history ~conninfo)
+  |> Current.list_seq
+  |> Current.map List.concat
 
 let filter_stale_repositories repos =
   let stale_timestamp = Util.stale_timestamp () in
@@ -226,12 +229,12 @@ let filter_stale_repositories repos =
       | _ -> None)
     repos
 
-let repositories ~config = function
+let repositories ~config ~conninfo = function
   | Source.Local path ->
       let local = Git.Local.v path in
       let name = Fpath.basename path in
       let src = Git.Local.head_commit local in
-      let+ head = Git.Local.head local and+ commit = src >>| Git.Commit.id in
+      let* head = Git.Local.head local and* commit = src >>| Git.Commit.id in
       let branch =
         match head with
         | `Commit _ -> None
@@ -243,12 +246,15 @@ let repositories ~config = function
                     log "Could not extract branch name from: %s" git_ref);
                 None)
       in
-      [ Repository.v ?branch ~src ~commit ~name ~owner:"local" ~labels:[] () ]
+      let head_repo =
+        Repository.v ?branch ~src ~commit ~name ~owner:"local" ~labels:[] ()
+      in
+      Commits.get_history ~conninfo head_repo
   | Github { repo; token; webhook_secret } ->
       let token = token |> Util.read_fpath |> String.trim in
       let api = Current_github.Api.of_oauth ~token ~webhook_secret in
       let repo = Current.return (api, repo) in
-      github_repositories ~config repo
+      github_repositories ~config ~conninfo repo
   | Github_app app ->
       let+ repos =
         Github.App.installations app
@@ -257,12 +263,14 @@ let repositories ~config = function
            repos
            |> Current.list_map ~collapse_key:"repo"
                 (module Github.Api.Repo)
-                (github_repositories ~config)
+                (github_repositories ~config ~conninfo)
       in
       List.concat (List.concat repos)
 
-let repositories ~config sources =
-  let repos = Current.list_seq (List.map (repositories ~config) sources) in
+let repositories ~config ~conninfo sources =
+  let repos =
+    Current.list_seq (List.map (repositories ~config ~conninfo) sources)
+  in
   Current.map List.concat repos
 
 let string_of_repositories repos =
@@ -279,7 +287,7 @@ let pull_requests_from_repositories repos =
     repos
 
 let process_pipeline ~config ~ocluster ~conninfo ~sources () =
-  let repos = repositories ~config sources in
+  let repos = repositories ~config ~conninfo sources in
   let fresh_repos = Current.map filter_stale_repositories repos in
   let+ () =
     let+ open_pulls = Current.map pull_requests_from_repositories repos in
