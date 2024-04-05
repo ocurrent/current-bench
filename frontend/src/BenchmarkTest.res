@@ -174,6 +174,9 @@ let make = (
   ~lastCommit,
   ~labelColorMapping: Belt.Map.String.t<string>,
 ) => {
+  let show_metric_table = Belt.Map.String.some(comparison, (_, (ts, _)) =>
+    Belt.Array.length(ts) > 0
+  )
   let metric_table = {
     <Table sx=[Sx.mb.xl2]>
       <thead>
@@ -331,7 +334,7 @@ let make = (
       ])}>
       <Text sx=[Sx.w.auto, Sx.text.md, Sx.text.bold, Sx.text.color(Sx.gray900)]> testName </Text>
     </summary>
-    {Belt.Map.String.isEmpty(comparison) ? Rx.null : metric_table}
+    {show_metric_table ? metric_table : Rx.null}
     <div className={Sx.make([Sx.unsafe("display", "grid"), Sx.unsafe("gap", "2px")])}>
       metric_graphs
     </div>
