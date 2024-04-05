@@ -229,16 +229,6 @@ module BenchmarkView = {
   }
 }
 
-let getDefaultDateRange = {
-  let hourMs = 3600.0 *. 1000.
-  let dayMs = hourMs *. 24.
-  () => {
-    let ts2 = Js.Date.now()
-    let ts1 = ts2 -. 90. *. dayMs
-    (Js.Date.fromFloat(ts1), Js.Date.fromFloat(ts2))
-  }
-}
-
 module Welcome = {
   @react.component
   let make = () => {
@@ -296,7 +286,7 @@ module RepoView = {
       ReScriptUrql.Hooks.useQuery(~query=module(GetAllRepos), ())
     }
 
-    let ((startDate, endDate), setDateRange) = React.useState(getDefaultDateRange)
+    let ((startDate, endDate), setDateRange) = React.useState(Litepicker.getDefaultDateRange)
     let onSelectDateRange = (startDate, endDate) => setDateRange(_ => (startDate, endDate))
 
     let setWorker = worker => {
