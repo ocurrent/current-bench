@@ -14,7 +14,7 @@ RUN sudo apt-get update && \
     graphviz \
     capnproto
 
-RUN cd ~/opam-repository && git fetch -q origin master && git reset --hard 14481bdb624a183382442546bcc0525ba8b1b523 && opam update
+RUN cd ~/opam-repository && git fetch -q origin master && git reset --hard 0cc239352aa24b954c66ef5e9ea0d90ff214183b && opam update
 
 WORKDIR /mnt/project
 
