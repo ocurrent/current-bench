@@ -222,7 +222,7 @@ let result_of_json t lines =
 let of_json t =
   let lines =
     match Json.get_opt "lines" t with
-    | `Tuple [ `Int start; `Int finish ] -> [ (start, finish) ]
+    | `List [ `Int start; `Int finish ] -> [ (start, finish) ]
     | _ -> []
   in
   {
