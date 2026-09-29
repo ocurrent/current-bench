@@ -141,6 +141,17 @@ let docker_run ~switch ~log ~docker_config img_hash =
   Docker_config.with_cpu docker_config @@ fun cpu ->
   docker_run ~switch ~log ~docker_config ~cpu img_hash
 
+(* The image built for a job is never tagged, so it is dangling from the moment
+   it is created and nothing will ever reclaim it: each benchmark run otherwise
+   leaks a multi-gigabyte image until something external happens to run
+   [docker system prune]. Best effort -- the daemon refuses to remove an image
+   that a concurrent job is still running from, and leaving an image behind is
+   far less bad than failing the job, so the exit status is ignored. Note this
+   does not touch the build cache, which still needs [docker builder prune]. *)
+let docker_rmi img_hash =
+  Lwt_process.exec ("docker", [| "docker"; "rmi"; img_hash |]) >>= fun _ ->
+  Lwt.return_unit
+
 let dockerpath ~src = function
   | `Contents contents ->
       let path = src / "Dockerfile" in
@@ -164,15 +175,21 @@ let docker_build ~switch ~log ~src ~options ~dockerpath ~iid_file =
 let build_and_run ~switch ~log ~src ~docker_config = function
   | `Docker (dockerfile, options) ->
       let iid_file = Filename.temp_file "build-worker-" ".iid" in
+      let built_image = ref None in
       Lwt.finalize
         (fun () ->
           dockerpath ~src dockerfile >>!= fun dockerpath ->
           docker_build ~switch ~log ~options ~src ~dockerpath ~iid_file
           >>!= fun () ->
           let img_hash = String.trim (read_file iid_file) in
+          built_image := Some img_hash;
           docker_run ~switch ~log ~docker_config img_hash >>!= fun () ->
           Lwt_result.return img_hash)
-        (fun () -> try_unlink iid_file)
+        (fun () ->
+          try_unlink iid_file >>= fun () ->
+          match !built_image with
+          | None -> Lwt.return_unit
+          | Some img_hash -> docker_rmi img_hash)
   | _ -> Lwt_result.fail (`Msg "Unsupported!")
 
 let update () = Lwt.return (fun () -> Lwt.return ())
