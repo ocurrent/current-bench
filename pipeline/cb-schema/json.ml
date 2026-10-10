@@ -7,9 +7,7 @@ type t =
   | `Float of float
   | `String of string
   | `Assoc of (string * t) list
-  | `List of t list
-  | `Tuple of t list
-  | `Variant of string * t option ]
+  | `List of t list ]
 
 let error key value_type value =
   match value with
