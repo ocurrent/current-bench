@@ -7,10 +7,11 @@ module Docker_config = struct
     numa_node : int option;
     shm_size : int;
     arch : string;
+    memory : string option;
   }
 
-  let v ?(cpus = []) ?numa_node ~shm_size ~arch () =
-    { cpus; numa_node; shm_size; arch }
+  let v ?(cpus = []) ?numa_node ?memory ~shm_size ~arch () =
+    { cpus; numa_node; shm_size; arch; memory }
 
   let cpus_count t = List.length t.cpus
 
@@ -44,6 +45,13 @@ module Docker_config = struct
     | None ->
         [ "--tmpfs"; Fmt.str "/dev/shm:rw,noexec,nosuid,size=%dg" t.shm_size ]
 
+  (* An unconstrained benchmark can take the whole machine down rather than
+     just itself: when the OOM killer fires it picks a victim globally, so a
+     job that allocates without bound takes out the database and the DHCP
+     client too. [None] keeps the previous, unlimited behaviour. *)
+  let memory_args t =
+    match t.memory with Some m -> [ "--memory"; m ] | None -> []
+
   let run_args ~cpu t =
     [
       "--security-opt";
@@ -53,8 +61,17 @@ module Docker_config = struct
       "--cpuset-cpus";
       cpu;
     ]
+    @ memory_args t
     @ tmpfs t
     @ cpuset_mems t
+
+  (* The build phase had no limits at all, while the run phase was carefully
+     pinned. Benchmark Dockerfiles that build a compiler run a parallel make
+     and will oversubscribe every core on the host, starving sshd and the
+     network stack until the machine looks dead. Pin the build to the same
+     CPU the run will use. *)
+  let build_args ~cpu t =
+    [ "--cpuset-cpus"; cpu ] @ memory_args t @ cpuset_mems t
 end
 
 let ( >>!= ) = Lwt_result.bind
@@ -137,10 +154,6 @@ let docker_run ~switch ~log ~docker_config ~cpu img_hash =
           Lwt.return_unit)
   >>= fun () -> Process.check_call ~label:"docker-run" ~switch ~log command
 
-let docker_run ~switch ~log ~docker_config img_hash =
-  Docker_config.with_cpu docker_config @@ fun cpu ->
-  docker_run ~switch ~log ~docker_config ~cpu img_hash
-
 (* The image built for a job is never tagged, so it is dangling from the moment
    it is created and nothing will ever reclaim it: each benchmark run otherwise
    leaks a multi-gigabyte image until something external happens to run
@@ -162,10 +175,12 @@ let dockerpath ~src = function
       | Ok path -> Lwt_result.return path
       | Error e -> Lwt_result.fail e)
 
-let docker_build ~switch ~log ~src ~options ~dockerpath ~iid_file =
+let docker_build ~switch ~log ~docker_config ~cpu ~src ~options ~dockerpath
+    ~iid_file =
   let { Cluster_api.Docker.Spec.build_args; squash; _ } = options in
   let args =
-    List.concat_map (fun x -> [ "--build-arg"; x ]) build_args
+    Docker_config.build_args ~cpu docker_config
+    @ List.concat_map (fun x -> [ "--build-arg"; x ]) build_args
     @ (if squash then [ "--squash" ] else [])
     @ [ "--pull"; "--iidfile"; iid_file; "-f"; dockerpath; src ]
   in
@@ -178,12 +193,14 @@ let build_and_run ~switch ~log ~src ~docker_config = function
       let built_image = ref None in
       Lwt.finalize
         (fun () ->
+          Docker_config.with_cpu docker_config @@ fun cpu ->
           dockerpath ~src dockerfile >>!= fun dockerpath ->
-          docker_build ~switch ~log ~options ~src ~dockerpath ~iid_file
+          docker_build ~switch ~log ~docker_config ~cpu ~options ~src
+            ~dockerpath ~iid_file
           >>!= fun () ->
           let img_hash = String.trim (read_file iid_file) in
           built_image := Some img_hash;
-          docker_run ~switch ~log ~docker_config img_hash >>!= fun () ->
+          docker_run ~switch ~log ~docker_config ~cpu img_hash >>!= fun () ->
           Lwt_result.return img_hash)
         (fun () ->
           try_unlink iid_file >>= fun () ->
@@ -236,14 +253,24 @@ module Docker = struct
     let doc = "Architecture used (typically x86_64 or aarch64, see uname -m)" in
     Arg.(value & opt string "x86_64" & info [ "arch" ] ~doc)
 
+  let memory =
+    let doc =
+      "Memory limit for each benchmark build and run, in the form accepted by \
+       `docker --memory' (for example 16g). Unset means no limit, in which \
+       case a single benchmark can exhaust the host and the OOM killer may \
+       pick any process on it."
+    in
+    Arg.(value & opt (some string) None & info [ "docker-memory" ] ~doc)
+
   let v =
     Term.(
-      const (fun cpus numa_node shm_size arch ->
-          Docker_config.v ?cpus ?numa_node ~shm_size ~arch ())
+      const (fun cpus numa_node shm_size arch memory ->
+          Docker_config.v ?cpus ?numa_node ?memory ~shm_size ~arch ())
       $ cpus
       $ numa_node
       $ shm_size
-      $ arch)
+      $ arch
+      $ memory)
 end
 
 let registration_path =
